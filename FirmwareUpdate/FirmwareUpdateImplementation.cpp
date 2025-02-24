@@ -686,14 +686,13 @@ namespace WPEFramework {
             if (fileWithoutExtension == currentFlashedImage)
             {
 
-                SWUPDATEERR("FW version of the active image and the image to be upgraded are the same. No upgrade required.");
-                dispatchAndUpdateEvent(_VALIDATION_FAILED,_FIRMWARE_UPTODATE);
+                SWUPDATEERR("FW version of the active image and the image to be upgraded are the same. No upgrade required.");                
                 isFlashingInProgress = false; // Reset the flag if exiting early
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|No upgrade needed\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|No upgrade needed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|No upgrade needed\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type);
-
+		dispatchAndUpdateEvent(_VALIDATION_FAILED,_FIRMWARE_UPTODATE);
                 return ;
             }
 
