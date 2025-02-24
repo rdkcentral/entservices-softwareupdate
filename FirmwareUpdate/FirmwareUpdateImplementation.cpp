@@ -667,13 +667,39 @@ namespace WPEFramework {
             struct FWDownloadStatus fwdls;
             memset(&fwdls, '\0', sizeof(fwdls));
             string dri = (firmwareType == "DRI") ? "yes" : "no";
+            string name = firmwareFilepath.substr(firmwareFilepath.find_last_of("/\\") + 1);
+            string path = firmwareFilepath.substr(0, firmwareFilepath.find_last_of("/\\") + 1);
+            
+            string currentFlashedImage = readProperty("/version.txt","imagename", ":") ;
+            SWUPDATEINFO("currentFlashedImage : %s",currentFlashedImage.c_str());
+            std::string fileWithoutExtension ="";
+            // Find the position of the last '.'
+            size_t dotPos = name.find_last_of('.');
+            if (dotPos != std::string::npos) {
+                // Extract substring before the '.'
+                fileWithoutExtension = name.substr(0, dotPos);
+            } else {
+                // If no '.' is found, use the original string
+                fileWithoutExtension = name;
+            }
+
+            if (fileWithoutExtension == currentFlashedImage)
+            {
+
+                SWUPDATEERR("FW version of the active image and the image to be upgraded are the same. No upgrade required.");
+                dispatchAndUpdateEvent(_VALIDATION_FAILED,_FIRMWARE_UPTODATE);
+                isFlashingInProgress = false; // Reset the flag if exiting early
+                snprintf(fwdls.status, sizeof(fwdls.status), "Status|No upgrade needed\n");
+                snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|No upgrade needed\n");
+                snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|No upgrade needed\n");
+                updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type);
+
+                return ;
+            }
 
 
             if(std::string(proto) == "usb")
             {
-                string name = firmwareFilepath.substr(firmwareFilepath.find_last_of("/\\") + 1);
-                string path = firmwareFilepath.substr(0, firmwareFilepath.find_last_of("/\\") + 1);
-
                 if (!copyFileToDirectory(upgrade_file.c_str(), USB_TMP_COPY)) {
                     SWUPDATEERR("File copy operation failed.\n");
                     dispatchAndUpdateEvent(_VALIDATION_FAILED,"");
