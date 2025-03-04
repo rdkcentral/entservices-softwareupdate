@@ -36,6 +36,8 @@
 #include "rfcapi.h"
 #include "cSettings.h"
 
+#include <interfaces/IAuthService.h>
+
 /* MaintenanceManager Services Triggered Events. */
 #define EVT_ONMAINTMGRSAMPLEEVENT           "onSampleEvent"
 #define EVT_ONMAINTENANCSTATUSCHANGE        "onMaintenanceStatusChange" /* Maintenance Status change */
@@ -148,6 +150,8 @@ namespace WPEFramework {
                 std::map<string, DATA_TYPE> m_paramType_map;
 
                 PluginHost::IShell* m_service= nullptr;
+
+                Exchange::IAuthService *m_authservicePlugin;
 
                 bool isDeviceOnline();
                 void task_execution_thread();

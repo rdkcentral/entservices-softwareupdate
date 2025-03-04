@@ -541,32 +541,23 @@ namespace WPEFramework {
 
 void MaintenanceManager::setPartnerId(string partnerid)
         {
-	    LOGINFO("Initiate setPartnerId...");
-            const char* authservice_callsign = "org.rdk.AuthService.1";
-            PluginHost::IShell::state state;
-            WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>* thunder_client = nullptr;
+            if (m_authservicePlugin == nullptr)
+            {
+                LOGERR("No interface for Authservice");
+                return;
+            }
 
-            if ((getServiceState(m_service, "org.rdk.AuthService", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED)) {
-                thunder_client=getThunderPluginHandle(authservice_callsign);
+            LOGINFO("Initiate setPartnerId...");
 
-                if (thunder_client == nullptr) {
-                    LOGINFO("Failed to get plugin handle");
-                } else {
-                    JsonObject joGetParams;
-                    JsonObject joGetResult;
-
-                    joGetParams["partnerId"] = partnerid;
-
-                    thunder_client->Invoke<JsonObject, JsonObject>(5000, "setPartnerId", joGetParams, joGetResult);
-		    string responseJson;
-		    joGetResult.ToString(responseJson);
-	            LOGINFO("AuthService Response Data: %s", responseJson.c_str());
-                    if (joGetResult.HasLabel("success") && joGetResult["success"].Boolean()) {
-                        LOGINFO("Successfully set the partnerId via Authservice");
-                    } else {
-                        LOGINFO("Failed to set the partnerId through Authservice");
-                    }
-                }
+            WPEFramework::Exchange::IAuthService::SetPartnerIdResult spRes;
+            uint32_t rc = m_authservicePlugin->SetPartnerId(partnerid, spRes);
+            if (rc == Core::ERROR_NONE)
+            {
+                LOGINFO("Successfully set the partnerId via Authservice");
+            }
+            else
+            {
+                LOGWARN("Failed to set the partnerId through Authservice, error code %d:%s", rc, spRes.error.c_str());
             }
         }
 
@@ -654,83 +645,25 @@ void MaintenanceManager::setPartnerId(string partnerid)
 
         const string MaintenanceManager::checkActivatedStatus()
         {
-            JsonObject joGetParams;
-            JsonObject joGetResult;
-            std::string callsign = "org.rdk.AuthService.1";
-            uint8_t i = 0;
             std::string ret_status("invalid");
 
-            /* check if plugin active */
-            PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
-            if ((getServiceState(m_service, "org.rdk.AuthService", state) != Core::ERROR_NONE) || (state != PluginHost::IShell::state::ACTIVATED)) {
-                LOGINFO("AuthService plugin is not activated.Retrying.. \n");
-                //if plugin is not activated we need to retry
-                do{
-                    if ((getServiceState(m_service, "org.rdk.AuthService", state) != Core::ERROR_NONE) || (state != PluginHost::IShell::state::ACTIVATED)) {
-                        sleep(10);
-                        i++;
-                        LOGINFO("AuthService retries [%d/4] \n",i);
-                    }
-                    else{
-                        break;
-                    }
-                }while( i < MAX_ACTIVATION_RETRIES );
-
-                if (state != PluginHost::IShell::state::ACTIVATED){
-                    LOGINFO("AuthService plugin is Still not active");
-                    return ret_status;
-                }
-                else{
-                    LOGINFO("AuthService plugin is Now active");
-                }
-            }
-            if (state == PluginHost::IShell::state::ACTIVATED){
-                LOGINFO("AuthService is active");
-            }
-
-            string token;
-
-            // TODO: use interfaces and remove token
-            auto security = m_service->QueryInterfaceByCallsign<PluginHost::IAuthenticate>("SecurityAgent");
-            if (security != nullptr) {
-                string payload = "http://localhost";
-                if (security->CreateToken(
-                        static_cast<uint16_t>(payload.length()),
-                        reinterpret_cast<const uint8_t*>(payload.c_str()),
-                        token)
-                    == Core::ERROR_NONE) {
-                    std::cout << "MaintenanceManager got security token" << std::endl;
-                } else {
-                    std::cout << "MaintenanceManager failed to get security token" << std::endl;
-                }
-                security->Release();
-            } else {
-                std::cout << "No security agent" << std::endl;
-            }
-
-            string query = "token=" + token;
-            Core::SystemInfo::SetEnvironment(_T("THUNDER_ACCESS"), _T(SERVER_DETAILS));
-            auto thunder_client = make_shared<WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> >(callsign.c_str(), "", false, query);
-            if (thunder_client != nullptr) {
-                uint32_t status = thunder_client->Invoke<JsonObject, JsonObject>(5000, "getActivationStatus", joGetParams, joGetResult);
-                LOGINFO("Invoke status : %d",status);
-                if (status > 0) {
-                    LOGINFO("%s call failed %d", callsign.c_str(), status);
-                    ret_status = "invalid";
-                    LOGINFO("Setting Default to [%s]",ret_status.c_str());
-                } else if (joGetResult.HasLabel("status")) {
-                    ret_status = joGetResult["status"].String();
-                    LOGINFO("Activation Value [%s]",ret_status.c_str());
-                }
-                else {
-                    LOGINFO("Failed to read the ActivationStatus");
-                    ret_status = "invalid";
-                }
-
+            if (m_authservicePlugin == nullptr)
+            {
                 return ret_status;
             }
 
-            LOGINFO("thunder client failed");
+            WPEFramework::Exchange::IAuthService::ActivationStatusResult asRes;
+            uint32_t rc = m_authservicePlugin->GetActivationStatus(asRes);
+            if (rc == Core::ERROR_NONE)
+            {
+                ret_status = asRes.status;
+                LOGINFO("Activation Value [%s]",ret_status.c_str());
+            }
+            else
+            {
+                LOGINFO("GetActivationStatus call failed %d", rc);
+            }
+
             return ret_status;
         }
 
@@ -960,6 +893,18 @@ void MaintenanceManager::setPartnerId(string partnerid)
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             InitializeIARM();
 #endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
+
+            m_authservicePlugin = m_service->QueryInterfaceByCallsign<Exchange::IAuthService>("org.rdk.AuthService");
+            if (m_authservicePlugin)
+            {
+                m_authservicePlugin->AddRef();
+                LOGWARN("Got IAuthService");
+            }
+            else
+            {
+                LOGERR("Failed to create IAuthService");
+            }
+
 
             /* On Success; return empty to indicate no error text. */
             return (string());
