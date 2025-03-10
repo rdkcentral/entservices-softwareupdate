@@ -247,6 +247,7 @@ namespace WPEFramework {
          */
         MaintenanceManager::MaintenanceManager()
             :PluginHost::JSONRPC()
+            , m_authservicePlugin(nullptr)
         {
             MaintenanceManager::_instance = this;
 
@@ -541,7 +542,7 @@ namespace WPEFramework {
 
 void MaintenanceManager::setPartnerId(string partnerid)
         {
-            if (m_authservicePlugin == nullptr)
+            if (!queryIAuthService())
             {
                 LOGERR("No interface for Authservice");
                 return;
@@ -643,12 +644,62 @@ void MaintenanceManager::setPartnerId(string partnerid)
             system("/lib/rdk/xconfImageCheck.sh >> /opt/logs/swupdate.log 2>&1 &");
         }
 
+        bool MaintenanceManager::queryIAuthService()
+        {
+            if (m_authservicePlugin != nullptr)
+                return true;
+
+            m_authservicePlugin = m_service->QueryInterfaceByCallsign<Exchange::IAuthService>("org.rdk.AuthService");
+            if (m_authservicePlugin)
+            {
+                m_authservicePlugin->AddRef();
+                LOGWARN("Got IAuthService");
+                return true;
+            }
+
+            LOGERR("Failed to create IAuthService");
+            return false;
+        }
+
         const string MaintenanceManager::checkActivatedStatus()
         {
+            JsonObject joGetParams;
+            JsonObject joGetResult;
+            std::string callsign = "org.rdk.AuthService.1";
+            uint8_t i = 0;
             std::string ret_status("invalid");
 
-            if (m_authservicePlugin == nullptr)
+            /* check if plugin active */
+            PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
+            if ((getServiceState(m_service, "org.rdk.AuthService", state) != Core::ERROR_NONE) || (state != PluginHost::IShell::state::ACTIVATED)) {
+                LOGINFO("AuthService plugin is not activated.Retrying.. \n");
+                //if plugin is not activated we need to retry
+                do{
+                    if ((getServiceState(m_service, "org.rdk.AuthService", state) != Core::ERROR_NONE) || (state != PluginHost::IShell::state::ACTIVATED)) {
+                        sleep(10);
+                        i++;
+                        LOGINFO("AuthService retries [%d/4] \n",i);
+                    }
+                    else{
+                        break;
+                    }
+                }while( i < MAX_ACTIVATION_RETRIES );
+
+                if (state != PluginHost::IShell::state::ACTIVATED){
+                    LOGINFO("AuthService plugin is Still not active");
+                    return ret_status;
+                }
+                else{
+                    LOGINFO("AuthService plugin is Now active");
+                }
+            }
+            if (state == PluginHost::IShell::state::ACTIVATED){
+                LOGINFO("AuthService is active");
+            }
+
+            if (!queryIAuthService())
             {
+                LOGERR("No interface for Authservice");
                 return ret_status;
             }
 
@@ -894,18 +945,6 @@ void MaintenanceManager::setPartnerId(string partnerid)
             InitializeIARM();
 #endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
 
-            m_authservicePlugin = m_service->QueryInterfaceByCallsign<Exchange::IAuthService>("org.rdk.AuthService");
-            if (m_authservicePlugin)
-            {
-                m_authservicePlugin->AddRef();
-                LOGWARN("Got IAuthService");
-            }
-            else
-            {
-                LOGERR("Failed to create IAuthService");
-            }
-
-
             /* On Success; return empty to indicate no error text. */
             return (string());
         }
@@ -921,6 +960,12 @@ void MaintenanceManager::setPartnerId(string partnerid)
 
             m_service->Release();
             m_service = nullptr;
+
+            if (m_authservicePlugin != nullptr)
+            {
+                m_authservicePlugin->Release();
+                m_authservicePlugin = nullptr;
+            }
         }
 
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)

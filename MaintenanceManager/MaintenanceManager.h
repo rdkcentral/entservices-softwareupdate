@@ -173,6 +173,7 @@ namespace WPEFramework {
                 bool setDeviceInitializationContext(JsonObject joGetResult);
                 bool getActivatedStatus(bool &skipFirmwareCheck);
                 const string checkActivatedStatus(void);
+                bool queryIAuthService();
                 int abortTask(const char*, int sig = SIGABRT);
                 pid_t getTaskPID(const char*);
                 string getLastRebootReason();
