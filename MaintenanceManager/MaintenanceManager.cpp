@@ -652,7 +652,6 @@ void MaintenanceManager::setPartnerId(string partnerid)
             m_authservicePlugin = m_service->QueryInterfaceByCallsign<Exchange::IAuthService>("org.rdk.AuthService");
             if (m_authservicePlugin)
             {
-                m_authservicePlugin->AddRef();
                 LOGWARN("Got IAuthService");
                 return true;
             }
