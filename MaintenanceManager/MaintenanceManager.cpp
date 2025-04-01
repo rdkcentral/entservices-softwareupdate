@@ -684,192 +684,193 @@ namespace WPEFramework
         }
 
         /**
-        * @brief Creates a new task timer.
-        *
-        * This function initializes and creates a new task timer if it does not already exist or is not running.
-        *
-        * @return true if the timer was successfully created, false otherwise.
-        */
-       bool MaintenanceManager::maintenance_initTimer()
-       {
-           if (g_task_timerCreated)
-           {
-               LOGINFO("Timer has already been created, no need to create a Timer.");
-               return g_task_timerCreated;
-           }
+         * @brief Creates a new task timer.
+         *
+         * This function initializes and creates a new task timer if it does not already exist or is not running.
+         *
+         * @return true if the timer was successfully created, false otherwise.
+         */
+        bool MaintenanceManager::maintenance_initTimer()
+        {
+            if (g_task_timerCreated)
+            {
+                LOGINFO("Timer has already been created, no need to create a Timer.");
+                return g_task_timerCreated;
+            }
 
-           struct sigevent sev = {0};
-           sev.sigev_notify = SIGEV_SIGNAL;
-           sev.sigev_signo = SIGALRM;
-           sev.sigev_value.sival_ptr = &timerid;
+            struct sigevent sev = {0};
+            sev.sigev_notify = SIGEV_SIGNAL;
+            sev.sigev_signo = SIGALRM;
+            sev.sigev_value.sival_ptr = &timerid;
 
-           if (timer_create(BASE_CLOCK, &sev, &timerid) == -1)
-           {
-               LOGERR("timer_create() failed to create the Timer");
-           }
-           else{
-               g_task_timerCreated = true; // Timer Created
-               LOGINFO("Timer created successfully.");
-           }
-           return g_task_timerCreated;
-       }
-
-       /**
-       * @brief Starts or restarts the task timer.
-       *
-       * This function starts or restarts the task timer with a predefined timeout.
-       *
-       * @return true if the timer was successfully started, false otherwise.
-       */
-       bool MaintenanceManager::task_startTimer()
-       {
-           bool status = false;
-           if (g_task_timerCreated)
-           {
-               LOGINFO("Timer has already been created, start the Timer");
-           }
-           else
-           {
-               LOGINFO("Timer has not been created already, create a new Timer.");
-               if (!maintenance_initTimer())
-               {
-                   return status;
-               }
-           }
-
-           struct itimerspec its;
-           its.it_value.tv_sec = TASK_TIMEOUT;
-           its.it_value.tv_nsec = 0;
-           its.it_interval.tv_sec = 0;
-           its.it_interval.tv_nsec = 0;
-
-           if (timer_settime(timerid, 0, &its, NULL) == -1)
-           {
-               LOGERR("timer_settime() failed to start the Timer");
-           }
-           else
-           {
-               LOGINFO("Timer started for %d seconds for %s", TASK_TIMEOUT, currentTask.c_str());
-               status = true;
-           }
-           return status;
-       }
-
-       /**
-       * @brief Stops the task timer.
-       *
-       * This function stops the task timer if it is currently running.
-       *
-       * @return true if the timer was successfully stopped, false otherwise.
-       */
-       bool MaintenanceManager::task_stopTimer()
-       {
-           bool status = false;
-           if (!g_task_timerCreated)
-           {
-               LOGINFO("Timer has not been created already, cannot stop the Timer");
-               return status;
-           }
-
-           struct itimerspec its = {0};
-           its.it_value.tv_sec = 0;
-           its.it_value.tv_nsec = 0;
-
-           if (timer_settime(timerid, 0, &its, NULL) == -1)
-           {
-               LOGERR("timer_settime() failed to stop the Timer");
-           }
-           else
-           {
-               LOGINFO("Timer stopped for %s", currentTask.c_str());
-               status = true;
-           }
-           return status;
-       }
-
-       /**
-       * @brief Deletes the task timer.
-       *
-       * This function deletes the task timer, stopping it first if necessary.
-       *
-       * @return true if the timer was successfully deleted, false otherwise.
-       */
-       bool MaintenanceManager::maintenance_deleteTimer()
-       {
-           bool status = false;
-           if (!g_task_timerCreated)
-           {
-               LOGINFO("Timer has not been created already, cannot delete the Timer.");
-               return status;
-           }
-
-           LOGINFO("Timer has already been created, delete the Timer.");
-
-           if (timer_delete(timerid) == -1)
-           {
-               LOGERR("timer_delete() failed to delete the Timer.");
-           }
-           else
-           {
-               g_task_timerCreated = false;
-               LOGINFO("Timer successfully deleted.");
-               status = true;
-           }
-           return status;
-       }
-
-       /**
-       * @brief Handles the timer signal.
-       *
-       * This function is invoked when the task timer expires and processes the timeout accordingly.
-       *
-       * @param signo The signal number received.
-       */
-       void MaintenanceManager::timer_handler(int signo)
-       {
-           if (signo == SIGALRM)
-           {
-               LOGERR("Timeout reached for %s. Set task to Error...", currentTask.c_str());
-
-               const char *failedTask = nullptr;
-               int complete_status = 0;
-               for (size_t j = 0; j < (sizeof(task_names_foreground) / sizeof(task_names_foreground[0])); j++)
-               {
-                   if (currentTask.find(task_names_foreground[j]) != string::npos)
-                   {
-                       failedTask = task_names_foreground[j].c_str();
-                       complete_status = task_complete_status[j];
-                       break;
-                   }
-               }
-               if (failedTask && !MaintenanceManager::_instance->m_task_map[failedTask])
-               {
-                   LOGINFO("Ignoring Error Event for Task: %s", failedTask);
-               }
-               else if (failedTask)
-               {
-                   MaintenanceManager::_instance->m_task_map[failedTask] = false;
-                   SET_STATUS(MaintenanceManager::_instance->g_task_status, complete_status);
-                   MaintenanceManager::_instance->task_thread.notify_one();
-                   LOGINFO("Set %s Task to ERROR", failedTask);
-               }
-           }
-           else
-           {
-               LOGERR("Received %d Signal instead of SIGALRM", signo);
-           }
-       }
+            if (timer_create(BASE_CLOCK, &sev, &timerid) == -1)
+            {
+                LOGERR("timer_create() failed to create the Timer");
+            }
+            else
+            {
+                g_task_timerCreated = true; // Timer Created
+                LOGINFO("Timer created successfully.");
+            }
+            return g_task_timerCreated;
+        }
 
         /**
-        * @brief Sets an RFC parameter.
-        *
-        * This function sets an RFC parameter with a specified value and data type.
-        *
-        * @param rfc The RFC parameter name.
-        * @param value The value to set.
-        * @param dataType The type of the value.
-        * @return true if the parameter was successfully set, false otherwise.
-        */
+         * @brief Starts or restarts the task timer.
+         *
+         * This function starts or restarts the task timer with a predefined timeout.
+         *
+         * @return true if the timer was successfully started, false otherwise.
+         */
+        bool MaintenanceManager::task_startTimer()
+        {
+            bool status = false;
+            if (g_task_timerCreated)
+            {
+                LOGINFO("Timer has already been created, start the Timer");
+            }
+            else
+            {
+                LOGINFO("Timer has not been created already, create a new Timer.");
+                if (!maintenance_initTimer())
+                {
+                    return status;
+                }
+            }
+
+            struct itimerspec its;
+            its.it_value.tv_sec = TASK_TIMEOUT;
+            its.it_value.tv_nsec = 0;
+            its.it_interval.tv_sec = 0;
+            its.it_interval.tv_nsec = 0;
+
+            if (timer_settime(timerid, 0, &its, NULL) == -1)
+            {
+                LOGERR("timer_settime() failed to start the Timer");
+            }
+            else
+            {
+                LOGINFO("Timer started for %d seconds for %s", TASK_TIMEOUT, currentTask.c_str());
+                status = true;
+            }
+            return status;
+        }
+
+        /**
+         * @brief Stops the task timer.
+         *
+         * This function stops the task timer if it is currently running.
+         *
+         * @return true if the timer was successfully stopped, false otherwise.
+         */
+        bool MaintenanceManager::task_stopTimer()
+        {
+            bool status = false;
+            if (!g_task_timerCreated)
+            {
+                LOGINFO("Timer has not been created already, cannot stop the Timer");
+                return status;
+            }
+
+            struct itimerspec its = {0};
+            its.it_value.tv_sec = 0;
+            its.it_value.tv_nsec = 0;
+
+            if (timer_settime(timerid, 0, &its, NULL) == -1)
+            {
+                LOGERR("timer_settime() failed to stop the Timer");
+            }
+            else
+            {
+                LOGINFO("Timer stopped for %s", currentTask.c_str());
+                status = true;
+            }
+            return status;
+        }
+
+        /**
+         * @brief Deletes the task timer.
+         *
+         * This function deletes the task timer, stopping it first if necessary.
+         *
+         * @return true if the timer was successfully deleted, false otherwise.
+         */
+        bool MaintenanceManager::maintenance_deleteTimer()
+        {
+            bool status = false;
+            if (!g_task_timerCreated)
+            {
+                LOGINFO("Timer has not been created already, cannot delete the Timer.");
+                return status;
+            }
+
+            LOGINFO("Timer has already been created, delete the Timer.");
+
+            if (timer_delete(timerid) == -1)
+            {
+                LOGERR("timer_delete() failed to delete the Timer.");
+            }
+            else
+            {
+                g_task_timerCreated = false;
+                LOGINFO("Timer successfully deleted.");
+                status = true;
+            }
+            return status;
+        }
+
+        /**
+         * @brief Handles the timer signal.
+         *
+         * This function is invoked when the task timer expires and processes the timeout accordingly.
+         *
+         * @param signo The signal number received.
+         */
+        void MaintenanceManager::timer_handler(int signo)
+        {
+            if (signo == SIGALRM)
+            {
+                LOGERR("Timeout reached for %s. Set task to Error...", currentTask.c_str());
+
+                const char *failedTask = nullptr;
+                int complete_status = 0;
+                for (size_t j = 0; j < (sizeof(task_names_foreground) / sizeof(task_names_foreground[0])); j++)
+                {
+                    if (currentTask.find(task_names_foreground[j]) != string::npos)
+                    {
+                        failedTask = task_names_foreground[j].c_str();
+                        complete_status = task_complete_status[j];
+                        break;
+                    }
+                }
+                if (failedTask && !MaintenanceManager::_instance->m_task_map[failedTask])
+                {
+                    LOGINFO("Ignoring Error Event for Task: %s", failedTask);
+                }
+                else if (failedTask)
+                {
+                    MaintenanceManager::_instance->m_task_map[failedTask] = false;
+                    SET_STATUS(MaintenanceManager::_instance->g_task_status, complete_status);
+                    MaintenanceManager::_instance->task_thread.notify_one();
+                    LOGINFO("Set %s Task to ERROR", failedTask);
+                }
+            }
+            else
+            {
+                LOGERR("Received %d Signal instead of SIGALRM", signo);
+            }
+        }
+
+        /**
+         * @brief Sets an RFC parameter.
+         *
+         * This function sets an RFC parameter with a specified value and data type.
+         *
+         * @param rfc The RFC parameter name.
+         * @param value The value to set.
+         * @param dataType The type of the value.
+         * @return true if the parameter was successfully set, false otherwise.
+         */
         bool MaintenanceManager::setRFC(const char *rfc, const char *value, DATA_TYPE dataType)
         {
             bool result = false;
@@ -1033,17 +1034,17 @@ namespace WPEFramework
 
             LOGINFO("Starting /lib/rdk/Start_RFC.sh");
             rfc_task_status = system("/lib/rdk/Start_RFC.sh &");
-             if (rfc_task_status != 0)
-             {
-                 LOGINFO("Failed to run Start_RFC.sh with %d", WEXITSTATUS(rfc_task_status));
-             }
- 
-             LOGINFO("Starting /lib/rdk/xconfImageCheck.sh");
-             xconf_imagecheck_status = system("/lib/rdk/xconfImageCheck.sh &");
-             if (xconf_imagecheck_status != 0)
-             {
-                 LOGINFO("Failed to run xconfImageCheck.sh with %d", WEXITSTATUS(xconf_imagecheck_status));
-             }
+            if (rfc_task_status != 0)
+            {
+                LOGINFO("Failed to run Start_RFC.sh with %d", WEXITSTATUS(rfc_task_status));
+            }
+
+            LOGINFO("Starting /lib/rdk/xconfImageCheck.sh");
+            xconf_imagecheck_status = system("/lib/rdk/xconfImageCheck.sh &");
+            if (xconf_imagecheck_status != 0)
+            {
+                LOGINFO("Failed to run xconfImageCheck.sh with %d", WEXITSTATUS(xconf_imagecheck_status));
+            }
         }
 
         bool MaintenanceManager::queryIAuthService()
@@ -1063,12 +1064,12 @@ namespace WPEFramework
         }
 
         /**
-        * @brief Checks the activation status of the device.
-        *
-        * This function queries the AuthService to check if the device is activated.
-        *
-        * @return A string representing the activation status.
-        */
+         * @brief Checks the activation status of the device.
+         *
+         * This function queries the AuthService to check if the device is activated.
+         *
+         * @return A string representing the activation status.
+         */
         const string MaintenanceManager::checkActivatedStatus()
         {
             JsonObject joGetParams;
@@ -1570,8 +1571,8 @@ namespace WPEFramework
                             }
                             else
                             {
-                                SET_STATUS(g_task_status,SWUPDATE_SUCCESS);
-                                SET_STATUS(g_task_status,SWUPDATE_COMPLETE);
+                                SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
+                                SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
                                 task_thread.notify_one();
 
                                 m_task_map[task_names_foreground[0].c_str()] = false;
