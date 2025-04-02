@@ -47,7 +47,8 @@ git clone --branch R4.4.1 https://github.com/rdkcentral/Thunder.git
 
 git clone --branch main https://github.com/rdkcentral/entservices-apis.git
 
-git clone https://github.com/rdkcentral/entservices-deviceanddisplay.git
+#git clone https://github.com/rdkcentral/entservices-deviceanddisplay.git
+git clone https://github.com/rdkcentral/entservices-softwareupdate.git
 
 git clone https://$GITHUB_TOKEN@github.com/rdkcentral/entservices-testframework.git
 
@@ -186,7 +187,7 @@ echo "==========================================================================
 echo "buliding entservices-deviceanddisplay"
 cd $GITHUB_WORKSPACE
 ls -al
-cmake -G Ninja -S entservices-deviceanddisplay -B build/entservices-deviceanddisplay \
+cmake -G Ninja -S entservices-softwareupdate -B build/entservices-softwareupdate\
   -DUSE_THUNDER_R4=ON \
   -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
   -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake" \
@@ -223,7 +224,7 @@ cmake -G Ninja -S entservices-deviceanddisplay -B build/entservices-deviceanddis
   -DDS_FOUND=ON \
   -DPLUGIN_MAINTENANCEMANAGER=ON \
 
-cmake --build build/entservices-deviceanddisplay --target install
+cmake --build build/entservices-softwareupdate --target install
 echo "======================================================================================"
 echo "path of so files"
 find . -iname "*.so*"
