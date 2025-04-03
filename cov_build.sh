@@ -222,7 +222,7 @@ cmake -G Ninja -S entservices-softwareupdate -B build/entservices-softwareupdate
   -DCOMCAST_CONFIG=OFF \
   -DRDK_SERVICES_COVERITY=ON \
   -DDS_FOUND=ON \
-  -DPLUGIN_MAINTENANCEMANAGER=ON \
+  -DPLUGIN_PACKAGER=ON \
 
 cmake --build build/entservices-softwareupdate --target install
 echo "======================================================================================"
