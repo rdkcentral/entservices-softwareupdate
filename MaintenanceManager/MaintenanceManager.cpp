@@ -261,8 +261,7 @@ namespace WPEFramework
         string task_param[] = {
             "RFC",
             "SWUPDATE",
-            "LOGUPLOAD"
-        }
+            "LOGUPLOAD"};
 
         vector<string> tasks;
 
@@ -460,6 +459,7 @@ namespace WPEFramework
                 int task_status = -1;
                 task = tasks[i];
                 currentTask = task;
+                task += " " + task_param[i];
                 task += " &";
                 task += " \0";
                 if (!m_abort_flag)
@@ -472,6 +472,7 @@ namespace WPEFramework
                     if (isTaskTimerStarted)
                     {
                         m_task_map[tasks[i]] = true;
+                        LOGINFO("Starting Task for %s \n", currentTask)
                         if (task == compare_strings[0])
                         {
 #ifdef ENABLE_RFC_MANAGER
