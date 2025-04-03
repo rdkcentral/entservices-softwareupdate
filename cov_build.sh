@@ -19,8 +19,16 @@ echo "akshay Current Directory: $GITHUB_WORKSPACE"
 
 
 apt update
-apt install -y libsqlite3-dev libcurl4-openssl-dev valgrind lcov clang libsystemd-dev libboost-all-dev libwebsocketpp-dev meson libcunit1 libcunit1-dev curl protobuf-compiler-grpc libgrpc-dev libgrpc++-dev libunwind-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libopkg-dev
+apt install -y libsqlite3-dev libcurl4-openssl-dev valgrind lcov clang libsystemd-dev libboost-all-dev libwebsocketpp-dev meson libcunit1 libcunit1-dev curl protobuf-compiler-grpc libgrpc-dev libgrpc++-dev libunwind-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev build-essential autoconf automake libtool pkg-config cmake libcurl4-openssl-dev libarchive-dev
 pip install jsonref
+
+git clone https://git.yoctoproject.org/opkg
+cd opkg
+./autogen.sh
+./configure --prefix=/usr
+make 
+sudo make install
+
 
 ############################
 # Build trevor-base64
@@ -182,6 +190,8 @@ cd $GITHUB_WORKSPACE
 ls -al
 cmake -G Ninja -S entservices-softwareupdate -B build/entservices-softwareupdate\
   -DUSE_THUNDER_R4=ON \
+  -DLIBOPKG_INCLUDE_DIRS="/usr/include" \
+  -DLIBOPKG_LIBRARIES="/usr/lib/libopkg.so" \
   -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
   -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake" \
   -DCMAKE_VERBOSE_MAKEFILE=ON \
