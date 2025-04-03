@@ -336,7 +336,7 @@ jobs:
           -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
           -DPLUGIN_FIRMWAREUPDATE=OFF
           -DPLUGIN_MAINTENANCEMANAGER=OFF
-          -DPLUGIN_PACKAGER=OFF
+          -DPLUGIN_PACKAGER=ON
           &&
           cmake --build build/entservices-softwareupdate -j8
           &&
