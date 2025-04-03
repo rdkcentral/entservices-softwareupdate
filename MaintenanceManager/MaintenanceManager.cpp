@@ -82,6 +82,8 @@ using namespace std;
 #define SWUPDATE_TASK RDK_PATH "Start_FWUpgrader.sh"
 #define LOGUPLOAD_TASK RDK_PATH "Start_uploadSTBLogs.sh"
 
+#define TASK_SCRIPT RDK_PATH "Start_MaintenanceTasks.sh"
+
 /**
  * @brief Converts a maintenance status enum to its corresponding string representation.
  *
@@ -102,23 +104,23 @@ string notifyStatusToString(Maint_notify_status_t &status)
     string ret_status = "";
     switch (status)
     {
-    case MAINTENANCE_IDLE:
-        ret_status = "MAINTENANCE_IDLE";
-        break;
-    case MAINTENANCE_STARTED:
-        ret_status = "MAINTENANCE_STARTED";
-        break;
-    case MAINTENANCE_ERROR:
-        ret_status = "MAINTENANCE_ERROR";
-        break;
-    case MAINTENANCE_COMPLETE:
-        ret_status = "MAINTENANCE_COMPLETE";
-        break;
-    case MAINTENANCE_INCOMPLETE:
-        ret_status = "MAINTENANCE_INCOMPLETE";
-        break;
-    default:
-        ret_status = "MAINTENANCE_ERROR";
+        case MAINTENANCE_IDLE:
+            ret_status = "MAINTENANCE_IDLE";
+            break;
+        case MAINTENANCE_STARTED:
+            ret_status = "MAINTENANCE_STARTED";
+            break;
+        case MAINTENANCE_ERROR:
+            ret_status = "MAINTENANCE_ERROR";
+            break;
+        case MAINTENANCE_COMPLETE:
+            ret_status = "MAINTENANCE_COMPLETE";
+            break;
+        case MAINTENANCE_INCOMPLETE:
+            ret_status = "MAINTENANCE_INCOMPLETE";
+            break;
+        default:
+            ret_status = "MAINTENANCE_ERROR";
     }
     return ret_status;
 }
@@ -139,7 +141,6 @@ bool checkValidOptOutModes(string OptoutModes)
         "BYPASS_OPTOUT",
         "IGNORE_UPDATE",
         "NONE"};
-
     return (find(modes.begin(), modes.end(), OptoutModes) != modes.end()) ? true : false;
 }
 
@@ -148,35 +149,35 @@ string moduleStatusToString(IARM_Maint_module_status_t &status)
     string ret_status = "";
     switch (status)
     {
-    case MAINT_RFC_COMPLETE:
-        ret_status = "MAINTENANCE_RFC_COMPLETE";
-        break;
-    case MAINT_RFC_ERROR:
-        ret_status = "MAINTENANCE_RFC_ERROR";
-        break;
-    case MAINT_LOGUPLOAD_COMPLETE:
-        ret_status = "MAINTENANCE_LOGUPLOAD_COMPLETE";
-        break;
-    case MAINT_LOGUPLOAD_ERROR:
-        ret_status = "MAINTENANCE_LOGUPLOAD_ERROR";
-        break;
-    case MAINT_FWDOWNLOAD_COMPLETE:
-        ret_status = "MAINTENANCE_FWDOWNLOAD_COMPLETE";
-        break;
-    case MAINT_FWDOWNLOAD_ERROR:
-        ret_status = "MAINTENANCE_FWDOWNLOAD_ERROR";
-        break;
-    case MAINT_REBOOT_REQUIRED:
-        ret_status = "MAINTENANCE_REBOOT_REQUIRED";
-        break;
-    case MAINT_FWDOWNLOAD_ABORTED:
-        ret_status = "MAINTENANCE_FWDOWNLOAD_ABORTED";
-        break;
-    case MAINT_CRITICAL_UPDATE:
-        ret_status = "MAINTENANCE_CRITICAL_UPDATE";
-        break;
-    default:
-        ret_status = "MAINTENANCE_EMPTY";
+        case MAINT_RFC_COMPLETE:
+            ret_status = "MAINTENANCE_RFC_COMPLETE";
+            break;
+        case MAINT_RFC_ERROR:
+            ret_status = "MAINTENANCE_RFC_ERROR";
+            break;
+        case MAINT_LOGUPLOAD_COMPLETE:
+            ret_status = "MAINTENANCE_LOGUPLOAD_COMPLETE";
+            break;
+        case MAINT_LOGUPLOAD_ERROR:
+            ret_status = "MAINTENANCE_LOGUPLOAD_ERROR";
+            break;
+        case MAINT_FWDOWNLOAD_COMPLETE:
+            ret_status = "MAINTENANCE_FWDOWNLOAD_COMPLETE";
+            break;
+        case MAINT_FWDOWNLOAD_ERROR:
+            ret_status = "MAINTENANCE_FWDOWNLOAD_ERROR";
+            break;
+        case MAINT_REBOOT_REQUIRED:
+            ret_status = "MAINTENANCE_REBOOT_REQUIRED";
+            break;
+        case MAINT_FWDOWNLOAD_ABORTED:
+            ret_status = "MAINTENANCE_FWDOWNLOAD_ABORTED";
+            break;
+        case MAINT_CRITICAL_UPDATE:
+            ret_status = "MAINTENANCE_CRITICAL_UPDATE";
+            break;
+        default:
+            ret_status = "MAINTENANCE_EMPTY";
     }
     return ret_status;
 }
@@ -200,7 +201,6 @@ namespace WPEFramework
 
     namespace Plugin
     {
-
         namespace
         {
             /**
@@ -257,6 +257,12 @@ namespace WPEFramework
             "/lib/rdk/Start_RFC.sh &",
             "/lib/rdk/Start_FWUpgrader.sh &",
             "/lib/rdk/Start_uploadSTBLogs.sh &"};
+
+        string task_param[] = {
+            "RFC",
+            "SWUPDATE",
+            "LOGUPLOAD"
+        }
 
         vector<string> tasks;
 
