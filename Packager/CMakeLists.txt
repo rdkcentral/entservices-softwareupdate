@@ -23,6 +23,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(PLUGIN_PACKAGER_AUTOSTART "true" CACHE STRING "Automatically start Packager plugin")
 set(PLUGIN_PACKAGER_MODE "Local" CACHE STRING "Controls if the plugin should run in its own process, in process or remote")
 set(PLUGIN_PACKAGER_STARTUPORDER "" CACHE STRING "To configure startup order of Packager plugin")
+set(LIBOPKG_LIBRARIES ${LIBOPKG_LIBRARIES} CACHE FILEPATH "Path to libopkg library")
+set(LIBOPKG_INCLUDE_DIRS "/usr/include/libopkg" CACHE PATH "Path to LibOPKG headers")
 
 # deprecated/legacy flags support
 if(PLUGIN_PACKAGER_OUTOFPROCESS STREQUAL "false")
