@@ -335,8 +335,8 @@ jobs:
           -DUSE_THUNDER_R4=ON
           -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
           -DPLUGIN_FIRMWAREUPDATE=OFF
-          -DPLUGIN_MAINTENANCEMANAGER=OFF
-          -DPLUGIN_PACKAGER=ON
+          -DPLUGIN_MAINTENANCEMANAGER=ON
+          -DPLUGIN_PACKAGER=OFF
           &&
           cmake --build build/entservices-softwareupdate -j8
           &&
@@ -406,6 +406,7 @@ jobs:
           -DRDK_SERVICES_L1_TEST=ON
           -DUSE_THUNDER_R4=ON
           -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
+          -DPLUGIN_MAINTENANCEMANAGER=ON
           &&
           cmake --build build/entservices-testframework -j8
           &&
