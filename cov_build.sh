@@ -130,6 +130,7 @@ mkdir -p headers/rdk/iarmbus
 mkdir -p headers/rdk/iarmmgrs-hal
 mkdir -p headers/ccec/drivers
 mkdir -p headers/network
+mkdir -p headers/opkg
 echo "dir created successfully"
 echo "======================================================================================"
 
@@ -175,6 +176,10 @@ touch pkg.h
 touch secure_wrapper.h
 touch wpa_ctrl.h
 touch btmgr.h
+touch opkg/opkg.h
+touch opkg/opkg_message.h
+touch opkg/opkg_cmd.h
+touch opkg/opkg_download.h
 touch rdk_logger_milestone.h
 echo "files created successfully"
 echo "======================================================================================"
