@@ -122,9 +122,11 @@ mkdir -p headers/audiocapturemgr
 mkdir -p headers/rdk/ds
 mkdir -p headers/rdk/iarmbus
 mkdir -p headers/rdk/iarmmgrs-hal
+mkdir -p headers/rdk/halif/
+mkdir -p headers/rdk/halif/deepsleep-manager
 mkdir -p headers/ccec/drivers
 mkdir -p headers/network
-mkdir -p headers/opkg
+mkdir -p headers/proc
 echo "dir created successfully"
 echo "======================================================================================"
 
@@ -155,13 +157,14 @@ touch rdk/ds/videoResolution.hpp
 touch rdk/iarmbus/libIARM.h
 touch rdk/iarmbus/libIBus.h
 touch rdk/iarmbus/libIBusDaemon.h
-touch rdk/iarmmgrs-hal/deepSleepMgr.h
+touch rdk/halif/deepsleep-manager/deepSleepMgr.h
 touch rdk/iarmmgrs-hal/mfrMgr.h
 touch rdk/iarmmgrs-hal/pwrMgr.h
 touch rdk/iarmmgrs-hal/sysMgr.h
 touch network/wifiSrvMgrIarmIf.h
 touch network/netsrvmgrIarm.h
 touch libudev.h
+touch libusb.h
 touch rfcapi.h
 touch rbus.h
 touch telemetry_busmessage_sender.h
@@ -169,12 +172,13 @@ touch maintenanceMGR.h
 touch pkg.h
 touch secure_wrapper.h
 touch wpa_ctrl.h
+touch proc/readproc.h
 touch btmgr.h
-touch opkg/opkg.h
-touch opkg/opkg_message.h
-touch opkg/opkg_cmd.h
-touch opkg/opkg_download.h
 touch rdk_logger_milestone.h
+touch audioOutputPortType.hpp
+touch audioOutputPortConfig.hpp
+touch tr181api.h
+touch dsRpc.h
 echo "files created successfully"
 echo "======================================================================================"
 
