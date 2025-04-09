@@ -57,7 +57,6 @@
 #ifdef ENABLE_DEEP_SLEEP
 #include "rdk/halif/deepsleep-manager/deepSleepMgr.h"
 #endif
-
 #include "maintenanceMGR.h"
 
 using namespace std;
@@ -69,7 +68,6 @@ using namespace std;
 
 #define PROC_DIR "/proc"
 #define RDK_PATH "/lib/rdk/"
-
 #define MAINTENANCE_MANAGER_RFC_CALLER_ID "MaintenanceManager"
 
 #if defined(ENABLE_WHOAMI)
@@ -78,11 +76,13 @@ using namespace std;
 #define TR181_XCONFURL "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.XconfUrl"
 #endif
 
-#define RFC_TASK RDK_PATH "Start_RFC.sh"
-#define SWUPDATE_TASK RDK_PATH "Start_FWUpgrader.sh"
-#define LOGUPLOAD_TASK RDK_PATH "Start_uploadSTBLogs.sh"
-
 #define TASK_SCRIPT RDK_PATH "Start_MaintenanceTasks.sh"
+
+enum TaskIndices {
+    TASK_RFC = 0,
+    TASK_SWUPDATE,
+    TASK_LOGUPLOAD
+};
 
 /**
  * @brief Converts a maintenance status enum to its corresponding string representation.
@@ -144,6 +144,25 @@ bool checkValidOptOutModes(string OptoutModes)
     return (find(modes.begin(), modes.end(), OptoutModes) != modes.end()) ? true : false;
 }
 
+/**
+ * @brief Converts a module status enum to its corresponding string representation.
+ *
+ * This function maps each `IARM_Maint_module_status_t` enumeration value to a specific
+ * string for easy readability and logging purposes.
+ *
+ * @param status The module status to convert, one of the values from the `IARM_Maint_module_status_t` enum.
+ * @return A string that represents the given module status:
+ *         - "MAINTENANCE_RFC_COMPLETE" for MAINT_RFC_COMPLETE
+ *         - "MAINTENANCE_RFC_ERROR" for MAINT_RFC_ERROR
+ *         - "MAINTENANCE_LOGUPLOAD_COMPLETE" for MAINT_LOGUPLOAD_COMPLETE
+ *         - "MAINTENANCE_LOGUPLOAD_ERROR" for MAINT_LOGUPLOAD_ERROR
+ *         - "MAINTENANCE_FWDOWNLOAD_COMPLETE" for MAINT_FWDOWNLOAD_COMPLETE
+ *         - "MAINTENANCE_FWDOWNLOAD_ERROR" for MAINT_FWDOWNLOAD_ERROR
+ *         - "MAINTENANCE_REBOOT_REQUIRED" for MAINT_REBOOT_REQUIRED
+ *         - "MAINTENANCE_FWDOWNLOAD_ABORTED" for MAINT_FWDOWNLOAD_ABORTED
+ *         - "MAINTENANCE_CRITICAL_UPDATE" for MAINT_CRITICAL_UPDATE
+ *         - "MAINTENANCE_EMPTY" for any unknown status
+ */
 string moduleStatusToString(IARM_Maint_module_status_t &status)
 {
     string ret_status = "";
@@ -181,6 +200,7 @@ string moduleStatusToString(IARM_Maint_module_status_t &status)
     }
     return ret_status;
 }
+
 /**
  * @brief WPEFramework class for Maintenance Manager
  */
@@ -248,32 +268,31 @@ namespace WPEFramework
         string MaintenanceManager::currentTask;
         bool MaintenanceManager::g_task_timerCreated = false;
 
-        string task_names_foreground[] = {
-            "/lib/rdk/Start_RFC.sh",
-            "/lib/rdk/Start_FWUpgrader.sh",
-            "/lib/rdk/Start_uploadSTBLogs.sh"};
-
-        string compare_strings[] = {
-            "/lib/rdk/Start_RFC.sh &",
-            "/lib/rdk/Start_FWUpgrader.sh &",
-            "/lib/rdk/Start_uploadSTBLogs.sh &"};
-
         string task_param[] = {
             "RFC",
             "SWUPDATE",
-            "LOGUPLOAD"};
+            "LOGUPLOAD"
+        };
+
+        string task_names_foreground[] = {
+            string(TASK_SCRIPT) + " " + task_param[TASK_RFC],
+            string(TASK_SCRIPT) + " " + task_param[TASK_SWUPDATE],
+            string(TASK_SCRIPT) + " " + task_param[TASK_LOGUPLOAD]
+        };
 
         vector<string> tasks;
 
         const int task_complete_status[] = {
             RFC_COMPLETE,
             SWUPDATE_COMPLETE,
-            LOGUPLOAD_COMPLETE};
+            LOGUPLOAD_COMPLETE
+        };
 
         std::map<string, int> task_status_map = {
-            {RFC_TASK, RFC_COMPLETE},
-            {SWUPDATE_TASK, SWUPDATE_COMPLETE},
-            {LOGUPLOAD_TASK, LOGUPLOAD_COMPLETE}};
+            {string(TASK_SCRIPT) + " " + task_param[TASK_RFC], RFC_COMPLETE},
+            {string(TASK_SCRIPT) + " " + task_param[TASK_SWUPDATE], SWUPDATE_COMPLETE},
+            {string(TASK_SCRIPT) + " " + task_param[TASK_LOGUPLOAD], LOGUPLOAD_COMPLETE}
+        };
 
         string task_names[] = {
 #ifdef ENABLE_RFC_MANAGER
@@ -282,12 +301,14 @@ namespace WPEFramework
             "RFCbase.sh",
 #endif
             "rdkvfwupgrader",
-            "uploadSTBLogs.sh"};
+            "uploadSTBLogs.sh"
+        };
 
         static const array<string, 3> kDeviceInitContextKeyVals = {
             "partnerId",
             "osClass",
-            "regionalConfigService"};
+            "regionalConfigService"
+        };
 
         /**
          * Register MaintenanceManager module as wpeframework plugin
@@ -310,9 +331,9 @@ namespace WPEFramework
             Register("stopMaintenance", &MaintenanceManager::stopMaintenance, this);
             Register("getMaintenanceMode", &MaintenanceManager::getMaintenanceMode, this);
 
-            MaintenanceManager::m_task_map[task_names_foreground[0].c_str()] = false;
-            MaintenanceManager::m_task_map[task_names_foreground[1].c_str()] = false;
-            MaintenanceManager::m_task_map[task_names_foreground[2].c_str()] = false;
+            MaintenanceManager::m_task_map[task_names_foreground[TASK_RFC].c_str()] = false;
+            MaintenanceManager::m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
+            MaintenanceManager::m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = false;
 
 #if defined(ENABLE_WHOAMI)
             MaintenanceManager::m_param_map[kDeviceInitContextKeyVals[0].c_str()] = TR181_PARTNER_ID;
@@ -359,9 +380,8 @@ namespace WPEFramework
             }
 
 #if defined(SUPPRESS_MAINTENANCE) && !defined(ENABLE_WHOAMI)
-            bool activationStatus = false;
             bool skipFirmwareCheck = false;
-            activationStatus = getActivatedStatus(skipFirmwareCheck); /* Activation check */
+            bool activationStatus = getActivatedStatus(skipFirmwareCheck); /* Activation check */
             /* we proceed with network check only if
              * "activation-connect",
              * "activation-ready"
@@ -439,19 +459,19 @@ namespace WPEFramework
                 SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
                 SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
                 /* Skip Firmware Download Task and add other tasks */
-                tasks.push_back(task_names_foreground[0].c_str());
-                tasks.push_back(task_names_foreground[2].c_str());
+                tasks.push_back(task_names_foreground[TASK_RFC].c_str());
+                tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
             }
             else
             {
-                tasks.push_back(task_names_foreground[0].c_str());
-                tasks.push_back(task_names_foreground[1].c_str());
-                tasks.push_back(task_names_foreground[2].c_str());
+                tasks.push_back(task_names_foreground[TASK_RFC].c_str());
+                tasks.push_back(task_names_foreground[TASK_SWUPDATE].c_str());
+                tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
             }
 #else
-            tasks.push_back(task_names_foreground[0].c_str());
-            tasks.push_back(task_names_foreground[1].c_str());
-            tasks.push_back(task_names_foreground[2].c_str());
+            tasks.push_back(task_names_foreground[TASK_RFC].c_str());
+            tasks.push_back(task_names_foreground[TASK_SWUPDATE].c_str());
+            tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
 #endif
             std::unique_lock<std::mutex> lck(m_callMutex);
             for (i = 0; i < tasks.size() && !m_abort_flag; i++)
@@ -459,50 +479,21 @@ namespace WPEFramework
                 int task_status = -1;
                 task = tasks[i];
                 currentTask = task;
-                task += " " + task_param[i];
                 task += " &";
                 task += " \0";
                 if (!m_abort_flag)
                 {
                     if (retry_count == TASK_RETRY_COUNT)
                     {
-                        LOGINFO("Starting Timer for %s \n", currentTask.c_str());
+                        LOGINFO("Starting Timer for %s", currentTask.c_str());
                         isTaskTimerStarted = task_startTimer();
                     }
                     if (isTaskTimerStarted)
                     {
                         m_task_map[tasks[i]] = true;
-                        LOGINFO("Starting Task for %s \n", currentTask)
-                        if (task == compare_strings[0])
-                        {
-#ifdef ENABLE_RFC_MANAGER
-                            task_status = v_secure_system("/usr/bin/rfcMgr >> /opt/logs/rfcscript.log &");
-#else
-                            task_status = v_secure_system("/lib/rdk/RFCbase.sh &");
-#endif
-                            LOGINFO("Waiting to unlock.. [%d/%zu]", i + 1, tasks.size());
-                            task_thread.wait(lck);
-                        }
-                        else if (task == compare_strings[1])
-                        {
-                            LOGINFO("[rdkvfwupgrader] Starting swupdate");
-                            task_status = v_secure_system("/usr/bin/rdkvfwupgrader 0 1 >> /opt/logs/swupdate.log &");
-                            LOGINFO("[rdkvfwupgrader] Started swupdate");
-                            LOGINFO("Waiting to unlock.. [%d/%zu]", i + 1, tasks.size());
-                            task_thread.wait(lck);
-                        }
-                        else if (task == compare_strings[2])
-                        {
-                            task_status = v_secure_system("/lib/rdk/Start_uploadSTBLogs.sh &");
-                            LOGINFO("Waiting to unlock.. [%d/%zu]", i + 1, tasks.size());
-                            task_thread.wait(lck);
-                        }
-                        else
-                        {
-                            LOGERR("Task [%s] is not in the list. So not running the Task. \n", tasks[i].c_str());
-                        }
+                        LOGINFO("Starting Task for %s", currentTask.c_str());
+                        task_status = v_secure_system(task.c_str());
                     }
-
                     /* Set task_status purposefully to non-zero value to verify failure logic*/
                     // task_status = -1;
 
@@ -1089,7 +1080,7 @@ namespace WPEFramework
             PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
             if ((getServiceState(m_service, "org.rdk.AuthService", state) != Core::ERROR_NONE) || (state != PluginHost::IShell::state::ACTIVATED))
             {
-                LOGINFO("AuthService plugin is not activated.Retrying.. \n");
+                LOGINFO("AuthService plugin is not activated.Retrying");
                 // if plugin is not activated we need to retry
                 do
                 {
@@ -1097,7 +1088,7 @@ namespace WPEFramework
                     {
                         sleep(10);
                         i++;
-                        LOGINFO("AuthService retries [%d/4] \n", i);
+                        LOGINFO("AuthService retries [%d/4]", i);
                     }
                     else
                     {
@@ -1305,7 +1296,7 @@ namespace WPEFramework
         bool MaintenanceManager::isDeviceOnline()
         {
             bool network_available = false;
-            LOGINFO("Checking device has network connectivity\n");
+            LOGINFO("Checking device has network connectivity");
             /* add 4 checks every 30 seconds */
             network_available = checkNetwork();
             if (!network_available)
@@ -1315,7 +1306,7 @@ namespace WPEFramework
                 {
                     LOGINFO("Network not available. Sleeping for %d seconds", NETWORK_RETRY_INTERVAL);
                     sleep(NETWORK_RETRY_INTERVAL);
-                    LOGINFO("Network retries [%d/%d] \n", ++retry_count, MAX_NETWORK_RETRIES);
+                    LOGINFO("Network retries [%d/%d]", ++retry_count, MAX_NETWORK_RETRIES);
                     network_available = checkNetwork();
                     if (network_available)
                     {
@@ -1506,14 +1497,14 @@ namespace WPEFramework
             OptOutmode = m_setting.getValue("softwareoptout").String();
             if (!checkValidOptOutModes(OptOutmode))
             {
-                LOGINFO("OptOut Value is not Set. Setting to NONE \n");
+                LOGINFO("OptOut Value is not Set. Setting to NONE");
                 m_setting.remove("softwareoptout");
                 OptOutmode = "NONE";
                 m_setting.setValue("softwareoptout", OptOutmode);
             }
             else
             {
-                LOGINFO("OptOut Value Found as: %s \n", OptOutmode.c_str());
+                LOGINFO("OptOut Value Found as: %s", OptOutmode.c_str());
             }
 
             MaintenanceManager::g_is_critical_maintenance = "false";
@@ -1553,143 +1544,143 @@ namespace WPEFramework
                 time_t successfulTime;
                 string str_successfulTime = "";
 
-                auto task_status_RFC = m_task_map.find(task_names_foreground[0].c_str());
-                auto task_status_FWDLD = m_task_map.find(task_names_foreground[1].c_str());
-                auto task_status_LOGUPLD = m_task_map.find(task_names_foreground[2].c_str());
+                auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
+                auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
+                auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
 
                 IARM_Bus_MaintMGR_EventId_t event = (IARM_Bus_MaintMGR_EventId_t)eventId;
-                LOGINFO("Maintenance Event-ID = %d \n", event);
+                LOGINFO("Maintenance Event-ID = %d", event);
 
                 if (!strcmp(owner, IARM_BUS_MAINTENANCE_MGR_NAME))
                 {
                     if ((IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE == eventId) && (MAINTENANCE_STARTED == m_notify_status))
                     {
                         module_status = module_event_data->data.maintenance_module_status.status;
-                        LOGINFO("MaintMGR Status %d \n", module_status);
+                        LOGINFO("MaintMGR Status %d", module_status);
                         string status_string = moduleStatusToString(module_status);
-                        LOGINFO("MaintMGR Status %s \n", status_string.c_str());
+                        LOGINFO("MaintMGR Status %s", status_string.c_str());
                         switch (module_status)
                         {
-                        case MAINT_RFC_COMPLETE:
-                            if (task_status_RFC->second != true)
-                            {
-                                LOGINFO("Ignoring Event RFC_COMPLETE");
+                            case MAINT_RFC_COMPLETE:
+                                if (task_status_RFC->second != true)
+                                {
+                                    LOGINFO("Ignoring Event RFC_COMPLETE");
+                                    break;
+                                }
+                                else
+                                {
+                                    SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
+                                    SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                                    task_thread.notify_one();
+
+                                    m_task_map[task_names_foreground[TASK_RFC].c_str()] = false;
+                                }
                                 break;
-                            }
-                            else
-                            {
-                                SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
+                            case MAINT_FWDOWNLOAD_COMPLETE:
+                                if (task_status_SWUPDATE->second != true)
+                                {
+                                    LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_COMPLETE");
+                                    break;
+                                }
+                                else
+                                {
+                                    SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
+                                    SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                                    task_thread.notify_one();
+                                    m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
+                                }
+                                break;
+                            case MAINT_LOGUPLOAD_COMPLETE:
+                                if (task_status_LOGUPLOAD->second != true)
+                                {
+                                    LOGINFO("Ignoring Event MAINT_LOGUPLOAD_COMPLETE");
+                                    break;
+                                }
+                                else
+                                {
+                                    SET_STATUS(g_task_status, LOGUPLOAD_SUCCESS);
+                                    SET_STATUS(g_task_status, LOGUPLOAD_COMPLETE);
+                                    task_thread.notify_one();
+                                    m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = false;
+                                }
+
+                                break;
+                            case MAINT_REBOOT_REQUIRED:
+                                SET_STATUS(g_task_status, REBOOT_REQUIRED);
+                                g_is_reboot_pending = "true";
+                                break;
+                            case MAINT_CRITICAL_UPDATE:
+                                g_is_critical_maintenance = "true";
+                                break;
+                            case MAINT_FWDOWNLOAD_ABORTED:
+                                SET_STATUS(g_task_status, TASK_SKIPPED);
+                                /* we say FW update task complete */
                                 SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
                                 task_thread.notify_one();
+                                m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
+                                LOGINFO("FW Download task aborted");
+                                break;
+                            case MAINT_RFC_ERROR:
+                                if (task_status_RFC->second != true)
+                                {
+                                    LOGINFO("Ignoring Event RFC_ERROR");
+                                    break;
+                                }
+                                else
+                                {
+                                    SET_STATUS(g_task_status, RFC_COMPLETE);
+                                    task_thread.notify_one();
+                                    LOGINFO("Error encountered in RFC Task");
+                                    m_task_map[task_names_foreground[TASK_RFC].c_str()] = true;
+                                }
 
-                                m_task_map[task_names_foreground[0].c_str()] = false;
-                            }
-                            break;
-                        case MAINT_FWDOWNLOAD_COMPLETE:
-                            if (task_status_FWDLD->second != true)
-                            {
-                                LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_COMPLETE");
                                 break;
-                            }
-                            else
-                            {
-                                SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
-                                SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
-                                task_thread.notify_one();
-                                m_task_map[task_names_foreground[1].c_str()] = false;
-                            }
-                            break;
-                        case MAINT_LOGUPLOAD_COMPLETE:
-                            if (task_status_LOGUPLD->second != true)
-                            {
-                                LOGINFO("Ignoring Event MAINT_LOGUPLOAD_COMPLETE");
-                                break;
-                            }
-                            else
-                            {
-                                SET_STATUS(g_task_status, LOGUPLOAD_SUCCESS);
-                                SET_STATUS(g_task_status, LOGUPLOAD_COMPLETE);
-                                task_thread.notify_one();
-                                m_task_map[task_names_foreground[2].c_str()] = false;
-                            }
+                            case MAINT_LOGUPLOAD_ERROR:
+                                if (task_status_LOGUPLOAD->second != true)
+                                {
+                                    LOGINFO("Ignoring Event MAINT_LOGUPLOAD_ERROR");
+                                    break;
+                                }
+                                else
+                                {
+                                    SET_STATUS(g_task_status, LOGUPLOAD_COMPLETE);
+                                    task_thread.notify_one();
+                                    LOGINFO("Error encountered in LOGUPLOAD Task");
+                                    m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = true;
+                                }
 
-                            break;
-                        case MAINT_REBOOT_REQUIRED:
-                            SET_STATUS(g_task_status, REBOOT_REQUIRED);
-                            g_is_reboot_pending = "true";
-                            break;
-                        case MAINT_CRITICAL_UPDATE:
-                            g_is_critical_maintenance = "true";
-                            break;
-                        case MAINT_FWDOWNLOAD_ABORTED:
-                            SET_STATUS(g_task_status, TASK_SKIPPED);
-                            /* we say FW update task complete */
-                            SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
-                            task_thread.notify_one();
-                            m_task_map[task_names_foreground[1].c_str()] = false;
-                            LOGINFO("FW Download task aborted \n");
-                            break;
-                        case MAINT_RFC_ERROR:
-                            if (task_status_RFC->second != true)
-                            {
-                                LOGINFO("Ignoring Event RFC_ERROR");
                                 break;
-                            }
-                            else
-                            {
-                                SET_STATUS(g_task_status, RFC_COMPLETE);
-                                task_thread.notify_one();
-                                LOGINFO("Error encountered in RFC Task \n");
-                                m_task_map[task_names_foreground[0].c_str()] = true;
-                            }
-
-                            break;
-                        case MAINT_LOGUPLOAD_ERROR:
-                            if (task_status_LOGUPLD->second != true)
-                            {
-                                LOGINFO("Ignoring Event MAINT_LOGUPLOAD_ERROR");
+                            case MAINT_FWDOWNLOAD_ERROR:
+                                if (task_status_SWUPDATE->second != true)
+                                {
+                                    LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_ERROR");
+                                    break;
+                                }
+                                else
+                                {
+                                    SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                                    task_thread.notify_one();
+                                    LOGINFO("Error encountered in SWUPDATE Task");
+                                    m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = true;
+                                }
                                 break;
-                            }
-                            else
-                            {
-                                SET_STATUS(g_task_status, LOGUPLOAD_COMPLETE);
-                                task_thread.notify_one();
-                                LOGINFO("Error encountered in LOGUPLOAD Task \n");
-                                m_task_map[task_names_foreground[2].c_str()] = true;
-                            }
-
-                            break;
-                        case MAINT_FWDOWNLOAD_ERROR:
-                            if (task_status_FWDLD->second != true)
-                            {
-                                LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_ERROR");
+                            case MAINT_RFC_INPROGRESS:
+                                m_task_map[task_names_foreground[TASK_RFC].c_str()] = true;
+                                /*will be set to false once COMEPLETE/ERROR received for RFC*/
+                                LOGINFO(" RFC already IN PROGRESS -> setting m_task_map of RFC to true");
                                 break;
-                            }
-                            else
-                            {
-                                SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
-                                task_thread.notify_one();
-                                LOGINFO("Error encountered in SWUPDATE Task \n");
-                                m_task_map[task_names_foreground[1].c_str()] = true;
-                            }
-                            break;
-                        case MAINT_RFC_INPROGRESS:
-                            m_task_map[task_names_foreground[0].c_str()] = true;
-                            /*will be set to false once COMEPLETE/ERROR received for RFC*/
-                            LOGINFO(" RFC already IN PROGRESS -> setting m_task_map of RFC to true \n");
-                            break;
-                        case MAINT_FWDOWNLOAD_INPROGRESS:
-                            m_task_map[task_names_foreground[1].c_str()] = true;
-                            /*will be set to false once COMEPLETE/ERROR received for FWDOWNLOAD*/
-                            LOGINFO(" FWDOWNLOAD already IN PROGRESS -> setting m_task_map of FWDOWNLOAD to true \n");
-                            break;
-                        case MAINT_LOGUPLOAD_INPROGRESS:
-                            m_task_map[task_names_foreground[2].c_str()] = true;
-                            /*will be set to false once COMEPLETE/ERROR received for LOGUPLOAD*/
-                            LOGINFO(" LOGUPLOAD already IN PROGRESS -> setting m_task_map of LOGUPLOAD to true \n");
-                            break;
-                        default:
-                            break;
+                            case MAINT_FWDOWNLOAD_INPROGRESS:
+                                m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = true;
+                                /*will be set to false once COMEPLETE/ERROR received for FWDOWNLOAD*/
+                                LOGINFO(" FWDOWNLOAD already IN PROGRESS -> setting m_task_map of FWDOWNLOAD to true");
+                                break;
+                            case MAINT_LOGUPLOAD_INPROGRESS:
+                                m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = true;
+                                /*will be set to false once COMEPLETE/ERROR received for LOGUPLOAD*/
+                                LOGINFO(" LOGUPLOAD already IN PROGRESS -> setting m_task_map of LOGUPLOAD to true");
+                                break;
+                            default:
+                                break;
                         }
                     }
                     else
@@ -1737,7 +1728,7 @@ namespace WPEFramework
                         if (m_thread.joinable())
                         {
                             m_thread.join();
-                            LOGINFO("Thread joined successfully\n");
+                            LOGINFO("Thread joined successfully");
                         }
 
                         if (g_maintenance_type == UNSOLICITED_MAINTENANCE && !g_unsolicited_complete)
@@ -1894,7 +1885,7 @@ namespace WPEFramework
             }
             else
             {
-                LOGERR("Error! %s cannot be opened.\n", propertiesFile);
+                LOGERR("Error! %s cannot be opened", propertiesFile);
                 return;
             }
             if (strcmp(deviceName, "PLATCO") == 0)
@@ -1979,7 +1970,7 @@ namespace WPEFramework
                 }
                 else
                 {
-                    LOGERR("Error! %s cannot be opened.\n", timeZoneDSTFile);
+                    LOGERR("Error! %s cannot be opened", timeZoneDSTFile);
                 }
             }
         }
@@ -2001,13 +1992,13 @@ namespace WPEFramework
             FILE *conf = fopen(maintConf, "r");
             if (conf == NULL)
             {
-                LOGERR("Error! %s cannot be opened.\n", maintConf);
+                LOGERR("Error! %s cannot be opened", maintConf);
                 return -1;
             }
 
             if (fscanf(conf, "start_hr=\"%d\"\nstart_min=\"%d\"\ntz_mode=\"%[^\"]s\"\n", &start_hr, &start_min, tz_mode) != 3)
             {
-                LOGERR("Error! Failed to read %s\n", maintConf);
+                LOGERR("Error! Failed to read %s", maintConf);
                 fclose(conf);
                 return -1;
             }
@@ -2021,14 +2012,14 @@ namespace WPEFramework
 
             if (strcmp(tz_mode, "Local time") == 0)
             {
-                LOGINFO("TimeZone is in Local time\n");
+                LOGINFO("TimeZone is in Local time");
                 char cmd[128];
                 snprintf(cmd, sizeof(cmd), "TZ=%s date +%%z", zoneValue);
                 FILE *fp = popen(cmd, "r");
                 char offset[10];
                 if (fgets(offset, sizeof(offset), fp) == NULL)
                 {
-                    LOGERR("Failed to read timezone offset\n");
+                    LOGERR("Failed to read timezone offset");
                     pclose(fp);
                     return -1;
                 }
@@ -2042,7 +2033,7 @@ namespace WPEFramework
             }
             else
             {
-                LOGINFO("TimeZone is in UTC\n");
+                LOGINFO("TimeZone is in UTC");
                 start_time_in_sec = cron_time_in_sec;
             }
 
@@ -2147,7 +2138,7 @@ namespace WPEFramework
             string softwareOptOutmode = "NONE";
             if (BACKGROUND_MODE != g_currentMode && FOREGROUND_MODE != g_currentMode)
             {
-                LOGERR("Didnt get a valid Mode. Failed\n");
+                LOGERR("Didnt get a valid Mode. Failed");
                 returnResponse(false);
             }
             else
@@ -2161,7 +2152,7 @@ namespace WPEFramework
                         /* check if the value is valid */
                         if (!checkValidOptOutModes(softwareOptOutmode))
                         {
-                            LOGERR("OptOut Value Corrupted. Failed\n");
+                            LOGERR("OptOut Value Corrupted. Failed");
                             returnResponse(false);
                         }
                         else
@@ -2171,13 +2162,13 @@ namespace WPEFramework
                     }
                     else
                     {
-                        LOGERR("OptOut Value Not Found. Failed\n");
+                        LOGERR("OptOut Value Not Found. Failed");
                         returnResponse(false);
                     }
                 }
                 else
                 {
-                    LOGERR("OptOut Config File Not Found. Failed\n");
+                    LOGERR("OptOut Config File Not Found. Failed");
                     returnResponse(false);
                 }
                 response["optOut"] = softwareOptOutmode.c_str();
@@ -2206,7 +2197,7 @@ namespace WPEFramework
             bool rdkvfwrfc = true;
             // 1 = Foreground and 0 = background
             int mode = 1;
-            LOGINFO("RDKE Device.Mode change allow anytime.\n");
+            LOGINFO("RDKE Device.Mode change allow anytime");
 
             /* Label should have maintenance mode and softwareOptout field */
             if (parameters.HasLabel("maintenanceMode") && parameters.HasLabel("optOut"))
@@ -2216,9 +2207,7 @@ namespace WPEFramework
 
                 if (BACKGROUND_MODE != new_mode && FOREGROUND_MODE != new_mode)
                 {
-                    LOGERR("value of new mode is incorrect, therefore \
-                            current mode '%s' not changed.\n",
-                           old_mode.c_str());
+                    LOGERR("value of new mode is incorrect, therefore current mode '%s' not changed", old_mode.c_str());
                     returnResponse(false);
                 }
 
@@ -2229,7 +2218,7 @@ namespace WPEFramework
                 if (MAINTENANCE_STARTED != m_notify_status)
                 {
 
-                    LOGINFO("SetMaintenanceMode new_mode = %s\n", new_mode.c_str());
+                    LOGINFO("SetMaintenanceMode new_mode = %s", new_mode.c_str());
 
                     /* remove any older one */
                     m_setting.remove("background_flag");
@@ -2251,15 +2240,15 @@ namespace WPEFramework
                     if (rdkvfwrfc == true)
                     {
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
-                        LOGINFO("SetMaintenanceMode new_mode = %s\n", new_mode.c_str());
+                        LOGINFO("SetMaintenanceMode new_mode = %s", new_mode.c_str());
                         /* Sending IARM Event to application for mode change */
                         (new_mode != BACKGROUND_MODE) ? mode = 1 : mode = 0;
-                        LOGINFO("setMaintenanceMode rfc is true and mode:%d\n", mode);
+                        LOGINFO("setMaintenanceMode rfc is true and mode:%d", mode);
                         IARM_Result_t ret_code = IARM_RESULT_SUCCESS;
                         ret_code = IARM_Bus_BroadcastEvent("RdkvFWupgrader", (IARM_EventId_t)0, (void *)&mode, sizeof(mode));
                         if (ret_code == IARM_RESULT_SUCCESS)
                         {
-                            LOGINFO("IARM_Bus_BroadcastEvent is success and value=%d\n", mode);
+                            LOGINFO("IARM_Bus_BroadcastEvent is success and value=%d", mode);
                             g_currentMode = new_mode;
                             /* remove any older one */
                             m_setting.remove("background_flag");
@@ -2276,7 +2265,7 @@ namespace WPEFramework
                         }
                         else
                         {
-                            LOGINFO("IARM_Bus_BroadcastEvent is fail Mode change not allowed and value=%d\n", mode);
+                            LOGINFO("IARM_Bus_BroadcastEvent is fail Mode change not allowed and value=%d", mode);
                         }
 #endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
                     }
@@ -2290,7 +2279,7 @@ namespace WPEFramework
                 /* OptOut changes here */
                 new_optout_state = parameters["optOut"].String();
 
-                LOGINFO("SetMaintenanceMode optOut = %s\n", new_optout_state.c_str());
+                LOGINFO("SetMaintenanceMode optOut = %s", new_optout_state.c_str());
 
                 /* check if we have a valid state from user */
                 if (checkValidOptOutModes(new_optout_state))
@@ -2300,7 +2289,7 @@ namespace WPEFramework
                 }
                 else
                 {
-                    LOGINFO("Invalid optOut = %s\n", new_optout_state.c_str());
+                    LOGINFO("Invalid optOut = %s", new_optout_state.c_str());
                     returnResponse(false);
                 }
 
@@ -2310,7 +2299,7 @@ namespace WPEFramework
             else
             {
                 /* havent got the correct label */
-                LOGERR("SetMaintenanceMode Missing Key Values\n");
+                LOGERR("SetMaintenanceMode Missing Key Values");
             }
 
             returnResponse(result);
@@ -2356,7 +2345,7 @@ namespace WPEFramework
                 if (m_thread.joinable())
                 {
                     m_thread.join();
-                    LOGINFO("Thread joined successfully\n");
+                    LOGINFO("Thread joined successfully");
                 }
 
                 m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
@@ -2401,13 +2390,13 @@ namespace WPEFramework
 
                 // Set the condition flag m_abort_flag to true
                 m_abort_flag = true;
-                auto task_status_RFC = m_task_map.find(task_names_foreground[0].c_str());
-                auto task_status_FWDLD = m_task_map.find(task_names_foreground[1].c_str());
-                auto task_status_LOGUPLD = m_task_map.find(task_names_foreground[2].c_str());
+                auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
+                auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
+                auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
 
                 task_status[0] = task_status_RFC->second;
-                task_status[1] = task_status_FWDLD->second;
-                task_status[2] = task_status_LOGUPLD->second;
+                task_status[1] = task_status_SWUPDATE->second;
+                task_status[2] = task_status_LOGUPLOAD->second;
 
                 for (i = 0; i < 3; i++)
                 {
@@ -2429,21 +2418,21 @@ namespace WPEFramework
                     }
                     else
                     {
-                        LOGINFO("Task[%d] is false \n", i);
+                        LOGINFO("Task[%d] is false", i);
                     }
                 }
                 result = true;
             }
             else
             {
-                LOGERR("Failed to stopMaintenance without starting maintenance \n");
+                LOGERR("Failed to stopMaintenance without starting maintenance");
             }
             task_thread.notify_one();
 
             if (m_thread.joinable())
             {
                 m_thread.join();
-                LOGINFO("Thread joined successfully\n");
+                LOGINFO("Thread joined successfully");
             }
 
             if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
@@ -2451,7 +2440,7 @@ namespace WPEFramework
                 g_unsolicited_complete = true;
             }
 
-            LOGINFO("Maintenance has been stopped. Hence setting maintenance status to MAINTENANCE_ERROR\n");
+            LOGINFO("Maintenance has been stopped. Hence setting maintenance status to MAINTENANCE_ERROR");
             MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
             m_statusMutex.unlock();
 
@@ -2490,39 +2479,39 @@ namespace WPEFramework
             pid_t pid_num;
 
             pid_num = getTaskPID(taskname);
-            LOGINFO("PID of %s is %d \n", taskname, (int)pid_num);
+            LOGINFO("PID of %s is %d", taskname, (int)pid_num);
             if (pid_num != -1)
             {
                 /* send the signal to task to terminate */
 #if defined(ENABLE_RFC_MANAGER)
                 if (strstr(taskname, "rfcMgr"))
                 {
-                    LOGINFO("Sending SIGUSR1 signal to %s\n", taskname);
+                    LOGINFO("Sending SIGUSR1 signal to %s", taskname);
                     k_ret = kill(pid_num, SIGUSR1);
                 }
 #endif
                 if (strstr(taskname, "rdkvfwupgrader"))
                 {
-                    LOGINFO("Sending SIGUSR1 signal to %s\n", taskname);
+                    LOGINFO("Sending SIGUSR1 signal to %s", taskname);
                     k_ret = kill(pid_num, SIGUSR1);
                 }
                 else
                 {
                     k_ret = kill(pid_num, sig_to_send);
                 }
-                LOGINFO(" %s sent signal %d\n", taskname, sig_to_send);
+                LOGINFO(" %s sent signal %d", taskname, sig_to_send);
                 if (k_ret == 0)
                 {
-                    LOGINFO(" %s Terminated\n", taskname);
+                    LOGINFO(" %s Terminated", taskname);
                 }
                 else
                 {
-                    LOGINFO("Failed to terminate with error %s - %d \n", taskname, k_ret);
+                    LOGINFO("Failed to terminate with error %s - %d", taskname, k_ret);
                 }
             }
             else
             {
-                LOGINFO("Didnt find PID for %s\n", taskname);
+                LOGINFO("Didnt find PID for %s", taskname);
             }
             return k_ret;
         }
@@ -2554,7 +2543,7 @@ namespace WPEFramework
                     size_t size = 0;
                     while (getdelim(&arg, &size, 0, fp) != -1)
                     {
-                        printf("%s\n", arg);
+                        printf("%s", arg);
                         char *first = strstr(arg, taskname);
                         if (first != NULL)
                         {
