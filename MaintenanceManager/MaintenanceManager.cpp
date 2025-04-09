@@ -1045,6 +1045,17 @@ namespace WPEFramework
             }
         }
 
+        /**
+         * @brief Queries the AuthService interface.
+         *
+         * This function checks if the AuthService interface has already been obtained.
+         * If not, it attempts to query and obtain the AuthService interface through the PluginHost's
+         * service, using the "org.rdk.AuthService" callsign. If successful, it logs a warning
+         * indicating the interface has been obtained, otherwise it logs an error.
+         *
+         * @return true if the AuthService interface is successfully obtained or already exists.
+         *         false if the interface could not be obtained.
+         */
         bool MaintenanceManager::queryIAuthService()
         {
             if (m_authservicePlugin != nullptr)
@@ -1852,9 +1863,18 @@ namespace WPEFramework
             returnResponse(result);
         }
 
-        /*
-         * @brief This utility function calculates the timeZoneOffset and zoneValue required for CalculateStartTime
-         * @return: void
+        /**
+         * @brief Retrieves the time zone and offset information for the device.
+         *
+         * This function reads the device properties to determine the device type and
+         * fetches the time zone information accordingly. It handles specific cases for
+         * device types, like "PLATCO", and sets default values if necessary.
+         *
+         * @param deviceName A character pointer to a buffer where the device name will be stored.
+         * @param zoneValue A character pointer to a buffer where the zone value will be stored.
+         * @param timeZone A character pointer to a buffer where the time zone will be stored.
+         * @param timeZoneOffset A character pointer to a buffer where the time zone offset will be stored.
+         * @param buffer_size The size of the buffers provided.
          */
         void getTimeZone(char *deviceName, char *zoneValue, char *timeZone, char *timeZoneOffset, int buffer_size)
         {
@@ -1975,9 +1995,15 @@ namespace WPEFramework
             }
         }
 
-        /*
-         * @brief This Function calculates the maintanance start time from RDK maintenance conf file values.
-         * @return: int
+        /**
+         * @brief Calculates the start time for the maintenance activity based on configuration and time zone.
+         *
+         * This function reads the maintenance configuration file to get the start hour, start minute,
+         * and time zone mode. It then calculates the start time in seconds and considers the device's
+         * local time zone and offset if necessary. The function returns the epoch time for the maintenance start.
+         *
+         * @return An integer representing the calculated start time in epoch format.
+         *         Returns -1 if there is an error in reading the configuration or time zone files.
          */
         int CalculateStartTime()
         {
