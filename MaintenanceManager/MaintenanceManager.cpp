@@ -492,12 +492,12 @@ namespace WPEFramework
                     {
                         m_task_map[tasks[i]] = true;
                         LOGINFO("Starting Task for %s", currentTask.c_str());
-                        task_status = v_secure_system(task.c_str());
+                        task_status = v_secure_system("%s", task.c_str());
                     }
                     /* Set task_status purposefully to non-zero value to verify failure logic*/
                     // task_status = -1;
 
-                    if (task_status != 0) /* system() call fails */
+                    if (task_status != 0) /* v_secure_system() call fails */
                     {
                         m_task_map[tasks[i]] = false;
                         LOGINFO("%s invocation failed with return status %d", tasks[i].c_str(), WEXITSTATUS(task_status));
@@ -528,7 +528,7 @@ namespace WPEFramework
                             }
                         }
                     }
-                    else /* System() executes successfully */
+                    else /* v_system_system() executes successfully */
                     {
                         LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
                         task_thread.wait(lck);
@@ -1031,14 +1031,14 @@ namespace WPEFramework
             int xconf_imagecheck_status = -1;
 
             LOGINFO("Starting /lib/rdk/Start_RFC.sh");
-            rfc_task_status = system("/lib/rdk/Start_RFC.sh &");
+            rfc_task_status = v_secure_system("/lib/rdk/Start_RFC.sh &");
             if (rfc_task_status != 0)
             {
                 LOGINFO("Failed to run Start_RFC.sh with %d", WEXITSTATUS(rfc_task_status));
             }
 
             LOGINFO("Starting /lib/rdk/xconfImageCheck.sh");
-            xconf_imagecheck_status = system("/lib/rdk/xconfImageCheck.sh &");
+            xconf_imagecheck_status = v_secure_system("/lib/rdk/xconfImageCheck.sh &");
             if (xconf_imagecheck_status != 0)
             {
                 LOGINFO("Failed to run xconfImageCheck.sh with %d", WEXITSTATUS(xconf_imagecheck_status));
