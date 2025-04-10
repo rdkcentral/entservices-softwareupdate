@@ -492,7 +492,7 @@ namespace WPEFramework
                     {
                         m_task_map[tasks[i]] = true;
                         LOGINFO("Starting Task for %s", task.c_str());
-                        task_status = system("%s", task.c_str());
+                        task_status = system(task.c_str());
                     }
                     /* Set task_status purposefully to non-zero value to verify failure logic*/
                     // task_status = -1;
@@ -528,7 +528,7 @@ namespace WPEFramework
                             }
                         }
                     }
-                    else /* v_system_system() executes successfully */
+                    else /* system() executes successfully */
                     {
                         LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
                         task_thread.wait(lck);
