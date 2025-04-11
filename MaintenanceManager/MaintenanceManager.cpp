@@ -474,13 +474,13 @@ namespace WPEFramework
             tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
 #endif
             std::unique_lock<std::mutex> lck(m_callMutex);
-            for (i = 0; i < tasks.size() && !m_abort_flag; i++)
+            for (i = 0; i < static_cast<int>(tasks.size()) && !m_abort_flag; i++)
             {
                 int task_status = -1;
                 task = tasks[i];
                 currentTask = task;
                 task += " &";
-                task += " \0";
+                task += "\0";
                 if (!m_abort_flag)
                 {
                     if (retry_count == TASK_RETRY_COUNT)
@@ -491,18 +491,18 @@ namespace WPEFramework
                     if (isTaskTimerStarted)
                     {
                         m_task_map[tasks[i]] = true;
-                        LOGINFO("Starting Task for %s", task.c_str());
+                        LOGINFO("Starting Task %s", task.c_str());
                         task_status = system(task.c_str());
                     }
                     /* Set task_status purposefully to non-zero value to verify failure logic*/
                     // task_status = -1;
-
                     if (task_status != 0) /* system() call fails */
                     {
                         m_task_map[tasks[i]] = false;
                         LOGINFO("%s invocation failed with return status %d", tasks[i].c_str(), WEXITSTATUS(task_status));
                         if (retry_count > 0 && isTaskTimerStarted)
                         {
+                            LOGINFO("Retry %s after %d seconds (%d retry left)\n", tasks[i].c_str(), TASK_RETRY_DELAY, retry_count);
                             sleep(TASK_RETRY_DELAY);
                             i--; /* Decrement iterator to retry the same task again */
                             retry_count--;
@@ -602,17 +602,17 @@ namespace WPEFramework
                             }
                             else
                             {
-                                LOGINFO("%s is not available in the response", kDeviceInitializationContext);
+                                LOGERR("%s is not available in the response", kDeviceInitializationContext);
                             }
                         }
                         else
                         {
-                            LOGINFO("getDeviceInitializationContext failed");
+                            LOGERR("getDeviceInitializationContext failed");
                         }
                     }
                     else
                     {
-                        LOGINFO("Failed to get plugin handle");
+                        LOGERR("Failed to get plugin handle");
                     }
                     if (!g_subscribed_for_deviceContextUpdate)
                     {
@@ -871,6 +871,7 @@ namespace WPEFramework
          */
         bool MaintenanceManager::setRFC(const char *rfc, const char *value, DATA_TYPE dataType)
         {
+            LOGINFO("Invoke SetRFC");
             bool result = false;
             WDMP_STATUS status;
             status = setRFCParameter((char *)MAINTENANCE_MANAGER_RFC_CALLER_ID, rfc, value, dataType);
@@ -902,7 +903,7 @@ namespace WPEFramework
                 return;
             }
 
-            LOGINFO("Initiate setPartnerId...");
+            LOGINFO("Invoke setPartnerId");
 
             WPEFramework::Exchange::IAuthService::SetPartnerIdResult spRes;
             uint32_t rc = m_authservicePlugin->SetPartnerId(partnerid, spRes);
@@ -935,7 +936,7 @@ namespace WPEFramework
             thunder_client = getThunderPluginHandle(network_callsign);
             if (thunder_client == nullptr)
             {
-                LOGINFO("Failed to get plugin handle");
+                LOGERR("Failed to get plugin handle");
             }
             else
             {
@@ -1091,7 +1092,7 @@ namespace WPEFramework
             PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
             if ((getServiceState(m_service, "org.rdk.AuthService", state) != Core::ERROR_NONE) || (state != PluginHost::IShell::state::ACTIVATED))
             {
-                LOGINFO("AuthService plugin is not activated.Retrying");
+                LOGERR("AuthService plugin is not activated.Retrying");
                 // if plugin is not activated we need to retry
                 do
                 {
@@ -1109,7 +1110,7 @@ namespace WPEFramework
 
                 if (state != PluginHost::IShell::state::ACTIVATED)
                 {
-                    LOGINFO("AuthService plugin is Still not active");
+                    LOGERR("AuthService plugin is Still not active");
                     return ret_status;
                 }
                 else
@@ -1137,7 +1138,7 @@ namespace WPEFramework
             }
             else
             {
-                LOGINFO("GetActivationStatus call failed %d", rc);
+                LOGERR("GetActivationStatus call failed %d", rc);
             }
 
             return ret_status;
@@ -1238,13 +1239,13 @@ namespace WPEFramework
                     }
                     else
                     {
-                        LOGINFO("Failed to subscribe for onInternetStatusChange event");
+                        LOGERR("Failed to subscribe for onInternetStatusChange event");
                     }
                 }
             }
             else
             {
-                LOGINFO("Network plugin is not active");
+                LOGERR("Network plugin is not active");
                 return false;
             }
 
@@ -1293,7 +1294,7 @@ namespace WPEFramework
                 }
             }
 
-            LOGINFO("thunder client failed");
+            LOGERR("thunder client failed");
             return false;
         }
 
@@ -1580,10 +1581,9 @@ namespace WPEFramework
                                 }
                                 else
                                 {
-                                    SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
-                                    SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                                    SET_STATUS(g_task_status, RFC_SUCCESS);
+                                    SET_STATUS(g_task_status, RFC_COMPLETE);
                                     task_thread.notify_one();
-
                                     m_task_map[task_names_foreground[TASK_RFC].c_str()] = false;
                                 }
                                 break;
@@ -1644,7 +1644,6 @@ namespace WPEFramework
                                     LOGINFO("Error encountered in RFC Task");
                                     m_task_map[task_names_foreground[TASK_RFC].c_str()] = true;
                                 }
-
                                 break;
                             case MAINT_LOGUPLOAD_ERROR:
                                 if (task_status_LOGUPLOAD->second != true)
@@ -1659,7 +1658,6 @@ namespace WPEFramework
                                     LOGINFO("Error encountered in LOGUPLOAD Task");
                                     m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = true;
                                 }
-
                                 break;
                             case MAINT_FWDOWNLOAD_ERROR:
                                 if (task_status_SWUPDATE->second != true)
@@ -1708,7 +1706,7 @@ namespace WPEFramework
                     {
                         if ((g_task_status & ALL_TASKS_SUCCESS) == ALL_TASKS_SUCCESS)
                         { // all tasks success
-                            LOGINFO("DBG:Maintenance Successfully Completed!!");
+                            LOGINFO("Maintenance Successfully Completed!!");
                             notify_status = MAINTENANCE_COMPLETE;
                             /*  we store the time in persistant location */
                             successfulTime = time(nullptr);
@@ -1725,12 +1723,12 @@ namespace WPEFramework
                         {
                             if ((g_task_status & MAINTENANCE_TASK_SKIPPED) == MAINTENANCE_TASK_SKIPPED)
                             {
-                                LOGINFO("DBG:There are Skipped Task. Maintenance Incomplete");
+                                LOGINFO("There are Skipped Task. Maintenance Incomplete");
                                 notify_status = MAINTENANCE_INCOMPLETE;
                             }
                             else
                             {
-                                LOGINFO("DBG:Maintenance Ended with Errors");
+                                LOGINFO("Maintenance Ended with Errors");
                                 notify_status = MAINTENANCE_ERROR;
                             }
                         }
