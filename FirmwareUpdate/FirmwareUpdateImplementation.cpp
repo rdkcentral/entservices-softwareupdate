@@ -162,7 +162,7 @@ namespace WPEFramework {
                                                             ++index;
                                                         }
                                                     } else {
-                                                        SWUPDATEERR("Invalid state %s and subState %s ",strState.c_str() ,strSubstate.c_str());
+                                                        SWUPDATEERR("Invalid state %s and subState %s ",strSubstate.c_str());
                                                     }
                                                 }
                                             }
