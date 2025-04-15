@@ -20,6 +20,7 @@
 #include "FirmwareUpdate.h"
 #include <interfaces/IConfiguration.h>
 
+
 #define API_VERSION_NUMBER_MAJOR 1
 #define API_VERSION_NUMBER_MINOR 0
 #define API_VERSION_NUMBER_PATCH 0
