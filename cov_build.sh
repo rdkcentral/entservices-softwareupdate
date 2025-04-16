@@ -211,6 +211,7 @@ cmake -G Ninja -S entservices-softwareupdate -B build/entservices-softwareupdate
   -DRDK_SERVICES_L1_TEST=ON \
   -DDS_FOUND=ON \
   -DPLUGIN_FIRMWAREUPDATE=ON \
+  -DPLUGIN_MAINTENANCEMANAGER=ON \
 
 
 cmake --build build/entservices-softwareupdate --target install
