@@ -59,8 +59,6 @@ echo "==========================================================================
 echo "buliding thunder"
 
 cd Thunder
-echo "akshay current working dir: "${PWD}
-echo "akshay applying patch in thunder"
 patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L2Tests/patches/Use_Legact_Alt_Based_On_ThunderTools_R4.4.3.patch
 patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L2Tests/patches/error_code_R4_4.patch
 patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L1Tests/patches/1004-Add-support-for-project-dir.patch
