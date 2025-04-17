@@ -210,6 +210,7 @@ jobs:
           headers/ccec/drivers
           headers/network
           headers/proc
+          headers/opkg
           &&
           cd headers
           &&
@@ -254,6 +255,10 @@ jobs:
           telemetry_busmessage_sender.h
           maintenanceMGR.h
           pkg.h
+          opkg.h
+          opkg_message.h
+          opkg_cmd.h
+          opkg_download.h
           secure_wrapper.h
           wpa_ctrl.h
           proc/readproc.h
@@ -336,7 +341,7 @@ jobs:
           -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
           -DPLUGIN_FIRMWAREUPDATE=OFF
           -DPLUGIN_MAINTENANCEMANAGER=OFF
-          -DPLUGIN_PACKAGER=OFF
+          -DPLUGIN_PACKAGER=ON
           &&
           cmake --build build/entservices-softwareupdate -j8
           &&
@@ -403,6 +408,7 @@ jobs:
           -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
           -DCMAKE_BUILD_TYPE=Debug
           -DDS_FOUND=ON
+          -DPLUGIN_PACKAGER=ON
           -DRDK_SERVICES_L1_TEST=ON
           -DUSE_THUNDER_R4=ON
           -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
@@ -467,6 +473,7 @@ jobs:
           /tmp/block/sdb/device/model
           &&
           sudo chmod -R 777
+          /tmp/test/testApp/etc/apps/testApp_package.json
           /opt/rdk_maintenance.conf
           /opt/persistent/timeZoneDST
           /opt/standbyReason.txt
