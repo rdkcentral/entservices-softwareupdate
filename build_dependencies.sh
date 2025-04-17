@@ -38,8 +38,6 @@ git clone https://$GITHUB_TOKEN@github.com/rdkcentral/entservices-testframework.
 echo "======================================================================================"
 echo "buliding thunderTools"
 cd ThunderTools
-echo "akshay current working dir: "${PWD}
-echo "akshay applying patch in thunder tools"
 patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L1Tests/patches/00010-R4.4-Add-support-for-project-dir.patch
 cd -
 
