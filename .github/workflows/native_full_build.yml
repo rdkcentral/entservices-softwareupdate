@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-entservices-on-pr:
-    name: Build entservices-casting component in github rdkcentral
+    name: Build entservices-softwareupdate component in github rdkcentral
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/rdkcentral/docker-rdk-ci:latest
@@ -19,7 +19,8 @@ jobs:
 
       - name: native build
         run: |
-          chmod +x cov_build.sh
+          chmod +x build_dependencies.sh cov_build.sh
+          sh -e build_dependencies.sh
           sh -e cov_build.sh
         env:
           GITHUB_TOKEN: ${{ secrets.RDKCM_RDKE }}
