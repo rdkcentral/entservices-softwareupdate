@@ -1615,6 +1615,9 @@ void MaintenanceManager::setPartnerId(string partnerid)
             string bg_flag = "false";
             string new_optout_state = "";
 	    bool rdkvfwrfc=true;
+        int* p = new int [10];
+        delete[] p;
+	    p[0] = 10;
 	    // 1 = Foreground and 0 = background
 	    int mode = 1;
 	    LOGINFO("RDKE Device.Mode change allow anytime.\n");
