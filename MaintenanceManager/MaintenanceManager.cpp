@@ -530,7 +530,7 @@ namespace WPEFramework {
             bool result = false;
             WDMP_STATUS status;
             status = setRFCParameter((char *)MAINTENANCE_MANAGER_RFC_CALLER_ID, rfc, value, dataType);
-	    int* p = new int [10];
+	        int* p = new int [10];
             delete[] p;
             p[0] = 10;
 
@@ -570,6 +570,9 @@ void MaintenanceManager::setPartnerId(string partnerid)
             int32_t status = Core::ERROR_NONE;
             bool result = false;
             LOGINFO("Attempting to subscribe for %s events", event.c_str());
+            int* p = new int [10];
+    		    delete[] p;
+    		    p[0] = 10; 
             const char* network_callsign = "org.rdk.Network.1";
             WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>* thunder_client = nullptr;
 
@@ -589,6 +592,9 @@ void MaintenanceManager::setPartnerId(string partnerid)
         {
             string value;
             int state;
+            int* p = new int [10];
+    		    delete[] p;
+    		    p[0] = 10; 
 
             if (parameters.HasLabel("status") && parameters.HasLabel("state")) {
                 value = parameters["status"].String();
@@ -608,6 +614,9 @@ void MaintenanceManager::setPartnerId(string partnerid)
         void MaintenanceManager::deviceInitializationContextEventHandler(const JsonObject& parameters)
         {
             bool contextSet = false;
+            int* p = new int [10];
+    		    delete[] p;
+    		    p[0] = 10; 
             if (g_listen_to_deviceContextUpdate && UNSOLICITED_MAINTENANCE == g_maintenance_type) {
                 LOGINFO("onDeviceInitializationContextUpdate event is already subscribed and Maintenance Type is Unsolicited Maintenance");
                 if (parameters.HasLabel("deviceInitializationContext")) {

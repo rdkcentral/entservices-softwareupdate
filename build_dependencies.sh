@@ -1,25 +1,13 @@
-# # #!/bin/bash
+
+#!/bin/bash
 set -e
-#GITHUB_TOKEN="${RDKCM_RDKE}"
-#GITHUB_TOKEN="${{ secrets.RDKCM_RDKE }}"
-
-
-# # ############################
-# # # EXPERIMENTAL
-# # # DO NOT MODIFY
-
-# # ############################
-# # # # 1. Install Dependencies
-
-GITHUB_WORKSPACE=$(pwd)
-echo "akshay GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
-GITHUB_WORKSPACE="$(pwd)"
-echo "akshay Current Directory: $GITHUB_WORKSPACE"
-
-
+##############################
+GITHUB_WORKSPACE="${PWD}"
+# # ############################# 
+#1. Install Dependencies and packages
 
 apt update
-apt install -y libsqlite3-dev libcurl4-openssl-dev valgrind lcov clang libsystemd-dev libboost-all-dev libwebsocketpp-dev meson libcunit1 libcunit1-dev curl protobuf-compiler-grpc libgrpc-dev libgrpc++-dev libunwind-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev build-essential autoconf automake libtool pkg-config cmake libcurl4-openssl-dev libarchive-dev
+apt install -y libsqlite3-dev libcurl4-openssl-dev valgrind lcov clang libsystemd-dev libboost-all-dev libwebsocketpp-dev meson libcunit1 libcunit1-dev curl protobuf-compiler-grpc libgrpc-dev libgrpc++-dev libunwind-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 pip install jsonref
 
 ############################
@@ -32,7 +20,9 @@ meson setup --warnlevel 3 --werror build
 ninja -C build
 ninja -C build install
 cd ..
-############################
+###########################################
+# Clone the required repositories
+
 
 git clone --branch  R4.4.3 https://github.com/rdkcentral/ThunderTools.git
 
@@ -40,18 +30,15 @@ git clone --branch R4.4.1 https://github.com/rdkcentral/Thunder.git
 
 git clone --branch main https://github.com/rdkcentral/entservices-apis.git
 
-#git clone https://github.com/rdkcentral/entservices-deviceanddisplay.git
 git clone https://github.com/rdkcentral/entservices-softwareupdate.git
 
-git clone --branch R4_4 https://$GITHUB_TOKEN@github.com/rdkcentral/entservices-testframework.git
+git clone https://$GITHUB_TOKEN@github.com/rdkcentral/entservices-testframework.git
 
 ############################
 # Build Thunder-Tools
 echo "======================================================================================"
 echo "buliding thunderTools"
 cd ThunderTools
-echo "akshay current working dir: "$(pwd)
-echo "akshay applying patch in thunder tools"
 patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L1Tests/patches/00010-R4.4-Add-support-for-project-dir.patch
 cd -
 
@@ -71,8 +58,6 @@ echo "==========================================================================
 echo "buliding thunder"
 
 cd Thunder
-echo "akshay current working dir: "$(pwd)
-echo "akshay applying patch in thunder"
 patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L2Tests/patches/Use_Legact_Alt_Based_On_ThunderTools_R4.4.3.patch
 patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L2Tests/patches/error_code_R4_4.patch
 patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L1Tests/patches/1004-Add-support-for-project-dir.patch
@@ -132,7 +117,7 @@ echo "==========================================================================
 echo "======================================================================================"
 echo "empty headers creation"
 cd headers
-echo "current working dir: "$(pwd)
+echo "current working dir: "${PWD}
 touch audiocapturemgr/audiocapturemgr_iarm.h
 touch ccec/drivers/CecIARMBusMgr.h
 touch rdk/ds/audioOutputPort.hpp
@@ -163,7 +148,6 @@ touch rdk/iarmmgrs-hal/sysMgr.h
 touch network/wifiSrvMgrIarmIf.h
 touch network/netsrvmgrIarm.h
 touch libudev.h
-touch libusb.h
 touch rfcapi.h
 touch rbus.h
 touch telemetry_busmessage_sender.h
@@ -171,9 +155,10 @@ touch maintenanceMGR.h
 touch pkg.h
 touch secure_wrapper.h
 touch wpa_ctrl.h
-touch proc/readproc.h
 touch btmgr.h
 touch rdk_logger_milestone.h
+touch gdialservice.h
+touch gdialservicecommon.h
 touch audioOutputPortType.hpp
 touch audioOutputPortConfig.hpp
 touch tr181api.h
