@@ -644,7 +644,7 @@ void MaintenanceManager::setPartnerId(string partnerid)
 #endif
 
             LOGINFO("Starting Script /lib/rdk/xconfImageCheck.sh");
-            system("/lib/rdk/xconfImageCheck.sh >> /opt/logs/swupdate.log 2>&1 &");
+            (void)system("/lib/rdk/xconfImageCheck.sh >> /opt/logs/swupdate.log 2>&1 &");
         }
 
         bool MaintenanceManager::queryIAuthService()
