@@ -7,7 +7,7 @@ GITHUB_WORKSPACE="${PWD}"
 #1. Install Dependencies and packages
 
 apt update
-apt install -y libsqlite3-dev libcurl4-openssl-dev valgrind lcov clang libsystemd-dev libboost-all-dev libwebsocketpp-dev meson libcunit1 libcunit1-dev curl protobuf-compiler-grpc libgrpc-dev libgrpc++-dev libunwind-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+apt install -y libsqlite3-dev libcurl4-openssl-dev valgrind lcov clang libsystemd-dev libboost-all-dev libwebsocketpp-dev meson libcunit1 libcunit1-dev curl protobuf-compiler-grpc libgrpc-dev libgrpc++-dev libunwind-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev build-essential autoconf automake libtool pkg-config cmake libcurl4-openssl-dev libarchive-dev
 pip install jsonref
 
 ############################
@@ -148,6 +148,7 @@ touch rdk/iarmmgrs-hal/sysMgr.h
 touch network/wifiSrvMgrIarmIf.h
 touch network/netsrvmgrIarm.h
 touch libudev.h
+touch libusb.h
 touch rfcapi.h
 touch rbus.h
 touch telemetry_busmessage_sender.h
@@ -155,15 +156,13 @@ touch maintenanceMGR.h
 touch pkg.h
 touch secure_wrapper.h
 touch wpa_ctrl.h
+touch proc/readproc.h
 touch btmgr.h
 touch rdk_logger_milestone.h
-touch gdialservice.h
-touch gdialservicecommon.h
 touch audioOutputPortType.hpp
 touch audioOutputPortConfig.hpp
 touch tr181api.h
-touch dsRpc.h
-echo "files created successfully"
+touch dsRpc.hecho "files created successfully"
 echo "======================================================================================"
 
 cd ../../
