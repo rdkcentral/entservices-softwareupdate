@@ -36,6 +36,8 @@
 #include "rfcapi.h"
 #include "cSettings.h"
 
+#include <interfaces/IAuthService.h>
+
 /* MaintenanceManager Services Triggered Events. */
 #define EVT_ONMAINTMGRSAMPLEEVENT           "onSampleEvent"
 #define EVT_ONMAINTENANCSTATUSCHANGE        "onMaintenanceStatusChange" /* Maintenance Status change */
@@ -149,6 +151,8 @@ namespace WPEFramework {
 
                 PluginHost::IShell* m_service= nullptr;
 
+                Exchange::IAuthService *m_authservicePlugin;
+
                 bool isDeviceOnline();
                 void task_execution_thread();
                 void requestSystemReboot();
@@ -169,6 +173,7 @@ namespace WPEFramework {
                 bool setDeviceInitializationContext(JsonObject joGetResult);
                 bool getActivatedStatus(bool &skipFirmwareCheck);
                 const string checkActivatedStatus(void);
+                bool queryIAuthService();
                 int abortTask(const char*, int sig = SIGABRT);
                 pid_t getTaskPID(const char*);
                 string getLastRebootReason();
