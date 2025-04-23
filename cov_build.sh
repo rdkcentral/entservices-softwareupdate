@@ -3,12 +3,14 @@ set -e
 ##############################
 GITHUB_WORKSPACE="${PWD}"
 ############################
-# Build entservices-softwareupdate
+# Build entservices-deviceanddisplay
 echo "======================================================================================"
 echo "buliding entservices-softwareupdate"
 cd $GITHUB_WORKSPACE
-cmake -G Ninja -S entservices-softwareupdate -B build/entservices-softwareupdate \
+cmake -G Ninja -S entservices-softwareupdate -B build/entservices-softwareupdate\
   -DUSE_THUNDER_R4=ON \
+  -DLIBOPKG_INCLUDE_DIRS="/usr/include" \
+  -DLIBOPKG_LIBRARIES="/usr/lib/libopkg.so" \
   -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
   -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake" \
   -DCMAKE_VERBOSE_MAKEFILE=ON \
@@ -31,23 +33,22 @@ cmake -G Ninja -S entservices-softwareupdate -B build/entservices-softwareupdate
                       -include ${PWD}/entservices-testframework/Tests/mocks/Udev.h \
                       -include ${PWD}/entservices-testframework/Tests/mocks/pkg.h \
                       -include ${PWD}/entservices-testframework/Tests/mocks/maintenanceMGR.h \
-                      -include ${PWD}/entservices-testframework/Tests/mocks/gdialservice.h \
-                      -include ${PWD}/entservices-testframework/Tests/mocks/wpa_ctrl_mock.h \
                       -include ${PWD}/entservices-testframework/Tests/mocks/secure_wrappermock.h \
                       --coverage -Wall -Werror -Wno-error=format \
-                      -Wl,-wrap,system -Wl,-wrap,popen -Wl,-wrap,syslog -Wl,-wrap,wpa_ctrl_open -Wl,-wrap,wpa_ctrl_request -Wl,-wrap,wpa_ctrl_close -Wl,-wrap,wpa_ctrl_pending -Wl,-wrap,wpa_ctrl_recv -Wl,-wrap,wpa_ctrl_attach \
+                      -Wl,-wrap,system -Wl,-wrap,popen -Wl,-wrap,syslog \
                       -DENABLE_TELEMETRY_LOGGING -DUSE_IARMBUS \
                       -DENABLE_SYSTEM_GET_STORE_DEMO_LINK -DENABLE_DEEP_SLEEP \
                       -DENABLE_SET_WAKEUP_SRC_CONFIG -DENABLE_THERMAL_PROTECTION \
                       -DUSE_DRM_SCREENCAPTURE -DHAS_API_SYSTEM -DHAS_API_POWERSTATE \
-                      -DHAS_RBUS -DDISABLE_SECURITY_TOKEN -DENABLE_DEVICE_MANUFACTURER_INFO -DUSE_THUNDER_R4=ON -DTHUNDER_VERSION=4 -DTHUNDER_VERSION_MAJOR=4 -DTHUNDER_VERSION_MINOR=4" \
+                      -DHAS_RBUS -DDISABLE_SECURITY_TOKEN -DENABLE_DEVICE_MANUFACTURER_INFO -DUSE_THUNDER_R4 -DTHUNDER_VERSION=4 -DTHUNDER_VERSION_MAJOR=4 -DTHUNDER_VERSION_MINOR=4" \
   -DCOMCAST_CONFIG=OFF \
   -DRDK_SERVICES_COVERITY=ON \
-  -DRDK_SERVICES_L1_TEST=ON \
   -DDS_FOUND=ON \
+  -DPLUGIN_MAINTENANCEMANAGER=ON \
   -DPLUGIN_FIRMWAREUPDATE=ON \
-
 
 cmake --build build/entservices-softwareupdate --target install
 echo "======================================================================================"
+echo "path of so files"
+find . -iname "*.so*"
 exit 0
