@@ -20,9 +20,7 @@ meson setup --warnlevel 3 --werror build
 ninja -C build
 ninja -C build install
 cd ..
-###########################################
-# Clone the required repositories
-
+############################
 
 git clone --branch  R4.4.3 https://github.com/rdkcentral/ThunderTools.git
 
@@ -118,7 +116,7 @@ echo "==========================================================================
 echo "======================================================================================"
 echo "empty headers creation"
 cd headers
-echo "current working dir: "${PWD}
+echo "current working dir: "$(pwd)
 touch audiocapturemgr/audiocapturemgr_iarm.h
 touch ccec/drivers/CecIARMBusMgr.h
 touch rdk/ds/audioOutputPort.hpp
