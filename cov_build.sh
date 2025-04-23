@@ -34,6 +34,7 @@ cmake -G Ninja -S entservices-softwareupdate -B build/entservices-softwareupdate
                       -include ${PWD}/entservices-testframework/Tests/mocks/gdialservice.h \
                       -include ${PWD}/entservices-testframework/Tests/mocks/wpa_ctrl_mock.h \
                       -include ${PWD}/entservices-testframework/Tests/mocks/secure_wrappermock.h \
+                      -include ${PWD}/entservices-testframework/Tests/headers/rdk/iarmmgrs-hal/deepSleepMgr.h \
                       --coverage -Wall -Werror -Wno-error=format \
                       -Wl,-wrap,system -Wl,-wrap,popen -Wl,-wrap,syslog -Wl,-wrap,wpa_ctrl_open -Wl,-wrap,wpa_ctrl_request -Wl,-wrap,wpa_ctrl_close -Wl,-wrap,wpa_ctrl_pending -Wl,-wrap,wpa_ctrl_recv -Wl,-wrap,wpa_ctrl_attach \
                       -DENABLE_TELEMETRY_LOGGING -DUSE_IARMBUS \
