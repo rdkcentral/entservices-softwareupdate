@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 ##############################
-#GITHUB_WORKSPACE="${PWD}"
+GITHUB_WORKSPACE="${PWD}"
 ############################
 # Build entservices-softwareupdate
 echo "======================================================================================"
