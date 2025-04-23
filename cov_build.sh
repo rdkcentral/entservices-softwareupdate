@@ -7,7 +7,6 @@ GITHUB_WORKSPACE="${PWD}"
 echo "======================================================================================"
 echo "buliding entservices-softwareupdate"
 cd $GITHUB_WORKSPACE
-ls -al
 cmake -G Ninja -S entservices-softwareupdate -B build/entservices-softwareupdate\
   -DUSE_THUNDER_R4=ON \
   -DLIBOPKG_INCLUDE_DIRS="/usr/include" \
