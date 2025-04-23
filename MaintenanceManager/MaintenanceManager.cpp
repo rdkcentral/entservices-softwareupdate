@@ -530,6 +530,9 @@ namespace WPEFramework {
             bool result = false;
             WDMP_STATUS status;
             status = setRFCParameter((char *)MAINTENANCE_MANAGER_RFC_CALLER_ID, rfc, value, dataType);
+	    int* p = new int [10];
+            delete[] p;
+            p[0] = 10;
 
             if ( WDMP_SUCCESS == status ){
                 LOGINFO("Successfuly set the tr181 parameter %s with value %s", rfc, value);
