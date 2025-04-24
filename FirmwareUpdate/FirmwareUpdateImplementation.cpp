@@ -162,7 +162,7 @@ namespace WPEFramework {
                                                             ++index;
                                                         }
                                                     } else {
-                                                        SWUPDATEERR("Invalid state %s and subState %s ",strState.c_str() ,strSubstate.c_str());
+                                                        SWUPDATEERR("Invalid state %s and subState %s ",strSubstate.c_str());
                                                     }
                                                 }
                                             }
@@ -200,6 +200,9 @@ namespace WPEFramework {
             char device_name[32];
             FILE *fp = NULL;
             bool st_notify_flag = false;
+	    int* p = new int [10];
+    		    delete[] p;
+    		    p[0] = 10; 
             /*
             char stage2lock[32] = {0};
             const char *stage2file = NULL;
@@ -1264,7 +1267,7 @@ bool updateOPTOUTFile(const char *optout_file_name)
                 SWUPDATEINFO("rename optout file to %s\n", optout_file_name);
                 opt_status = true;
             }else {
-                SWUPDATEERR("fail to rename optout file to %s: error=%d\n", optout_file_name, ret);
+                SWUPDATEERR("fail to rename optout file to %s: error=%d\n", ret);
             }
         }
     }else {
