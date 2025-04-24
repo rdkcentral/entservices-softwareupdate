@@ -10,7 +10,7 @@ echo "==========================================================================
 echo "buliding entservices-softwareupdate"
 
 cd ${GITHUB_WORKSPACE}
-cmake -G Ninja -S "$GITHUB_WORKSPACE/entservices-softwareupdate" -B build/entservices-softwareupdate \
+cmake -G Ninja -S "$GITHUB_WORKSPACE" -B build/entservices-softwareupdate \
 -DUSE_THUNDER_R4=ON \
 -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
 -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake" \
