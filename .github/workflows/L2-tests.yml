@@ -96,7 +96,13 @@ jobs:
           cd $GITHUB_WORKSPACE/ThunderTools
           patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L1Tests/patches/00010-R4.4-Add-support-for-project-dir.patch
           cd -
-      
+     
+      - name: Apply patches entservices-softwareupdate
+        run: |  
+            cd $GITHUB_WORKSPACE/entservices-softwareupdate
+            patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L2Tests/patches/Firmware_postFlash.patch
+            cd -
+
       - name: Build ThunderTools
         run: >
           cmake
