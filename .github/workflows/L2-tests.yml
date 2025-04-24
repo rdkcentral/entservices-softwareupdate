@@ -96,7 +96,13 @@ jobs:
           cd $GITHUB_WORKSPACE/ThunderTools
           patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L1Tests/patches/00010-R4.4-Add-support-for-project-dir.patch
           cd -
-      
+     
+      - name: Apply patches entservices-softwareupdate
+        run: |  
+            cd $GITHUB_WORKSPACE/entservices-softwareupdate
+            patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L2Tests/patches/Firmware_postFlash.patch
+            cd -
+
       - name: Build ThunderTools
         run: >
           cmake
@@ -315,6 +321,7 @@ jobs:
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/ds/dsError.h
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/ds/dsUtl.h
           -Werror -Wall -Wno-unused-result -Wno-deprecated-declarations -Wno-error=format=
+          -Wl,-wrap,system -Wl,-wrap,popen -Wl,-wrap,syslog -Wl,-wrap,v_secure_system -Wl,-wrap,v_secure_popen -Wl,-wrap,v_secure_pclose -Wl,-wrap,unlink
           -DUSE_IARMBUS
           -DRDK_SERVICE_L2_TEST
           -DDISABLE_SECURITY_TOKEN
