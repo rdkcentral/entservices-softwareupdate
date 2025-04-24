@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -x
 ##############################
 GITHUB_WORKSPACE="${PWD}"
 ls -la ${GITHUB_WORKSPACE}
