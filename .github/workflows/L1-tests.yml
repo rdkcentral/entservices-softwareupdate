@@ -113,7 +113,7 @@ jobs:
         with:
           repository: rdkcentral/entservices-testframework
           path: entservices-testframework
-          ref: develop
+          ref: RDKEMW-2689_FirmwareUpdate_L1
           token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Checkout entservices-softwareupdate
@@ -315,6 +315,7 @@ jobs:
           -DENABLE_DEEP_SLEEP
           -DENABLE_SET_WAKEUP_SRC_CONFIG
           -DENABLE_THERMAL_PROTECTION
+          -DDISABLE_SECURITY_TOKEN
           -DUSE_DRM_SCREENCAPTURE
           -DHAS_API_SYSTEM
           -DHAS_API_POWERSTATE
@@ -332,7 +333,7 @@ jobs:
           -DRDK_SERVICES_L1_TEST=ON
           -DUSE_THUNDER_R4=ON
           -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
-          -DPLUGIN_FIRMWAREUPDATE=OFF
+          -DPLUGIN_FIRMWAREUPDATE=ON
           -DPLUGIN_MAINTENANCEMANAGER=OFF
           -DPLUGIN_PACKAGER=OFF
           &&
@@ -388,6 +389,7 @@ jobs:
           -DENABLE_SET_WAKEUP_SRC_CONFIG
           -DENABLE_THERMAL_PROTECTION
           -DUSE_DRM_SCREENCAPTURE
+          -DDISABLE_SECURITY_TOKEN
           -DHAS_API_SYSTEM
           -DHAS_API_POWERSTATE
           -DHAS_RBUS
@@ -399,6 +401,7 @@ jobs:
           -DCMAKE_DISABLE_FIND_PACKAGE_RFC=ON
           -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
           -DCMAKE_BUILD_TYPE=Debug
+          -DPLUGIN_FIRMWAREUPDATE=ON
           -DDS_FOUND=ON
           -DRDK_SERVICES_L1_TEST=ON
           -DUSE_THUNDER_R4=ON
