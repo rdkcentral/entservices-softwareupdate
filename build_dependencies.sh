@@ -1,7 +1,11 @@
 #!/bin/bash
 set -e
+set -x
 ##############################
 GITHUB_WORKSPACE="${PWD}"
+ls -la ${GITHUB_WORKSPACE}
+cd ${GITHUB_WORKSPACE}
+
 # # ############################# 
 #1. Install Dependencies and packages
 
@@ -28,8 +32,6 @@ git clone --branch  R4.4.3 https://github.com/rdkcentral/ThunderTools.git
 git clone --branch R4.4.1 https://github.com/rdkcentral/Thunder.git
 
 git clone --branch main https://github.com/rdkcentral/entservices-apis.git
-
-git clone https://github.com/rdkcentral/entservices-softwareupdate.git
 
 git clone https://$GITHUB_TOKEN@github.com/rdkcentral/entservices-testframework.git
 
@@ -159,3 +161,5 @@ echo "==========================================================================
 
 cd ../../
 cp -r /usr/include/gstreamer-1.0/gst /usr/include/glib-2.0/* /usr/lib/x86_64-linux-gnu/glib-2.0/include/* /usr/local/include/trower-base64/base64.h .
+
+ls -la ${GITHUB_WORKSPACE}
