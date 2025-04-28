@@ -107,8 +107,11 @@ mkdir -p headers/audiocapturemgr
 mkdir -p headers/rdk/ds
 mkdir -p headers/rdk/iarmbus
 mkdir -p headers/rdk/iarmmgrs-hal
+mkdir -p headers/rdk/halif/
+mkdir -p headers/rdk/halif/deepsleep-manager
 mkdir -p headers/ccec/drivers
 mkdir -p headers/network
+mkdir -p headers/proc
 echo "dir created successfully"
 echo "======================================================================================"
 
@@ -139,7 +142,7 @@ touch rdk/ds/videoResolution.hpp
 touch rdk/iarmbus/libIARM.h
 touch rdk/iarmbus/libIBus.h
 touch rdk/iarmbus/libIBusDaemon.h
-touch rdk/iarmmgrs-hal/deepSleepMgr.h
+touch rdk/halif/deepsleep-manager/deepSleepMgr.h
 touch rdk/iarmmgrs-hal/mfrMgr.h
 touch rdk/iarmmgrs-hal/pwrMgr.h
 touch rdk/iarmmgrs-hal/sysMgr.h
@@ -153,6 +156,7 @@ touch maintenanceMGR.h
 touch pkg.h
 touch secure_wrapper.h
 touch wpa_ctrl.h
+touch proc/readproc.h
 touch btmgr.h
 touch rdk_logger_milestone.h
 touch gdialservice.h
