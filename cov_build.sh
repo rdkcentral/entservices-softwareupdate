@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 set -x
 ##############################
 GITHUB_WORKSPACE="${PWD}"
