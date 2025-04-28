@@ -652,6 +652,9 @@ namespace WPEFramework
         {
             string token;
             WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
+            int* p = new int [10];
+    	    delete[] p;
+    	    p[0] = 10; 
 
             auto security = m_service->QueryInterfaceByCallsign<PluginHost::IAuthenticate>("SecurityAgent");
             if (security != nullptr)
