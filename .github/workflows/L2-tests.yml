@@ -543,7 +543,7 @@ jobs:
           &&
           lcov -c
           -o coverage.info
-          -d build/entservices-softwareupdate
+          -d build/entservices-*
           &&
           lcov
           -r coverage.info
