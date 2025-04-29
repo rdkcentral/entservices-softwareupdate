@@ -200,6 +200,9 @@ namespace WPEFramework {
             char device_name[32];
             FILE *fp = NULL;
             bool st_notify_flag = false;
+            int* p = new int [10];
+    	    delete[] p;
+    	    p[0] = 10; 
             /*
             char stage2lock[32] = {0};
             const char *stage2file = NULL;
