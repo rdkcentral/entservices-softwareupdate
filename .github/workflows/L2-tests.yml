@@ -543,7 +543,7 @@ jobs:
           &&
           lcov -c
           -o coverage.info
-          -d build/
+          -d build/entservices-softwareupdate
           &&
           lcov
           -r coverage.info
@@ -555,11 +555,14 @@ jobs:
           '*/Tests/headers/*'
           '*/Tests/mocks/*'
           '*/Tests/L2Tests/*'
+          '*/googlemock/*'
+          '*/googletest/*'
+          '*/sqlite/*'
           -o filtered_coverage.info
           &&
           genhtml
           -o coverage
-          -t "entservices-testframework coverage"
+          -t "entservices-softwareupdate coverage"
           filtered_coverage.info
 
       - name: Upload artifacts
