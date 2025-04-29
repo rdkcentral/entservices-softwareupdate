@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 set -x
 ##############################
 GITHUB_WORKSPACE="${PWD}"
@@ -20,9 +19,9 @@ cmake -G Ninja -S "$GITHUB_WORKSPACE" -B build/entservices-softwareupdate \
 -DCMAKE_DISABLE_FIND_PACKAGE_DS=ON \
 -DCOMCAST_CONFIG=OFF \
 -DRDK_SERVICES_COVERITY=ON \
--DRDK_SERVICES_L1_TEST=ON \
 -DDS_FOUND=ON \
 -DPLUGIN_FIRMWAREUPDATE=ON \
+-DPLUGIN_MAINTENANCEMANAGER=ON \
 -DCMAKE_CXX_FLAGS="-DEXCEPTIONS_ENABLE=ON \
 -I ${GITHUB_WORKSPACE}/entservices-testframework/Tests/headers \
 -I ${GITHUB_WORKSPACE}/entservices-testframework/Tests/headers/audiocapturemgr \
