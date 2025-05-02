@@ -2432,27 +2432,28 @@ namespace WPEFramework
         uint32_t MaintenanceManager::stopMaintenance(const JsonObject &parameters,
                                                      JsonObject &response)
         {
-            bool stopMaintResp = stopMaintenanceTasks();
+            bool result = false;
+            result = stopMaintenanceTasks();
 #if defined(ENABLE_JOURNAL_LOGGING)
-            MM_RETURN_RESPONSE(stopMaintResp);
+            MM_RETURN_RESPONSE(result);
 #endif
-            returnResponse(stopMaintResp);
+            returnResponse(result);
         }
 
         bool MaintenanceManager::stopMaintenanceTasks()
         {
+            MM_LOGINFO("Request for stopMaintenance()");
             string codeDLtask;
             int k_ret = EINVAL;
             int i = 0;
             bool task_status[3] = {false};
             bool result = false;
-
-            MM_LOGINFO("Stopping maintenance activities");
+            
             /* run only when the maintenance status is MAINTENANCE_STARTED */
             m_statusMutex.lock();
             if (MAINTENANCE_STARTED == m_notify_status)
             {
-
+                MM_LOGINFO("Stopping maintenance activities");
                 // Set the condition flag m_abort_flag to true
                 m_abort_flag = true;
                 auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
@@ -2487,28 +2488,31 @@ namespace WPEFramework
                     }
                 }
                 result = true;
+                if (task_stopTimer())
+                {
+                    MM_LOGINFO("Stopped Timer Successfully");
+                }
+                else{
+                    MM_LOGERR("task_stopTimer() did not stop the Timer");
+                }
+                task_thread.notify_one();
+                if (m_thread.joinable())
+                {
+                    m_thread.join();
+                    MM_LOGINFO("Thread joined successfully");
+                }
+                if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
+                {
+                    g_unsolicited_complete = true;
+                }
+                MM_LOGINFO("Maintenance has been stopped. Hence setting maintenance status to MAINTENANCE_ERROR");
+                MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
             }
             else
             {
-                MM_LOGERR("Failed to stopMaintenance without starting maintenance");
+                MM_LOGINFO("Maintenance Status is not MAINTENANCE_STARTED, Hence can not stop the Maintenance execution");
             }
-            task_thread.notify_one();
-
-            if (m_thread.joinable())
-            {
-                m_thread.join();
-                MM_LOGINFO("Thread joined successfully");
-            }
-
-            if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
-            {
-                g_unsolicited_complete = true;
-            }
-
-            MM_LOGINFO("Maintenance has been stopped. Hence setting maintenance status to MAINTENANCE_ERROR");
-            MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
             m_statusMutex.unlock();
-
             return result;
         }
 
