@@ -28,7 +28,7 @@ FetchContent_Declare(
         googletest
         URL https://github.com/google/googletest/archive/e39786088138f2749d64e9e90e0f9902daa77c40.zip
 )
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+#set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 FetchContent_MakeAvailable(googletest)
 
 set (TEST_LIB
@@ -118,7 +118,7 @@ add_plugin_test_ex(PLUGIN_FIRMWAREUPDATE tests/test_FirmwareUpdate.cpp "${FIRMWA
 set (MAINTENANCEMANAGER_INC ${CMAKE_SOURCE_DIR}/../entservices-softwareupdate/MaintenanceManager ${CMAKE_SOURCE_DIR}/../entservices-softwareupdate/helpers)
 add_plugin_test_ex(PLUGIN_MAINTENANCEMANAGER tests/test_MaintenanceManager.cpp "${MAINTENANCEMANAGER_INC}" "${NAMESPACE}MaintenanceManager")
 
-add_library(${MODULE_NAME} SHARED ${TEST_SRC})
+add_library(${MODULE_NAME} STATIC ${TEST_SRC})
 
 if (RDK_SERVICES_L1_TEST)
    find_library(TESTMOCKLIB_LIBRARIES NAMES L1TestMocklib)
