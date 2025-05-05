@@ -120,15 +120,16 @@ add_plugin_test_ex(PLUGIN_MAINTENANCEMANAGER tests/test_MaintenanceManager.cpp "
 
 add_library(${MODULE_NAME} SHARED ${TEST_SRC})
 
-#if (RDK_SERVICES_L1_TEST)
-   #find_library(TESTMOCKLIB_LIBRARIES NAMES L1TestMocklib)
-   #if (TESTMOCKLIB_LIBRARIES)
-       #message ("KKK3 Found mock libraries ${TESTMOCKLIB_LIBRARIES} library")
-       #target_link_libraries(${MODULE_NAME} ${TESTMOCKLIB_LIBRARIES})
-   #else (TESTMOCKLIB_LIBRARIES)
-       #message ("KKK3 Require ${TESTMOCKLIB_LIBRARIES} library")
-   #endif (TESTMOCKLIB_LIBRARIES)
-#endif (RDK_SERVICES_L1_TEST)
+if (RDK_SERVICES_L1_TEST)
+   find_library(TESTMOCKLIB_LIBRARIES NAMES L1TestMocklib)
+   if (TESTMOCKLIB_LIBRARIES)
+       message ("KKK3 Found mock libraries ${TESTMOCKLIB_LIBRARIES} library")
+       target_link_libraries(${PROJECT_NAME} ${TESTMOCKLIB_LIBRARIES})
+   else (TESTMOCKLIB_LIBRARIES)
+       message ("KKK3 Require ${TESTMOCKLIB_LIBRARIES} library")
+   endif (TESTMOCKLIB_LIBRARIES)
+endif (RDK_SERVICES_L1_TEST)
+
 
 include_directories(${TEST_INC})
 
