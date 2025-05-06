@@ -275,7 +275,7 @@ jobs:
         if: ${{ matrix.compiler == 'gcc' && matrix.coverage == 'with-coverage' && !env.ACT }}
         run: echo "TOOLCHAIN_FILE=$GITHUB_WORKSPACE/entservices-testframework/Tests/gcc-with-coverage.cmake" >> $GITHUB_ENV
 
-            - name: Build mocks
+      - name: Build mocks
         run: >
           cmake
           -S "$GITHUB_WORKSPACE/entservices-testframework/Tests/mocks"
