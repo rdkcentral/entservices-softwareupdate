@@ -43,6 +43,10 @@ if(DISABLE_SECURITY_TOKEN)
     add_definitions(-DDISABLE_SECURITY_TOKEN)
 endif()
 
+if(RDK_SERVICES_L1_TEST)
+    add_subdirectory(Tests/L1Tests)
+endif()
+
 if(PLUGIN_PACKAGER)
     add_subdirectory(Packager)
 endif()
