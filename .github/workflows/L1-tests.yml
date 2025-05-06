@@ -504,7 +504,8 @@ jobs:
           valgrind
           --tool=memcheck
           --log-file=valgrind_log
-          --leak-check=yes
+          --leak-check=full
+          --track-origins=yes
           --show-reachable=yes
           --track-fds=yes
           --fair-sched=try
