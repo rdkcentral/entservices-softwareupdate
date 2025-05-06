@@ -495,15 +495,6 @@ jobs:
           &&
           ls -l /dev/disk/by-id/usb-JetFlash_Transcend_16GB_UEUIRCXT-0
 
-      - name: Run unit tests without valgrind
-        run: >
-          PATH=$GITHUB_WORKSPACE/install/usr/bin:${PATH}
-          LD_LIBRARY_PATH=$GITHUB_WORKSPACE/install/usr/lib:$GITHUB_WORKSPACE/install/usr/lib/wpeframework/plugins:${LD_LIBRARY_PATH}
-          GTEST_OUTPUT="json:$(pwd)/entservices-testframeworkL1TestResults.json"
-          RdkServicesL1Test &&
-          cp -rf $(pwd)/entservices-testframeworkL1TestResults.json $GITHUB_WORKSPACE/entservices-testframeworkL1TestResultsWithoutValgrind.json &&
-          rm -rf $(pwd)/entservices-testframeworkL1TestResults.json
-
       - name: Run unit tests with valgrind
         if: ${{ !env.ACT }}
         run: >
