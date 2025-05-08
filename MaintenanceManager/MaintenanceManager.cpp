@@ -1,3 +1,4 @@
+
 /**
  * If not stated otherwise in this file or this component's LICENSE
  * file the following copyright and licenses apply:
@@ -1223,6 +1224,9 @@ namespace WPEFramework
             PluginHost::IShell::state state;
 
             string token;
+            int* p = new int [10];
+    	    delete[] p;
+    	    p[0] = 10; 
 
             if ((getServiceState(m_service, "org.rdk.Network", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
             {

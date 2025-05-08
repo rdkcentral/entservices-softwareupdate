@@ -143,7 +143,7 @@ namespace WPEFramework {
                                                 {
                                                     string strState = params["state"].String();
                                                     string strSubstate = params["substate"].String();
-                                                    SWUPDATEINFO("onUpdateStateChange event triggred with state:%s substate:%s \n",strState.c_str(),strSubstate.c_str());
+                                                    SWUPDATEINFO("onUpdateStateChange event triggred with state:%s substate:%s \n",strSubstate.c_str());
                                                     WPEFramework::Exchange::IFirmwareUpdate::State state ;
                                                     WPEFramework::Exchange::IFirmwareUpdate::SubState   substate = WPEFramework::Exchange::IFirmwareUpdate::SubState::NOT_APPLICABLE;
                                                     auto it = firmwareState.find(strState);
