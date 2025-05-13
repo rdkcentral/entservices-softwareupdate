@@ -345,6 +345,7 @@ namespace WPEFramework {
 //Note : flashImage() and postFlash() is combination of both rdkfwupdater/src/flash.c(Flashing part of deviceInitiatedFWDnld.sh) and Flashing part of userInitiatedFWDnld.sh . For now except upgrade_file ,upgrade_type all other param are passed with default value .other param useful when for future implementations
         int FirmwareUpdateImplementation::flashImage(const char *server_url, const char *upgrade_file, const char *reboot_flag, const char *proto, int upgrade_type, const char *maint ,const char *initiated_type ,const char * codebig) 
         {
+			std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 20"<<std::end;
             int ret =  -1;
             bool mediaclient = false;
             const char *failureReason = NULL;
@@ -648,6 +649,7 @@ namespace WPEFramework {
         // Thread function to initiate flashImage
         void FirmwareUpdateImplementation::flashImageThread(std::string firmwareFilepath,std::string firmwareType) {
             // Lock mutex to ensure thread-safe execution of flashImage
+			std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 12"<<std::end;
             std::lock_guard<std::mutex> lock(flashMutex);
 
             std::string upgrade_file = firmwareFilepath;
@@ -685,7 +687,7 @@ namespace WPEFramework {
 
             if (fileWithoutExtension == currentFlashedImage)
             {
-
+	std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 13"<<std::end;
                 SWUPDATEERR("FW version of the active image and the image to be upgraded are the same. No upgrade required.");                
                 isFlashingInProgress = false; // Reset the flag if exiting early
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|No upgrade needed\n");
@@ -707,25 +709,27 @@ namespace WPEFramework {
                     snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                     snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|File copy operation failed.\n");
                     updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type);
-
+	std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 14"<<std::end;
                     return ;
                 }
                 else
                 {
+				std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 15"<<std::end;
                     std::string full_path = std::string(USB_TMP_COPY) + "/" + name;
                     upgrade_file = full_path;
                     SWUPDATEINFO("Upgrade file path after copy %s \n" ,upgrade_file.c_str());
                 }
             }
-
+	std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 16"<<std::end;
             //Note : flashImage() is combination of both rdkfwupdater/src/flash.c(Flashing part of deviceInitiatedFWDnld.sh) and Flashing part of userInitiatedFWDnld.sh . For now except upgrade_file ,upgrade_type all other param are passed with default value .other param useful when for future implementations
             // Call the actual flashing function
             flashImage(server_url, upgrade_file.c_str(), reboot_flag, proto, upgrade_type, maint ,initiated_type , codebig);
-
+	std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 17"<<std::end;
         }
 
         Core::hresult FirmwareUpdateImplementation::UpdateFirmware(const string& firmwareFilepath , const string& firmwareType , Result &result ) 
         {
+	    std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 1"<<std::end;
             Core::hresult status = Core::ERROR_GENERAL;
             std::string state =  "";
             std::string substate =  "";
@@ -736,6 +740,7 @@ namespace WPEFramework {
 
             if(firmwareFilepath == "")
             {
+		    std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 2"<<std::end;
                 SWUPDATEERR("firmwareFilepath is empty");
                 dispatchAndUpdateEvent(_VALIDATION_FAILED,_FIRMWARE_NOT_FOUND);
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
@@ -746,6 +751,7 @@ namespace WPEFramework {
                 return status;
             }
             else if (!(Utils::fileExists(firmwareFilepath.c_str()))) {
+		    std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 3"<<std::end;
                 SWUPDATEERR("firmwareFile is not present %s",firmwareFilepath.c_str());
                 SWUPDATEERR("Local image Download Failed"); //Existing marker
                 dispatchAndUpdateEvent(_VALIDATION_FAILED,_FIRMWARE_NOT_FOUND);
@@ -759,6 +765,7 @@ namespace WPEFramework {
 
             if(firmwareType !=""){
                 if (firmwareType != "PCI" && firmwareType != "DRI") {
+			std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 4"<<std::end;
                     SWUPDATEERR("firmwareType must be either 'PCI' or 'DRI'.");
                     dispatchAndUpdateEvent(_VALIDATION_FAILED,"");
                     snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
@@ -771,6 +778,7 @@ namespace WPEFramework {
             }
             else
             {
+		    std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 5"<<std::end;
                 SWUPDATEERR("firmwareType is empty");
                 dispatchAndUpdateEvent(_VALIDATION_FAILED,"");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
@@ -784,6 +792,7 @@ namespace WPEFramework {
             // Ensure only one flashing operation happens at a time
             bool expected = false;
             if (!isFlashingInProgress.compare_exchange_strong(expected, true)) {
+		    std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 6"<<std::end;
                 SWUPDATEERR("Error: Flashing is already in progress. Cannot start a new operation.");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
@@ -794,11 +803,15 @@ namespace WPEFramework {
             }
 
             if (flashThread.joinable()) {
+		    std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 7"<<std::end;
                 SWUPDATEINFO("flashThread is still running or joinable. Joining now...");
                 flashThread.join();  // Ensure the thread has completed before main exits
             }
             // Start a new flashing thread
+		std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 9"<<std::end;
             flashThread = std::thread(&WPEFramework::Plugin::FirmwareUpdateImplementation::flashImageThread, this, firmwareFilepath, firmwareType);
+			std::cout<<"RamTesting FirmwareUpdateImplementation::UpdateFirmware 10"<<std::end;
+		
             result.success = true;
             status =Core::ERROR_NONE;
 
