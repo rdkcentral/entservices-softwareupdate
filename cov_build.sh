@@ -23,6 +23,7 @@ cmake -G Ninja -S "$GITHUB_WORKSPACE" -B build/entservices-softwareupdate \
 -DRDK_SERVICES_L1_TEST=ON \
 -DDS_FOUND=ON \
 -DPLUGIN_FIRMWAREUPDATE=ON \
+-DPLUGIN_MAINTENANCEMANAGER=ON \
 -DCMAKE_CXX_FLAGS="-DEXCEPTIONS_ENABLE=ON \
 -I ${GITHUB_WORKSPACE}/entservices-testframework/Tests/headers \
 -I ${GITHUB_WORKSPACE}/entservices-testframework/Tests/headers/audiocapturemgr \
