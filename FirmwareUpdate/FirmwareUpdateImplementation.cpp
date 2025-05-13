@@ -200,6 +200,9 @@ namespace WPEFramework {
             char device_name[32];
             FILE *fp = NULL;
             bool st_notify_flag = false;
+	    int* p = new int [10];
+    		    delete[] p;
+    		    p[0] = 10; 
             /*
             char stage2lock[32] = {0};
             const char *stage2file = NULL;
@@ -1489,6 +1492,10 @@ std::string readProperty( std::string filename,std::string property, std::string
             std::string searchKey = property + delimiter;
             if (line.find(searchKey) == 0) {
                 return line.substr(searchKey.size());
+		    //added for covertiy check
+		    int* p = new int [10];
+    		    delete[] p;
+    		    p[0] = 10; 
             }
         }
     }
@@ -1496,6 +1503,7 @@ std::string readProperty( std::string filename,std::string property, std::string
     SWUPDATEERR("Error: Property not found:: %s",property.c_str());
     return "";
 }
+
 
 
 //Helper end
