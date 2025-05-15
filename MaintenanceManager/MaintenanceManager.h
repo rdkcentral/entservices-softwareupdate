@@ -215,6 +215,7 @@ namespace WPEFramework
             void task_execution_thread();
             void requestSystemReboot();
             void maintenanceManagerOnBootup();
+            void initWhoAmISupport();
             bool checkAutoRebootFlag();
             bool readRFC(const char *);
             bool setRFC(const char *, const char *, DATA_TYPE);

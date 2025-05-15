@@ -1456,7 +1456,7 @@ namespace WPEFramework
             return (string());
         }
 
-        void MaintenanceManager::initWhoAmISyupport()
+        void MaintenanceManager::initWhoAmISupport()
         {
             std::string wai_prop_val;
             if (Utils::readPropertyFromFile(DEVICE_PROPS_FILE, WHOAMI_SUPPORT, wai_prop_val))
