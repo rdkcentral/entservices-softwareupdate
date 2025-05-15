@@ -188,26 +188,6 @@ TEST_F(FirmwareUpdateTest,FirmwareFilepath_not_exist)
     }    
 }
 
-TEST_F(FirmwareUpdateTest,FirmwareFilepath_exist)
-{
-    const char* filePath = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
-    uint32_t status = Core::ERROR_GENERAL;
-    JsonObject params;
-    JsonObject result;
-
-    // Create and open the file
-    std::ofstream file(filePath, std::ios::binary); // Open in binary mode (if needed)
-
-    if (file.is_open()) {
-        //Case5 given firmwareFilepath is exist but not valid .bin.
-        params["firmwareFilepath"] = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
-        params["firmwareType"]     = "PCI";
-        status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
-        EXPECT_EQ(Core::ERROR_NONE, status);
-    }
-
-}
-
 TEST_F(FirmwareUpdateTest,FirmwareUptoDateValidatation)
 {
     const char* filePath = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
@@ -227,8 +207,8 @@ TEST_F(FirmwareUpdateTest,FirmwareUptoDateValidatation)
         params["firmwareType"]     = "PCI";
         status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
         EXPECT_EQ(Core::ERROR_NONE, status);
+        sleep(5);
     }
-
 }
 
 TEST_F(FirmwareUpdateTest,FirmwareUpdate_without_imageFlasher)
