@@ -45,6 +45,7 @@
 #include "UtilsIarm.h"
 #include "UtilsJsonRpc.h"
 #include "UtilsfileExists.h"
+#include "UtilsgetFileContent.h"
 
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
 #include "libIARM.h"
@@ -199,6 +200,32 @@ string moduleStatusToString(IARM_Maint_module_status_t &status)
             ret_status = "MAINTENANCE_EMPTY";
     }
     return ret_status;
+}
+
+void initWhoAmISupport()
+{
+    std::string wai_prop_val;
+    if(readPropertyFromFile(DEVICE_PROP_FILE, WHOAMI_SUPPORT, wai_prop_val))
+    {
+        if (wai_prop_val == "true")
+        {
+            g_whoami_support_enabled = true;
+            MM_LOGINFO("WhoAmI Support is enabled");
+        }
+        else if (propertyValue == "false")
+        {
+            g_whoami_support_enabled = false;
+            MM_LOGINFO("WhoAmI Support is Disabled");
+        }
+        else
+        {
+            MM_LOGERR("Invalid value for WHOAMI_SUPPORT: %s", propertyValue.c_str());
+        }
+    }
+    else
+    {
+        MM_LOGERR("Failed to read WHOAMI_SUPPORT from config file: %s", DEVICE_PROP_FILE);
+    }
 }
 
 /**
