@@ -202,32 +202,6 @@ string moduleStatusToString(IARM_Maint_module_status_t &status)
     return ret_status;
 }
 
-void initWhoAmISupport()
-{
-    std::string wai_prop_val;
-    if(Utils::readPropertyFromFile(DEVICE_PROPS_FILE, WHOAMI_SUPPORT, wai_prop_val))
-    {
-        if (wai_prop_val == "true")
-        {
-            MaintenanceManager::g_whoami_support_enabled = true;
-            MM_LOGINFO("WhoAmI Support is enabled");
-        }
-        else if (wai_prop_val == "false")
-        {
-            MaintenanceManager::g_whoami_support_enabled = false;
-            MM_LOGINFO("WhoAmI Support is Disabled");
-        }
-        else
-        {
-            MM_LOGERR("Invalid value for WHOAMI_SUPPORT: %s", propertyValue.c_str());
-        }
-    }
-    else
-    {
-        MM_LOGERR("Failed to read WHOAMI_SUPPORT from config file: %s", DEVICE_PROP_FILE);
-    }
-}
-
 /**
  * @brief WPEFramework class for Maintenance Manager
  */
@@ -1480,6 +1454,32 @@ namespace WPEFramework
 
             /* On Success; return empty to indicate no error text. */
             return (string());
+        }
+
+        void MaintenanceManager::initWhoAmISyupport()
+        {
+            std::string wai_prop_val;
+            if (Utils::readPropertyFromFile(DEVICE_PROPS_FILE, WHOAMI_SUPPORT, wai_prop_val))
+            {
+                if (wai_prop_val == "true")
+                {
+                    MaintenanceManager::g_whoami_support_enabled = true;
+                    MM_LOGINFO("WhoAmI Support is enabled");
+                }
+                else if (wai_prop_val == "false")
+                {
+                    MaintenanceManager::g_whoami_support_enabled = false;
+                    MM_LOGINFO("WhoAmI Support is Disabled");
+                }
+                else
+                {
+                    MM_LOGERR("Invalid value for WHOAMI_SUPPORT: %s", wai_prop_val.c_str());
+                }
+            }
+            else
+            {
+                MM_LOGERR("Failed to read WHOAMI_SUPPORT from config file: %s", DEVICE_PROPS_FILE);
+            }
         }
 
         void MaintenanceManager::Deinitialize(PluginHost::IShell *service)
