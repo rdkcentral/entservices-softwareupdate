@@ -114,6 +114,9 @@ typedef enum
 
 #define BASE_CLOCK CLOCK_BOOTTIME
 
+#define WHOAMI_PROP_KEY "WHOAMI_ENABLED"
+#define DEVICE_PROP_FILE "/etc/device.properties"
+
 #define FOREGROUND_MODE "FOREGROUND"
 #define BACKGROUND_MODE "BACKGROUND"
 
@@ -222,6 +225,7 @@ namespace WPEFramework
             void deviceInitializationContextEventHandler(const JsonObject &parameters);
             void startCriticalTasks();
             bool checkNetwork();
+            void isWhoAmIEnabled();
             bool knowWhoAmI(string &activation_status);
             bool subscribeToDeviceInitializationEvent();
             bool setDeviceInitializationContext(JsonObject joGetResult);
