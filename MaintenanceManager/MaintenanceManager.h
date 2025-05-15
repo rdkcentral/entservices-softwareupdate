@@ -196,6 +196,7 @@ namespace WPEFramework
             bool g_subscribed_for_nwevents = false;
             bool g_listen_to_deviceContextUpdate = false;
             bool g_subscribed_for_deviceContextUpdate = false;
+            bool g_whoami_support_enabled = false;
 
             std::mutex m_callMutex;
             std::mutex m_waiMutex;

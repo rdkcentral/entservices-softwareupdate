@@ -45,6 +45,7 @@
 #include "UtilsIarm.h"
 #include "UtilsJsonRpc.h"
 #include "UtilsfileExists.h"
+#include "UtilsgetFileContent.h"
 
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
 #include "libIARM.h"
@@ -63,18 +64,17 @@ using namespace std;
 
 #define API_VERSION_NUMBER_MAJOR 1
 #define API_VERSION_NUMBER_MINOR 0
-#define API_VERSION_NUMBER_PATCH 23
+#define API_VERSION_NUMBER_PATCH 24
 #define SERVER_DETAILS "127.0.0.1:9998"
 
 #define PROC_DIR "/proc"
 #define RDK_PATH "/lib/rdk/"
 #define MAINTENANCE_MANAGER_RFC_CALLER_ID "MaintenanceManager"
 
-#if defined(ENABLE_WHOAMI)
 #define TR181_PARTNER_ID "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.PartnerName"
 #define TR181_TARGET_OS_CLASS "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.OsClass"
 #define TR181_XCONFURL "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.XconfUrl"
-#endif
+
 
 #define TASK_SCRIPT RDK_PATH "Start_MaintenanceTasks.sh"
 
@@ -335,7 +335,6 @@ namespace WPEFramework
             MaintenanceManager::m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
             MaintenanceManager::m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = false;
 
-#if defined(ENABLE_WHOAMI)
             MaintenanceManager::m_param_map[kDeviceInitContextKeyVals[0].c_str()] = TR181_PARTNER_ID;
             MaintenanceManager::m_param_map[kDeviceInitContextKeyVals[1].c_str()] = TR181_TARGET_OS_CLASS;
             MaintenanceManager::m_param_map[kDeviceInitContextKeyVals[2].c_str()] = TR181_XCONFURL;
@@ -343,13 +342,13 @@ namespace WPEFramework
             MaintenanceManager::m_paramType_map[kDeviceInitContextKeyVals[0].c_str()] = DATA_TYPE::WDMP_STRING;
             MaintenanceManager::m_paramType_map[kDeviceInitContextKeyVals[1].c_str()] = DATA_TYPE::WDMP_STRING;
             MaintenanceManager::m_paramType_map[kDeviceInitContextKeyVals[2].c_str()] = DATA_TYPE::WDMP_STRING;
-#endif
         }
 
         void MaintenanceManager::task_execution_thread()
         {
             int i = 0;
             string task = "";
+            bool isMaintenanceSuppressed = false;
             bool internetConnectStatus = false;
             bool delayMaintenanceStarted = false;
             bool exitOnNoNetwork = false;
@@ -359,13 +358,12 @@ namespace WPEFramework
             std::unique_lock<std::mutex> wailck(m_waiMutex);
             MM_LOGINFO("Executing Maintenance tasks");
 
-#if defined(ENABLE_WHOAMI)
             /* Purposefully delaying MAINTENANCE_STARTED status to honor POWER compliance */
-            if (UNSOLICITED_MAINTENANCE == g_maintenance_type)
+            if (UNSOLICITED_MAINTENANCE == g_maintenance_type && g_whoami_support_enabled)
             {
                 delayMaintenanceStarted = true;
             }
-#endif
+
             if (!delayMaintenanceStarted)
             {
                 m_statusMutex.lock();
@@ -379,55 +377,65 @@ namespace WPEFramework
                 tasks.erase(tasks.begin(), tasks.end());
             }
 
-#if defined(SUPPRESS_MAINTENANCE) && !defined(ENABLE_WHOAMI)
-            bool skipFirmwareCheck = false;
-            bool activationStatus = getActivatedStatus(skipFirmwareCheck); /* Activation check */
-            /* we proceed with network check only if
-             * "activation-connect",
-             * "activation-ready"
-             * "not-activated",
-             * "activated" */
-            if (activationStatus)
+#if defined(SUPPRESS_MAINTENANCE)
+            if (!g_whoami_support_enabled)
+            {   
+                isMaintenanceSuppressed = true;
+                bool skipFirmwareCheck = false;
+                bool activationStatus = getActivatedStatus(skipFirmwareCheck); /* Activation check */
+                /* we proceed with network check only if
+                * "activation-connect",
+                * "activation-ready"
+                * "not-activated",
+                * "activated" */
+                if (activationStatus)
+                {
+                    internetConnectStatus = isDeviceOnline(); /* Network check */
+                }
+            }
+#endif  
+            if (!isMaintenanceSuppressed)
             {
                 internetConnectStatus = isDeviceOnline(); /* Network check */
             }
-#else
-            internetConnectStatus = isDeviceOnline(); /* Network check */
-#endif
 
-#if defined(ENABLE_WHOAMI)
-            if (UNSOLICITED_MAINTENANCE == g_maintenance_type)
+            if (g_whoami_support_enabled)
             {
-                string activation_status = checkActivatedStatus(); /* Device Activation Status Check */
-                bool whoAmIStatus = knowWhoAmI(activation_status); /* WhoAmI Response & Set Status Check */
-                MM_LOGINFO("knowWhoAmI() returned %s", (whoAmIStatus) ? "successfully" : "false");
+                if (UNSOLICITED_MAINTENANCE == g_maintenance_type)
+                {
+                    string activation_status = checkActivatedStatus(); /* Device Activation Status Check */
+                    bool whoAmIStatus = knowWhoAmI(activation_status); /* WhoAmI Response & Set Status Check */
+                    MM_LOGINFO("knowWhoAmI() returned %s", (whoAmIStatus) ? "successfully" : "false");
 
-                if (!whoAmIStatus && activation_status != "activated")
-                {
-                    MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
-                    g_listen_to_deviceContextUpdate = true;
-                    MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
-                    task_thread.wait(wailck);
+                    if (!whoAmIStatus && activation_status != "activated")
+                    {
+                        MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
+                        g_listen_to_deviceContextUpdate = true;
+                        MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
+                        task_thread.wait(wailck);
+                    }
+                    else if (!internetConnectStatus && activation_status == "activated")
+                    {
+                        MM_LOGINFO("Device is not connected to the Internet and Device is already Activated");
+                        exitOnNoNetwork = true;
+                    }
                 }
-                else if (!internetConnectStatus && activation_status == "activated")
+                else /* Solicited Maintenance in WHOAMI */
                 {
-                    MM_LOGINFO("Device is not connected to the Internet and Device is already Activated");
-                    exitOnNoNetwork = true;
+                    if (!internetConnectStatus)
+                    {
+                        exitOnNoNetwork = true;
+                    }
                 }
             }
-            else /* Solicited Maintenance in WHOAMI */
+            else
             {
                 if (!internetConnectStatus)
                 {
                     exitOnNoNetwork = true;
                 }
             }
-#else
-            if (!internetConnectStatus)
-            {
-                exitOnNoNetwork = true;
-            }
-#endif
+            
             if (exitOnNoNetwork) /* Exit Maintenance Cycle if no Internet */
             {
                 m_statusMutex.lock();
@@ -451,28 +459,34 @@ namespace WPEFramework
 
             MM_LOGINFO("Reboot_Pending :%s", g_is_reboot_pending.c_str());
             MM_LOGINFO("%s", UNSOLICITED_MAINTENANCE == g_maintenance_type ? "---------------UNSOLICITED_MAINTENANCE--------------" : "=============SOLICITED_MAINTENANCE===============");
-
-#if defined(SUPPRESS_MAINTENANCE) && !defined(ENABLE_WHOAMI)
-            if (skipFirmwareCheck)
+            
+#if defined(SUPPRESS_MAINTENANCE)
+            if (!g_whoami_support_enabled && isMaintenanceSuppressed)
             {
-                /* set the task status of Firmware Download */
-                SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
-                SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
-                /* Skip Firmware Download Task and add other tasks */
-                tasks.push_back(task_names_foreground[TASK_RFC].c_str());
-                tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
+                if (skipFirmwareCheck)
+                {
+                    /* set the task status of Firmware Download */
+                    SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
+                    SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                    /* Skip Firmware Download Task and add other tasks */
+                    tasks.push_back(task_names_foreground[TASK_RFC].c_str());
+                    tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
+                }
+                else
+                {
+                    tasks.push_back(task_names_foreground[TASK_RFC].c_str());
+                    tasks.push_back(task_names_foreground[TASK_SWUPDATE].c_str());
+                    tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
+                }
             }
-            else
+#endif
+            if (!isMaintenanceSuppressed)
             {
                 tasks.push_back(task_names_foreground[TASK_RFC].c_str());
                 tasks.push_back(task_names_foreground[TASK_SWUPDATE].c_str());
                 tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
             }
-#else
-            tasks.push_back(task_names_foreground[TASK_RFC].c_str());
-            tasks.push_back(task_names_foreground[TASK_SWUPDATE].c_str());
-            tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
-#endif
+
             std::unique_lock<std::mutex> lck(m_callMutex);
             for (i = 0; i < static_cast<int>(tasks.size()) && !m_abort_flag; i++)
             {
@@ -559,7 +573,28 @@ namespace WPEFramework
             MM_LOGINFO("Worker Thread Completed");
         } /* end of task_execution_thread() */
 
-#if defined(ENABLE_WHOAMI)
+        void MaintenanceManager::isWhoAmIEnabled()
+        {
+            std::string wai_prop_val;
+            if (Utils::readPropertyFile(DEVICE_PROP_FILE, WHOAMI_PROP_KEY, wai_prop_val))
+            {
+                if (wai_prop_val == "true")
+                {
+                    g_whoami_support_enabled = true;
+                    MM_LOGINFO("Device is in WhoAmI mode");
+                }
+                else
+                {
+                    g_whoami_support_enabled = false;
+                    MM_LOGINFO("Device is not in WhoAmI mode");
+                }
+            }
+            else
+            {
+                MM_LOGERR("Failed to read %s property", WHOAMI_PROP_KEY);
+            }
+        }
+
         /**
          * @brief Determines the device identity by querying the Security Manager.
          *
@@ -637,7 +672,6 @@ namespace WPEFramework
                 }
             } while (true);
         }
-#endif /* end of ENABLE_WHOAMI */
 
         /**
          * @brief Retrieves a handle to the specified Thunder plugin with authentication.
@@ -1430,15 +1464,16 @@ namespace WPEFramework
 
         const string MaintenanceManager::Initialize(PluginHost::IShell *service)
         {
+            isWhoAmIEnabled();
             ASSERT(service != nullptr);
             ASSERT(m_service == nullptr);
             ASSERT(timerid != nullptr);
 
             m_service = service;
             m_service->AddRef();
-#if defined(ENABLE_WHOAMI)
-            subscribeToDeviceInitializationEvent();
-#endif
+            if (g_whoami_support_enabled) {
+                subscribeToDeviceInitializationEvent();
+            }
 
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             InitializeIARM();
