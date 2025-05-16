@@ -112,6 +112,7 @@ mkdir -p headers/rdk/halif/deepsleep-manager
 mkdir -p headers/ccec/drivers
 mkdir -p headers/network
 mkdir -p headers/proc
+mkdir -p headers/opkg
 echo "dir created successfully"
 echo "======================================================================================"
 
@@ -160,6 +161,10 @@ touch btmgr.h
 touch rdk_logger_milestone.h
 touch gdialservice.h
 touch gdialservicecommon.h
+touch opkg.h
+touch opkg_message.h
+touch opkg_cmd.h
+touch opkg_download.h
 echo "files created successfully"
 echo "======================================================================================"
 
