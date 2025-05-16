@@ -401,7 +401,7 @@ TEST_F(MaintenanceManagerTest, DISABLED_startMaintenanceRPC_unsolicNotCompleted)
     EXPECT_EQ(response_, "{\"maintenanceStatus\":\"MAINTENANCE_IDLE\",\"LastSuccessfulCompletionTime\":0,\"isCriticalMaintenance\":false,\"isRebootPending\":false,\"success\":true}");
 }
 
-#if 0 //Test case is failing in workflow, so commenting this test case
+#if 0
 TEST_F(MaintenanceManagerTest, startMaintenanceRPC_UnsoliCompleted)
 {
     Maint_notify_status_t status = MAINTENANCE_IDLE;
@@ -784,7 +784,7 @@ TEST_F(ParseConfTest, KeyFound) {
 }
 
 /* ---- moduleStatusToString() ---- */
-#if 0
+#if 0 //Test case is failing in workflow, so commenting this test case
 TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	std::vector<std::pair<IARM_Maint_module_status_t, std::string>> maint_modStatus = {
 		{MAINT_RFC_COMPLETE, "MAINTENANCE_RFC_COMPLETE"},
