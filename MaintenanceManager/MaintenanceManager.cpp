@@ -63,7 +63,7 @@ using namespace std;
 
 #define API_VERSION_NUMBER_MAJOR 1
 #define API_VERSION_NUMBER_MINOR 0
-#define API_VERSION_NUMBER_PATCH 23
+#define API_VERSION_NUMBER_PATCH 24
 #define SERVER_DETAILS "127.0.0.1:9998"
 
 #define PROC_DIR "/proc"
@@ -1031,11 +1031,11 @@ namespace WPEFramework
             int rfc_task_status = -1;
             int xconf_imagecheck_status = -1;
 
-            MM_LOGINFO("Starting /lib/rdk/Start_RFC.sh");
-            rfc_task_status = system("/lib/rdk/Start_RFC.sh &");
+            MM_LOGINFO("Starting RFC Task");
+            rfc_task_status = system("/lib/rdk/Start_MaintenanceTasks.sh RFC &");
             if (rfc_task_status != 0)
             {
-                MM_LOGINFO("Failed to run Start_RFC.sh with %d", WEXITSTATUS(rfc_task_status));
+                MM_LOGINFO("Failed to run RFC Task with %d", WEXITSTATUS(rfc_task_status));
             }
 
             MM_LOGINFO("Starting /lib/rdk/xconfImageCheck.sh");
