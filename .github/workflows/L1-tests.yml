@@ -2,7 +2,7 @@ name: L1-tests
 
 on:
   push:
-    branches: [ main, develop, 'sprint/**', 'release/**' ]
+    branches: [ main, develop, 'sprint/**', 'release/**', feature/* ]
   pull_request:
     branches: [ main, develop, 'sprint/**', 'release/**' ]
 
@@ -478,6 +478,7 @@ jobs:
           -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
           -DCMAKE_BUILD_TYPE=Debug
           -DPLUGIN_PACKAGER=ON
+          -DPLUGIN_MAINTENANCEMANAGER=ON
           -DDS_FOUND=ON
           -DRDK_SERVICES_L1_TEST=ON
           -DUSE_THUNDER_R4=ON
