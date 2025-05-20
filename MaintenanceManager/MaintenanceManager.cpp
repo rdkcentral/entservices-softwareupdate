@@ -1029,23 +1029,24 @@ namespace WPEFramework
          */
         void MaintenanceManager::startCriticalTasks()
         {
-            char rfc_command[256];
-            char img_chk_command[256];
             MM_LOGINFO("Starting Critical Tasks...");
+            char command[256];
             int rfc_task_status = -1;
             int xconf_imagecheck_status = -1;
 
-            snprintf(rfc_command, sizeof(rfc_command), "%s %s &", TASK_SCRIPT, TASK_RFC);
-            MM_LOGINFO("Starting %s", rfc_command);
-            rfc_task_status = system(rfc_command);
+            // Critical Task RFC
+            snprintf(command, sizeof(command), "%s %s &", TASK_SCRIPT, TASK_RFC);
+            MM_LOGINFO("Starting %s", command);
+            rfc_task_status = system(command);
             if (rfc_task_status != 0)
             {
                 MM_LOGINFO("Failed to run %s with %d", RFC_TASK, WEXITSTATUS(rfc_task_status));
             }
 
-            snprintf(img_chk_command, sizeof(img_chk_command), "%s &", IMAGE_CHECK_SCRIPT);
-            MM_LOGINFO("Starting %s", img_chk_command);
-            xconf_imagecheck_status = system(img_chk_command);
+            // Critical Task XConf Image Check
+            snprintf(command, sizeof(command), "%s &", IMAGE_CHECK_SCRIPT);
+            MM_LOGINFO("Starting %s", command);
+            xconf_imagecheck_status = system(command);
             if (xconf_imagecheck_status != 0)
             {
                 MM_LOGINFO("Failed to run %s with %d", IMAGE_CHECK_SCRIPT, WEXITSTATUS(xconf_imagecheck_status));
