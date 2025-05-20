@@ -1040,7 +1040,7 @@ namespace WPEFramework
             rfc_task_status = system(rfc_command);
             if (rfc_task_status != 0)
             {
-                MM_LOGINFO("Failed to run RFC Task with %d", WEXITSTATUS(rfc_task_status));
+                MM_LOGINFO("Failed to run %s with %d", RFC_TASK, WEXITSTATUS(rfc_task_status));
             }
 
             snprintf(img_chk_command, sizeof(img_chk_command), "%s &", IMAGE_CHECK_SCRIPT);
@@ -1048,7 +1048,7 @@ namespace WPEFramework
             xconf_imagecheck_status = system(img_chk_command);
             if (xconf_imagecheck_status != 0)
             {
-                MM_LOGINFO("Failed to run xconfImageCheck.sh with %d", WEXITSTATUS(xconf_imagecheck_status));
+                MM_LOGINFO("Failed to run %s with %d", IMAGE_CHECK_SCRIPT, WEXITSTATUS(xconf_imagecheck_status));
             }
         }
 
