@@ -35,6 +35,8 @@ cmake -G Ninja -S "$GITHUB_WORKSPACE" -B build/entservices-softwareupdate \
 -I ${GITHUB_WORKSPACE}/entservices-testframework/Tests/headers/rdk/iarmmgrs-hal \
 -I ${GITHUB_WORKSPACE}/entservices-testframework/Tests/headers/ccec/drivers \
 -I ${GITHUB_WORKSPACE}/entservices-testframework/Tests/headers/network \
+-I ${GITHUB_WORKSPACE}/entservices-testframework/Tests/mocks \
+-I ${GITHUB_WORKSPACE}/entservices-testframework/Tests/mocks/thunder \
 -include ${GITHUB_WORKSPACE}/entservices-testframework/Tests/mocks/devicesettings.h \
 -include ${GITHUB_WORKSPACE}/entservices-testframework/Tests/mocks/Iarm.h \
 -include ${GITHUB_WORKSPACE}/entservices-testframework/Tests/mocks/Rfc.h \
