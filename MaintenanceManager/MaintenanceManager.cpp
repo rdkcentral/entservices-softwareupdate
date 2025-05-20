@@ -77,6 +77,8 @@ using namespace std;
 #endif
 
 #define TASK_SCRIPT RDK_PATH "Start_MaintenanceTasks.sh"
+#define IMAGE_CHECK_SCRIPT RDK_PATH "xconfImageCheck.sh"
+#define RFC_TASK "RFC"
 
 enum TaskIndices {
     TASK_RFC = 0,
@@ -1027,19 +1029,23 @@ namespace WPEFramework
          */
         void MaintenanceManager::startCriticalTasks()
         {
+            char rfc_command[256];
+            char img_chk_command[256];
             MM_LOGINFO("Starting Critical Tasks...");
             int rfc_task_status = -1;
             int xconf_imagecheck_status = -1;
 
-            MM_LOGINFO("Starting RFC Task");
-            rfc_task_status = system("/lib/rdk/Start_MaintenanceTasks.sh RFC &");
+            snprintf(rfc_command, sizeof(rfc_command), "%s %s &", TASK_SCRIPT, TASK_RFC);
+            MM_LOGINFO("Starting %s", rfc_command);
+            rfc_task_status = system(rfc_command);
             if (rfc_task_status != 0)
             {
                 MM_LOGINFO("Failed to run RFC Task with %d", WEXITSTATUS(rfc_task_status));
             }
 
-            MM_LOGINFO("Starting /lib/rdk/xconfImageCheck.sh");
-            xconf_imagecheck_status = system("/lib/rdk/xconfImageCheck.sh &");
+            snprintf(img_chk_command, sizeof(img_chk_command), "%s &", IMAGE_CHECK_SCRIPT);
+            MM_LOGINFO("Starting %s", img_chk_command);
+            xconf_imagecheck_status = system(img_chk_command);
             if (xconf_imagecheck_status != 0)
             {
                 MM_LOGINFO("Failed to run xconfImageCheck.sh with %d", WEXITSTATUS(xconf_imagecheck_status));
