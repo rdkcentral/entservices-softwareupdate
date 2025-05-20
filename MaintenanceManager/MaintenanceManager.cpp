@@ -1035,7 +1035,7 @@ namespace WPEFramework
             int xconf_imagecheck_status = -1;
 
             // Critical Task RFC
-            snprintf(command, sizeof(command), "%s %s &", TASK_SCRIPT, TASK_RFC);
+            snprintf(command, sizeof(command), "%s %s &", TASK_SCRIPT, RFC_TASK);
             MM_LOGINFO("Starting %s", command);
             rfc_task_status = system(command);
             if (rfc_task_status != 0)
