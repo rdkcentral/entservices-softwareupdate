@@ -578,7 +578,7 @@ namespace WPEFramework
         void MaintenanceManager::isWhoAmIEnabled()
         {
             std::string wai_prop_val;
-            if (Utils::readPropertyFile(DEVICE_PROP_FILE, WHOAMI_PROP_KEY, wai_prop_val))
+            if (Utils::readPropertyFromFile(DEVICE_PROP_FILE, WHOAMI_PROP_KEY, wai_prop_val))
             {
                 if (wai_prop_val == "true")
                 {
