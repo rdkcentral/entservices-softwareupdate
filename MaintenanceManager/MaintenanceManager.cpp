@@ -45,6 +45,7 @@
 #include "UtilsIarm.h"
 #include "UtilsJsonRpc.h"
 #include "UtilsfileExists.h"
+#include "UtilsgetFileContent.h"
 
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
 #include "libIARM.h"
@@ -1460,6 +1461,32 @@ namespace WPEFramework
 
             /* On Success; return empty to indicate no error text. */
             return (string());
+        }
+
+        void MaintenanceManager::initWhoAmISupport()
+        {
+            std::string wai_prop_val;
+            if (Utils::readPropertyFromFile(DEVICE_PROPS_FILE, WHOAMI_SUPPORT, wai_prop_val))
+            {
+                if (wai_prop_val == "true")
+                {
+                    MaintenanceManager::g_whoami_support_enabled = true;
+                    MM_LOGINFO("WhoAmI Support is enabled");
+                }
+                else if (wai_prop_val == "false")
+                {
+                    MaintenanceManager::g_whoami_support_enabled = false;
+                    MM_LOGINFO("WhoAmI Support is Disabled");
+                }
+                else
+                {
+                    MM_LOGERR("Invalid value for WHOAMI_SUPPORT: %s", wai_prop_val.c_str());
+                }
+            }
+            else
+            {
+                MM_LOGERR("Failed to read WHOAMI_SUPPORT from config file: %s", DEVICE_PROPS_FILE);
+            }
         }
 
         void MaintenanceManager::Deinitialize(PluginHost::IShell *service)
