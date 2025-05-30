@@ -669,32 +669,6 @@ namespace WPEFramework {
             string dri = (firmwareType == "DRI") ? "yes" : "no";
             string name = firmwareFilepath.substr(firmwareFilepath.find_last_of("/\\") + 1);
             string path = firmwareFilepath.substr(0, firmwareFilepath.find_last_of("/\\") + 1);
-            
-            string currentFlashedImage = readProperty("/version.txt","imagename", ":") ;
-            SWUPDATEINFO("currentFlashedImage : %s",currentFlashedImage.c_str());
-            std::string fileWithoutExtension ="";
-            // Find the position of the last '.'
-            size_t dotPos = name.find_last_of('.');
-            if (dotPos != std::string::npos) {
-                // Extract substring before the '.'
-                fileWithoutExtension = name.substr(0, dotPos);
-            } else {
-                // If no '.' is found, use the original string
-                fileWithoutExtension = name;
-            }
-
-            if (fileWithoutExtension == currentFlashedImage)
-            {
-
-                SWUPDATEERR("FW version of the active image and the image to be upgraded are the same. No upgrade required.");                
-                isFlashingInProgress = false; // Reset the flag if exiting early
-                snprintf(fwdls.status, sizeof(fwdls.status), "Status|No upgrade needed\n");
-                snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|No upgrade needed\n");
-                snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|No upgrade needed\n");
-                updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type);
-		dispatchAndUpdateEvent(_VALIDATION_FAILED,_FIRMWARE_UPTODATE);
-                return ;
-            }
 
 
             if(std::string(proto) == "usb")
@@ -737,7 +711,9 @@ namespace WPEFramework {
             if(firmwareFilepath == "")
             {
                 SWUPDATEERR("firmwareFilepath is empty");
-                dispatchAndUpdateEvent(_VALIDATION_FAILED,_FIRMWARE_NOT_FOUND);
+                state =  _VALIDATION_FAILED;
+                substate =  _FIRMWARE_NOT_FOUND;
+                FirmwareStatus(state,substate,"write");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareFilepath is empty\n");
@@ -748,7 +724,9 @@ namespace WPEFramework {
             else if (!(Utils::fileExists(firmwareFilepath.c_str()))) {
                 SWUPDATEERR("firmwareFile is not present %s",firmwareFilepath.c_str());
                 SWUPDATEERR("Local image Download Failed"); //Existing marker
-                dispatchAndUpdateEvent(_VALIDATION_FAILED,_FIRMWARE_NOT_FOUND);
+                state =  _VALIDATION_FAILED;
+                substate =  _FIRMWARE_NOT_FOUND;
+                FirmwareStatus(state,substate,"write");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareFile is not present\n");
@@ -760,7 +738,9 @@ namespace WPEFramework {
             if(firmwareType !=""){
                 if (firmwareType != "PCI" && firmwareType != "DRI") {
                     SWUPDATEERR("firmwareType must be either 'PCI' or 'DRI'.");
-                    dispatchAndUpdateEvent(_VALIDATION_FAILED,"");
+                    state =  _VALIDATION_FAILED;
+                    substate =  "";
+                    FirmwareStatus(state,substate,"write");
                     snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                     snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                     snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareType must be either 'PCI' or 'DRI'.\n");
@@ -772,7 +752,9 @@ namespace WPEFramework {
             else
             {
                 SWUPDATEERR("firmwareType is empty");
-                dispatchAndUpdateEvent(_VALIDATION_FAILED,"");
+                state =  _VALIDATION_FAILED;
+                substate =  "";
+                FirmwareStatus(state,substate,"write");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareType is empty\n");
@@ -780,6 +762,38 @@ namespace WPEFramework {
                 status = Core::ERROR_INVALID_PARAMETER;
                 return status;
             }
+
+            string name = firmwareFilepath.substr(firmwareFilepath.find_last_of("/\\") + 1);
+            string path = firmwareFilepath.substr(0, firmwareFilepath.find_last_of("/\\") + 1);
+
+            string currentFlashedImage = readProperty("/version.txt","imagename", ":") ;
+            SWUPDATEINFO("currentFlashedImage : %s",currentFlashedImage.c_str());
+            std::string fileWithoutExtension ="";
+            // Find the position of the last '.'
+            size_t dotPos = name.find_last_of('.');
+            if (dotPos != std::string::npos) {
+                // Extract substring before the '.'
+                fileWithoutExtension = name.substr(0, dotPos);
+            } else {
+                // If no '.' is found, use the original string
+                fileWithoutExtension = name;
+            }
+
+            if (fileWithoutExtension == currentFlashedImage)
+            {
+
+                SWUPDATEERR("FW version of the active image and the image to be upgraded are the same. No upgrade required.");              
+                state =  _VALIDATION_FAILED;
+                substate = _FIRMWARE_UPTODATE;
+                FirmwareStatus(state,substate,"write");
+                snprintf(fwdls.status, sizeof(fwdls.status), "Status|No upgrade needed\n");
+                snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|No upgrade needed\n");
+                snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|No upgrade needed\n");
+                updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
+                status = Core::ERROR_INVALID_PARAMETER;
+                return status;
+            }
+
 
             // Ensure only one flashing operation happens at a time
             bool expected = false;
