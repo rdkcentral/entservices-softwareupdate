@@ -844,7 +844,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
     // Should succeed
     EXPECT_TRUE(result);
 }
-TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
+TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Fail)
 {
     // Ensure the timer is created first
     plugin_->task_startTimer();
