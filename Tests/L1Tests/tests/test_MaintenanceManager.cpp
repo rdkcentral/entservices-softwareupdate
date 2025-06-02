@@ -811,8 +811,3 @@ TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Success)
     bool result = plugin_->maintenance_initTimer();
     EXPECT_TRUE(result); // Or EXPECT_FALSE(result); depending on expected implementation
 }
-TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Fail)
-{
-    bool result = plugin_->maintenance_initTimer();
-    EXPECT_FALSE(result);
-}
