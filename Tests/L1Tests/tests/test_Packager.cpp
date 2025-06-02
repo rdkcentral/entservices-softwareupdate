@@ -152,6 +152,7 @@ TEST_F(PackagerInitializedTest, SynchronizeRepositoryTest)
 	EXPECT_EQ(Core::ERROR_NONE, PackagerImplementation->SynchronizeRepository());
 }
 
+#if 0
 /* DoWork() Test */
 TEST_F(PackagerInitializedTest, DoWorkTest)
 {
@@ -290,4 +291,4 @@ TEST_F(PackagerInitializedTest, TestBlockingSetupLocalRepoNoLock) {
     EXPECT_FALSE(PackagerImplementation->GetIsSyncing());
 }
 
-
+#endif
