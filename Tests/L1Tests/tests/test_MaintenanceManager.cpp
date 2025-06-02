@@ -848,7 +848,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Fail)
 {
     // Ensure the timer is created first
     plugin_->task_startTimer();
-    MaintenanceManager::g_task_timerCreated = false;
+    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = false;
     // Attempt to delete the timer
     bool result = plugin_->maintenance_deleteTimer();
 
