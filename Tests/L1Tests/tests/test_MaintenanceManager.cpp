@@ -809,5 +809,16 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Success)
 {
     bool result = plugin_->maintenance_initTimer();
-    EXPECT_TRUE(result); // Or EXPECT_FALSE(result); depending on expected implementation
+    EXPECT_TRUE(result); 
 }
+TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Failure_AlreadyInitialized)
+{
+    // First initialization should succeed
+    bool firstInit = plugin_->maintenance_initTimer();
+    EXPECT_TRUE(firstInit);
+
+    // Second initialization when timer is already running should fail
+    bool secondInit = plugin_->maintenance_initTimer();
+    EXPECT_FALSE(secondInit);
+}
+
