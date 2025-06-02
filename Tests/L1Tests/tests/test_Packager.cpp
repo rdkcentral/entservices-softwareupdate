@@ -164,6 +164,7 @@ TEST_F(PackagerInitializedTest, DoWorkTest)
     // Call the public method using references to the strings (not pointers)
     EXPECT_EQ(Core::ERROR_NONE, PackagerImplementation->TestDoWork(name, version, arch));
 }
+#endif
 
 /* FreeOPKG() Test */
 TEST_F(PackagerInitializedTest, TestFreeOPKG) {
@@ -291,4 +292,4 @@ TEST_F(PackagerInitializedTest, TestBlockingSetupLocalRepoNoLock) {
     EXPECT_FALSE(PackagerImplementation->GetIsSyncing());
 }
 
-#endif
+
