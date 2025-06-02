@@ -844,3 +844,17 @@ TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
     // Should succeed
     EXPECT_TRUE(result);
 }
+TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
+{
+    // Ensure the timer is created first
+    plugin_->task_startTimer();
+    bool MaintenanceManager::g_task_timerCreated = false;
+    // Attempt to delete the timer
+    bool result = plugin_->maintenance_deleteTimer();
+
+    // Should succeed
+    EXPECT_FALSE(result);
+}
+
+
+
