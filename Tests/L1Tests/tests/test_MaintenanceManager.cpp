@@ -822,4 +822,14 @@ TEST_F(MaintenanceManagerTest, TaskStartTimer_Success)
     // The result should be true if the timer started successfully
     EXPECT_TRUE(result);
 }
+TEST_F(MaintenanceManagerTest, TaskStopTimer_Success)
+{
+    // Ensure the timer is created and started
+    plugin_->task_startTimer();
 
+    // Attempt to stop the timer
+    bool result = plugin_->task_stopTimer();
+
+    // Should succeed
+    EXPECT_TRUE(result);
+}
