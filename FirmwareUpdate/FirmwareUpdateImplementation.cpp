@@ -675,7 +675,7 @@ namespace WPEFramework {
             {
                 if (!copyFileToDirectory(upgrade_file.c_str(), USB_TMP_COPY)) {
                     SWUPDATEERR("File copy operation failed.\n");
-                    dispatchAndUpdateEvent(_VALIDATION_FAILED,"");
+                    dispatchAndUpdateEvent(_VALIDATION_FAILED,_FIRMWARE_NOT_ACCESSIBLE);
                     isFlashingInProgress = false; // Reset the flag if exiting early
                     snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                     snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
@@ -782,7 +782,7 @@ namespace WPEFramework {
             if (fileWithoutExtension == currentFlashedImage)
             {
 
-                SWUPDATEERR("FW version of the active image and the image to be upgraded are the same. No upgrade required.");              
+                SWUPDATEERR("FW version of the active image and the image to be upgraded are the same. No upgrade required. imagename : %s" ,name.c_str());
                 state =  _VALIDATION_FAILED;
                 substate = _FIRMWARE_UPTODATE;
                 FirmwareStatus(state,substate,"write");
@@ -790,7 +790,7 @@ namespace WPEFramework {
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|No upgrade needed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|No upgrade needed\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
-                status = Core::ERROR_INVALID_PARAMETER;
+                status = Core::ERROR_FIRMWAREUPDATE_UPTODATE;
                 return status;
             }
 
