@@ -821,4 +821,15 @@ TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Failure_AlreadyInitialized)
     bool secondInit = plugin_->maintenance_initTimer();
     EXPECT_FALSE(secondInit);
 }
+TEST_F(MaintenanceManagerTest, TaskStartTimer_Success)
+{
+    // Ensure the timer is not already created
+    plugin_->maintenance_deleteTimer();
+
+    // Attempt to start the timer
+    bool result = plugin_->task_startTimer();
+
+    // The result should be true if the timer started successfully
+    EXPECT_TRUE(result);
+}
 
