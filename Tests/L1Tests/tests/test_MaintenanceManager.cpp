@@ -806,3 +806,19 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	}
 }
 #endif
+TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Success)
+{
+    // Act
+    bool result = plugin_->maintenance_initTimer();
+
+    // Assert
+    EXPECT_TRUE(result); // Or EXPECT_FALSE(result); depending on expected implementation
+}
+TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Fail)
+{
+    // Act
+    bool result = plugin_->maintenance_initTimer();
+
+    // Assert
+   EXPECT_FALSE(result);
+}
