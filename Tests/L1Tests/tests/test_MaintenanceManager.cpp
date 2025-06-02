@@ -878,3 +878,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Fail1)
     // Should succeed
     EXPECT_FALSE(result);
 }
+TEST_F(MaintenanceManagerTest, TimerHandler_HandlesSignalCorrectly) {
+    int test_signo = SIGALRM; // or any relevant signal number
+    manager.timer_handler(test_signo);
+}
