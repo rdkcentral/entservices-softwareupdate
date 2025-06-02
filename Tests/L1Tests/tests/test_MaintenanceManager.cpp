@@ -881,5 +881,16 @@ TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Fail1)
 } */
 TEST_F(MaintenanceManagerTest, TimerHandler_HandlesSignalCorrectly) {
     int test_signo = SIGALRM; // or any relevant signal number
-    manager.timer_handler(test_signo);
+    plugin_->timer_handler(test_signo);
+}
+
+TEST(IarmEventHandlerTest, HandlesEventCorrectly) {
+    const char* owner = "TestOwner";
+    IARM_EventId_t eventId = 42; // Use an appropriate value
+    char data[100] = {0}; // Or whatever data is expected
+    size_t len = sizeof(data);
+
+    // Optionally, set up any necessary global or static state
+
+    plugin_->iarmEventHandler(owner, eventId, data, len);
 }
