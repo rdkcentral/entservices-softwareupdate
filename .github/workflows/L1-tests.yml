@@ -566,9 +566,9 @@ jobs:
           &&
           sudo ln -s ../../sda /dev/disk/by-id/usb-Generic_Flash_Disk_B32FD507-0
           &&
-          ln -s ../../sdb /dev/disk/by-id/usb-JetFlash_Transcend_16GB_UEUIRCXT-0
+          sudo ln -s ../../sdb /dev/disk/by-id/usb-JetFlash_Transcend_16GB_UEUIRCXT-0
           &&
-          ls -l /dev/disk/by-id/usb-Generic_Flash_Disk_B32FD507-0
+          sudo ls -l /dev/disk/by-id/usb-Generic_Flash_Disk_B32FD507-0
           &&
           sudo ls -l /dev/disk/by-id/usb-JetFlash_Transcend_16GB_UEUIRCXT-0
 
