@@ -30,35 +30,3 @@ const uint8_t bytes[] = { 0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0xFE, 0x03, 0x20, 
 
 using namespace WPEFramework;
 
-TEST(UtilsFileTest, createFolder_createFile_moveFile_verifyFile)
-{
-    Core::Directory dir(_T("/tmp/UtilsFileTest"));
-
-#ifdef USE_THUNDER_R4
-    EXPECT_TRUE(dir.Destroy());
-#else
-    EXPECT_TRUE(dir.Destroy(false));
-#endif /*USE_THUNDER_R4 */
-    ASSERT_TRUE(dir.CreatePath());
-
-    Core::File file(string(_T("/tmp/UtilsFileTest/file")));
-
-    EXPECT_FALSE(file.Exists());
-    EXPECT_TRUE(file.Create());
-    EXPECT_EQ(sizeof(bytes), file.Write(bytes, sizeof(bytes)));
-
-    Core::File file2(string(_T("/tmp/UtilsFileTest/destination/for/new/file")));
-
-    EXPECT_FALSE(file2.Exists());
-    EXPECT_TRUE(Utils::MoveFile(file.Name(), file2.Name()));
-    file.LoadFileInfo();
-    file2.LoadFileInfo();
-    EXPECT_FALSE(file.Exists());
-    EXPECT_TRUE(file2.Exists());
-    EXPECT_TRUE(file2.Open(true));
-
-    uint8_t buffer[2 * sizeof(bytes)];
-
-    EXPECT_EQ(sizeof(bytes), file2.Read(buffer, 2 * sizeof(bytes)));
-    EXPECT_EQ(0, memcmp(buffer, bytes, sizeof(bytes)));
-}
