@@ -239,7 +239,7 @@ namespace WPEFramework
             MaintenanceManager &operator=(const MaintenanceManager &) = delete;
 #if defined(GTEST_ENABLE)
             friend class MaintenanceManagerTest;
-            FRIEND_TEST(MaintenanceManagerTest, HandlesEventCorrectly);
+            FRIEND_TEST(MaintenanceManagerTest, iarmEventHandler);
 #endif
 
         private:
