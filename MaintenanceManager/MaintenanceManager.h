@@ -171,6 +171,9 @@ namespace WPEFramework
 
         class MaintenanceManager : public PluginHost::IPlugin, public PluginHost::JSONRPC
         {
+#if defined(GTEST_ENABLE)
+        public:
+#else
         private:
             typedef Core::JSON::String JString;
             typedef Core::JSON::ArrayType<JString> JStringArray;
@@ -242,7 +245,7 @@ namespace WPEFramework
             public:
                   using MaintenanceManager::iarmEventHandler;
 #endif
-
+#endif
         private:
             class MaintenanceTask
             {
