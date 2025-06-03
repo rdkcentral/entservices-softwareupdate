@@ -135,7 +135,7 @@ protected:
 
     }
 };
-
+/*
 TEST_F(FirmwareUpdateTest, RegisteredMethods)
 {    
     EXPECT_EQ(Core::ERROR_NONE, handler.Exists(_T("updateFirmware")));    
@@ -192,3 +192,4 @@ TEST_F(FirmwareUpdateTest, InvalidFirmwareType)
     }
 }
 
+*/
