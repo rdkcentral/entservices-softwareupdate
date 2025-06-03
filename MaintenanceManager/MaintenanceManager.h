@@ -175,6 +175,7 @@ namespace WPEFramework
         public:
 #else
         private:
+#endif
             typedef Core::JSON::String JString;
             typedef Core::JSON::ArrayType<JString> JStringArray;
             typedef Core::JSON::Boolean JBool;
@@ -244,7 +245,6 @@ namespace WPEFramework
             FRIEND_TEST(MaintenanceManagerTest, iarmEventHandler);
             public:
                   using MaintenanceManager::iarmEventHandler;
-#endif
 #endif
         private:
             class MaintenanceTask
