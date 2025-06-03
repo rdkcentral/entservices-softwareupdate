@@ -892,5 +892,5 @@ TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
 
     // Optionally, set up any necessary global or static state
 
-    plugin_->iarmEventHandler(owner, eventId, data, len);
+    iarmEventHandler(owner, eventId, data, len);
 } 
