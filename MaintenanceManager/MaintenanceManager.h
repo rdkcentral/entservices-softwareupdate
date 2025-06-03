@@ -38,9 +38,9 @@
 #include "rfcapi.h"
 #include "cSettings.h"
 #include <interfaces/IAuthService.h>
-#if defined(GTEST_ENABLE)
+//#if defined(GTEST_ENABLE)
 #include<gtest/gtest.h>
-#endif
+//#endif
 
 /* ---- LOGGING ---- */
 #ifdef ENABLE_JOURNAL_LOGGING
