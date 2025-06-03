@@ -37,7 +37,6 @@
 #include "sysMgr.h"
 #include "rfcapi.h"
 #include "cSettings.h"
-#include <gtest/gtest.h>
 #include <interfaces/IAuthService.h>
 
 /* ---- LOGGING ---- */
