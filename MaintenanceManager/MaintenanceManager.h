@@ -240,12 +240,14 @@ namespace WPEFramework
             /* We do not allow this plugin to be copied !! */
             MaintenanceManager(const MaintenanceManager &) = delete;
             MaintenanceManager &operator=(const MaintenanceManager &) = delete;
+/*
 #if defined(GTEST_ENABLE)
             friend class MaintenanceManagerTest;
             FRIEND_TEST(MaintenanceManagerTest, iarmEventHandler);
             public:
                   using MaintenanceManager::iarmEventHandler;
 #endif
+*/
         private:
             class MaintenanceTask
             {
