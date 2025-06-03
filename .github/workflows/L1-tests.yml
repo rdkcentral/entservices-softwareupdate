@@ -568,9 +568,9 @@ jobs:
           &&
           sudo ln -s ../../sdb /dev/disk/by-id/usb-JetFlash_Transcend_16GB_UEUIRCXT-0
           &&
-          sudo ls -l /dev/disk/by-id/usb-Generic_Flash_Disk_B32FD507-0
+          ls -l /dev/disk/by-id/usb-Generic_Flash_Disk_B32FD507-0
           &&
-          sudo ls -l /dev/disk/by-id/usb-JetFlash_Transcend_16GB_UEUIRCXT-0
+          ls -l /dev/disk/by-id/usb-JetFlash_Transcend_16GB_UEUIRCXT-0
 
       - name: Run unit tests with valgrind
         if: ${{ !env.ACT }}
