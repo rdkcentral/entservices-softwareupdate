@@ -141,7 +141,7 @@ target_link_directories(${MODULE_NAME} PUBLIC ${CMAKE_INSTALL_PREFIX}/lib/wpefra
 
 target_link_libraries(${MODULE_NAME} ${TEST_LIB})
 
-target_compile_definitions(${MODULE_NAME PRIVATE GTEST_ENABLE)
+target_compile_definitions(${MODULE_NAME} PRIVATE GTEST_ENABLE)
 
 target_include_directories(${MODULE_NAME}
         PUBLIC
