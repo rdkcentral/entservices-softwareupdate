@@ -239,6 +239,8 @@ namespace WPEFramework
 #if defined(GTEST_ENABLE)
             friend class MaintenanceManagerTest;
             FRIEND_TEST(MaintenanceManagerTest, iarmEventHandler);
+            public:
+                  using MaintenanceManager::iarmEventHandler;
 #endif
 
         private:
