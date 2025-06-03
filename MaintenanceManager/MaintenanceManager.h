@@ -236,6 +236,7 @@ namespace WPEFramework
             MaintenanceManager(const MaintenanceManager &) = delete;
             MaintenanceManager &operator=(const MaintenanceManager &) = delete;
             friend class MaintenanceManagerTest;
+            FRIEND_TEST(MaintenanceManagerTest, HandlesEventCorrectly)
 
         private:
             class MaintenanceTask
