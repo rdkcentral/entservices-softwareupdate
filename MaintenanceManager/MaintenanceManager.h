@@ -235,6 +235,7 @@ namespace WPEFramework
             /* We do not allow this plugin to be copied !! */
             MaintenanceManager(const MaintenanceManager &) = delete;
             MaintenanceManager &operator=(const MaintenanceManager &) = delete;
+            friend class MaintenanceManagerTest;
 
         private:
             class MaintenanceTask
