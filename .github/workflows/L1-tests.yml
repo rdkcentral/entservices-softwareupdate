@@ -16,7 +16,9 @@ env:
 jobs:
   L1-tests:
     name: Build and run unit tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/rdkcentral/docker-rdk-ci:latest
     strategy:
       matrix:
         compiler: [ gcc, clang ]
