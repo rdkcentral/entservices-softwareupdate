@@ -121,6 +121,7 @@ add_plugin_test_ex(PLUGIN_FIRMWAREUPDATE tests/test_FirmwareUpdate.cpp "${FIRMWA
 # PLUGIN_MAINTENANCEMANAGER
 set (MAINTENANCEMANAGER_INC ${CMAKE_SOURCE_DIR}/../entservices-softwareupdate/MaintenanceManager ${CMAKE_SOURCE_DIR}/../entservices-softwareupdate/helpers)
 add_plugin_test_ex(PLUGIN_MAINTENANCEMANAGER tests/test_MaintenanceManager.cpp "${MAINTENANCEMANAGER_INC}" "${NAMESPACE}MaintenanceManager")
+target_compile_definitions(PLUGIN_MAINTENANCEMANAGER PRIVATE GTEST_ENABLE)
 
 add_library(${MODULE_NAME} SHARED ${TEST_SRC})
 
