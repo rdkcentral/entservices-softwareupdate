@@ -39,7 +39,6 @@
 #include "cSettings.h"
 #include <interfaces/IAuthService.h>
 //#if defined(GTEST_ENABLE)
-#include<gtest/gtest.h>
 //#endif
 
 /* ---- LOGGING ---- */
