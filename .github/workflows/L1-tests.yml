@@ -613,7 +613,7 @@ jobs:
           -o coverage
           -t "entservices-softwareupdate coverage"
           filtered_coverage.info
-          lcov --extract filtered_coverage.info "*/MantenanceManager/*" -o maintenancemanager_coverage.info
+          lcov --extract filtered_coverage.info "*/MaintenanceManager/*" -o maintenancemanager_coverage.info
           genhtml -o coverage -t "MaintenanceManager coverage" maintenancemanager_coverage.info
 
       - name: Upload artifacts
