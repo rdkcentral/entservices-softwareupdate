@@ -61,6 +61,8 @@ public:
     MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
     MOCK_METHOD1(setDeviceInitializationContext, bool(const JsonObject&));
     MOCK_METHOD0(subscribeToDeviceInitializationEvent, bool());
+    MOCK_CONST_METHOD0(AddRef, void());
+    MOCK_CONST_METHOD0(Release, uint32_t());
 };
 
 class MaintenanceManagerTest : public Test {
