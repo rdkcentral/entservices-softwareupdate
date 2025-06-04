@@ -927,10 +927,35 @@ TEST_F(MaintenanceManagerTest, ReturnsTrueAndSetsActiveStatus) {
     //EXPECT_EQ(status, "active"); 
 }
 */
-
+/*
 TEST_F(MaintenanceManagerTest, SecManagerActive_DeviceContextSuccess1) {
     std::string activation_status = "not-activated";
     // ... various EXPECT_CALL statements ...
+    EXPECT_TRUE(manager.knowWhoAmI(activation_status));
+}*/
+
+TEST_F(MaintenanceManagerTest, SecManagerActive_DeviceContextSuccess1) {
+    std::string activation_status = "not-activated";
+    // Mock getServiceState to return ACTIVATED
+    EXPECT_CALL(manager, getServiceState(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<2>(PluginHost::IShell::state::ACTIVATED), Return(Core::ERROR_NONE)));
+    // Mock Thunder plugin handle
+    EXPECT_CALL(manager, getThunderPluginHandle(_)).WillOnce(Return(&mockThunderClient));
+    // Mock Thunder call to return success and context
+    EXPECT_CALL(mockThunderClient, Invoke(_, _, _, _))
+        .WillOnce([](int, const std::string&, const JsonObject&, JsonObject& out) {
+            out["success"] = true;
+            JsonObject context;
+            context["partnerId"] = "pid";
+            context["osClass"] = "osclass";
+            context["regionalConfigService"] = "rcs";
+            out["deviceInitializationContext"] = context;
+        });
+    // Mock context setter
+    EXPECT_CALL(manager, setDeviceInitializationContext(_)).WillOnce(Return(true));
+    // Mock event subscription
+    EXPECT_CALL(manager, subscribeToDeviceInitializationEvent()).WillOnce(Return(true));
+
     EXPECT_TRUE(manager.knowWhoAmI(activation_status));
 }
 
