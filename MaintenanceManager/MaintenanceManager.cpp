@@ -561,7 +561,7 @@ namespace WPEFramework
             MM_LOGINFO("Worker Thread Completed");
         } /* end of task_execution_thread() */
 
-#if defined(ENABLE_WHOAMI)
+#if defined(ENABLE_WHOAMI) || defined(GTEST_ENABLE)
         /**
          * @brief Determines the device identity by querying the Security Manager.
          *
