@@ -898,7 +898,7 @@ TEST_F(MaintenanceManagerTest, ReturnsTrueAndSetsActiveStatus) {
     std::string status;
     // Optionally, set up any mocks or preconditions needed
 
-    bool result = manager.knowWhoAmI(status);
+    bool result = plugin_->knowWhoAmI(status);
 
     EXPECT_TRUE(result);
     //EXPECT_EQ(status, "active"); 
