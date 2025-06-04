@@ -52,7 +52,8 @@ extern "C" int __real_pclose(FILE* pipe);
 
 class MockThunderClient {
 public:
-    MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
+    MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
+    //MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
 };
 
 class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
