@@ -55,7 +55,7 @@ public:
     MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
 };
 
-class MockMaintenanceManager : public MaintenanceManager {
+class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
 public:
     MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
     MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
