@@ -920,7 +920,13 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
     // Assume getThunderPluginHandle returns a valid pointer
     // and Subscribe returns Core::ERROR_NONE
     // Set up the mock or override as needed
+    auto mockThunderClient = new MockThunderClient();
+    EXPECT_CALL(mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(Core::ERROR_NONE));
 
+    // Assume manager is a MockMaintenanceManager
+    EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
+        .WillOnce(::testing::Return(mockThunderClient));
     bool result = plugin_->subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
     //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
