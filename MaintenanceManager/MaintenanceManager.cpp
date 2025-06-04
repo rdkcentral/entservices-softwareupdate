@@ -2059,6 +2059,7 @@ namespace WPEFramework
                 if (fgets(offset, sizeof(offset), fp) == NULL)
                 {
                     MM_LOGERR("Failed to read timezone offset");
+                    pclose(fp);
                     return -1;
                 }
                 pclose(fp);
