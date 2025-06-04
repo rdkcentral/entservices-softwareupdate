@@ -916,6 +916,17 @@ TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
 
     plugin_->iarmEventHandler(owner, eventId, data, len);
 } 
+TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
+    // Assume getThunderPluginHandle returns a valid pointer
+    // and Subscribe returns Core::ERROR_NONE
+    // Set up the mock or override as needed
+
+    bool result = plugin_->subscribeToDeviceInitializationEvent();
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
+}
+
+
 /*
 TEST_F(MaintenanceManagerTest, ReturnsTrueAndSetsActiveStatus) {
     std::string status;
