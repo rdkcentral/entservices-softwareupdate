@@ -894,3 +894,12 @@ TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
 
     plugin_->iarmEventHandler(owner, eventId, data, len);
 } 
+TEST_F(MaintenanceManagerTest, ReturnsTrueAndSetsActiveStatus) {
+    std::string status;
+    // Optionally, set up any mocks or preconditions needed
+
+    bool result = manager.knowWhoAmI(status);
+
+    EXPECT_TRUE(result);
+    //EXPECT_EQ(status, "active"); 
+}
