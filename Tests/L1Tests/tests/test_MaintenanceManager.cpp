@@ -41,6 +41,10 @@ using ::testing::AssertionResult;
 using ::testing::AssertionSuccess;
 using ::testing::AssertionFailure;
 
+using ::testing::Return;
+using ::testing::DoAll;
+using ::testing::SetArgReferee;
+
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
 
@@ -53,7 +57,8 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
-
+    MockMaintenanceManager manager;
+    MockThunderClient mockThunderClient;
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
         , handler_(*plugin_)
@@ -903,3 +908,42 @@ TEST_F(MaintenanceManagerTest, ReturnsTrueAndSetsActiveStatus) {
     EXPECT_TRUE(result);
     //EXPECT_EQ(status, "active"); 
 }
+class MockThunderClient {
+public:
+    MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
+};
+
+class MockMaintenanceManager : public MaintenanceManager {
+public:
+    MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
+    MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
+    MOCK_METHOD1(setDeviceInitializationContext, bool(const JsonObject&));
+    MOCK_METHOD0(subscribeToDeviceInitializationEvent, bool());
+};
+
+
+TEST_F(MaintenanceManagerTest, SecManagerActive_DeviceContextSuccess) {
+    std::string activation_status = "not-activated";
+    // getServiceState returns ACTIVE
+    EXPECT_CALL(manager, getServiceState(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<2>(PluginHost::IShell::state::ACTIVATED), Return(Core::ERROR_NONE)));
+    // Thunder plugin handle valid
+    EXPECT_CALL(manager, getThunderPluginHandle(_)).WillOnce(Return(&mockThunderClient));
+    // Thunder call returns success + deviceInitializationContext
+    EXPECT_CALL(mockThunderClient, Invoke(_, _, _, _))
+        .WillOnce([](int, const std::string&, const JsonObject&, JsonObject& out) {
+            out["success"] = true;
+            JsonObject context;
+            context["partnerId"] = "pid";
+            context["osClass"] = "osclass";
+            context["regionalConfigService"] = "rcs";
+            out["deviceInitializationContext"] = context;
+        });
+    // setDeviceInitializationContext returns true
+    EXPECT_CALL(manager, setDeviceInitializationContext(_)).WillOnce(Return(true));
+    // Event subscription logic
+    EXPECT_CALL(manager, subscribeToDeviceInitializationEvent()).WillOnce(Return(true));
+
+    EXPECT_TRUE(manager.knowWhoAmI(activation_status));
+}
+
