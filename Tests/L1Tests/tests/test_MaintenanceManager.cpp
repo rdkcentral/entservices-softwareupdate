@@ -923,7 +923,7 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
     // Set up the mock or override as needed
     auto mockThunderClient = new MockThunderClient();
     EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
-    //    .WillOnce(::testing::Return(mockThunderClient));
+        .WillOnce(::testing::Return(mockThunderClient));
     EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
         .WillOnce(::testing::Return(Core::ERROR_NONE));
 
