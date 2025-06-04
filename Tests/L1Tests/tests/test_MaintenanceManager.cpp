@@ -928,7 +928,11 @@ TEST_F(MaintenanceManagerTest, ReturnsTrueAndSetsActiveStatus) {
 }
 */
 
-
+TEST_F(MaintenanceManagerTest, SecManagerActive_DeviceContextSuccess) {
+    std::string activation_status = "not-activated";
+    // ... various EXPECT_CALL statements ...
+    EXPECT_TRUE(manager.knowWhoAmI(activation_status));
+}
 
 TEST_F(MaintenanceManagerTest, SecManagerActive_DeviceContextSuccess) {
     std::string activation_status = "not-activated";
