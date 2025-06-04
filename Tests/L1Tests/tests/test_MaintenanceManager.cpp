@@ -928,7 +928,7 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
     // Assume manager is a MockMaintenanceManager
     EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
         .WillOnce(::testing::Return(mockThunderClient));
-    bool result = plugin_->subscribeToDeviceInitializationEvent();
+    bool result = manager.subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
     //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
 }
