@@ -48,6 +48,21 @@ using ::testing::SetArgReferee;
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
 
+
+
+class MockThunderClient {
+public:
+    MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
+};
+
+class MockMaintenanceManager : public MaintenanceManager {
+public:
+    MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
+    MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
+    MOCK_METHOD1(setDeviceInitializationContext, bool(const JsonObject&));
+    MOCK_METHOD0(subscribeToDeviceInitializationEvent, bool());
+};
+
 class MaintenanceManagerTest : public Test {
 protected:
     Core::ProxyType<Plugin::MaintenanceManager> plugin_;
@@ -910,18 +925,7 @@ TEST_F(MaintenanceManagerTest, ReturnsTrueAndSetsActiveStatus) {
     //EXPECT_EQ(status, "active"); 
 }
 */
-class MockThunderClient {
-public:
-    MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
-};
 
-class MockMaintenanceManager : public MaintenanceManager {
-public:
-    MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
-    MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
-    MOCK_METHOD1(setDeviceInitializationContext, bool(const JsonObject&));
-    MOCK_METHOD0(subscribeToDeviceInitializationEvent, bool());
-};
 
 
 TEST_F(MaintenanceManagerTest, SecManagerActive_DeviceContextSuccess) {
