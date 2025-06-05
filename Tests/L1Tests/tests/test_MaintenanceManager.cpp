@@ -925,7 +925,7 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
     bool result = plugin_->subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
 }
-
+/*
 TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
     MockThunderClient mockThunderClient;
     // Set up the manager mock to return our ThunderClient mock
@@ -941,8 +941,7 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
     bool result = manager.subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
 }
-
-
+*/
 
 /*
 
