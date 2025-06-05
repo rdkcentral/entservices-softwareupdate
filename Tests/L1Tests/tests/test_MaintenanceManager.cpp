@@ -77,6 +77,7 @@ protected:
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
     MockMaintenanceManager manager;
     MockThunderClient mockThunderClient;
+    WPEFramework::Plugin::MaintenanceManager Mg;
     MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MaintenanceManager*(const char*));
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
@@ -947,7 +948,7 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
       //  .WillOnce(::testing::Return(true));
 
     // Only call the mock, not the real implementation
-    bool result = manager.subscribeToDeviceInitializationEvent();
+    bool result = Mg.subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
 }
 
