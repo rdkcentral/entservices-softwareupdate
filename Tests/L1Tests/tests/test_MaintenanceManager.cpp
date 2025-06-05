@@ -952,7 +952,7 @@ TEST_F(MaintenanceManagerTest, ReturnsHandleForKnownCallsign) {
     // You may need to set up the plugin system so that KnownPlugin exists.
     // This might involve initializing WPEFramework or mocking dependencies.
 
-    auto* handle = plugin_->manager.getThunderPluginHandle(knownCallsign);
+    auto* handle = plugin_->getThunderPluginHandle(knownCallsign);
    // auto* handle = manager.getThunderPluginHandle(knownCallsign);
 
     // Depending on your framework, it might be nullptr if not set up correctly.
