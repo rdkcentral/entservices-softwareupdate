@@ -952,7 +952,7 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
       .WillOnce(::testing::Return(true));
 
     // Only call the mock, not the real implementation
-    bool result = Mg.subscribeToDeviceInitializationEvent();
+    bool result = manager.subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
 }
 
