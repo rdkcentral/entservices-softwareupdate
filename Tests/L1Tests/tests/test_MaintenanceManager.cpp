@@ -53,9 +53,9 @@ extern "C" int __real_pclose(FILE* pipe);
 class MockThunderClient {
 public:
     //MOCK_METHOD(int32_t, Subscribe, (int timeout, const std::string& event, void (MaintenanceManager::*)(const JsonObject&), MaintenanceManager*), ());
-    MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
-    //MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
-    MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
+    //MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
+    MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
+    
 };
 
 class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
@@ -63,6 +63,7 @@ public:
     MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
     //MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
     MOCK_METHOD1(getThunderPluginHandle, MockMaintenanceManager*(const char*));
+    MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
     //MOCK_METHOD1(setDeviceInitializationContext, bool(const JsonObject&));
     //MOCK_METHOD0(subscribeToDeviceInitializationEvent, bool());
     MOCK_CONST_METHOD0(AddRef, void());
