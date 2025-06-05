@@ -952,8 +952,8 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
 EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
     .WillOnce(::testing::Return(mockThunderClient));
 
-//EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-   // .WillOnce(::testing::Return(Core::ERROR_NONE));
+EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    .WillOnce(::testing::Return(Core::ERROR_NONE));
 
 
   //  EXPECT_CALL(manager, subscribeToDeviceInitializationEvent())
