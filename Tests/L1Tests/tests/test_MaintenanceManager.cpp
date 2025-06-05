@@ -61,8 +61,8 @@ class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
 public:
     MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
     MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
-    MOCK_METHOD1(setDeviceInitializationContext, bool(const JsonObject&));
-    MOCK_METHOD0(subscribeToDeviceInitializationEvent, bool());
+    //MOCK_METHOD1(setDeviceInitializationContext, bool(const JsonObject&));
+    //MOCK_METHOD0(subscribeToDeviceInitializationEvent, bool());
     MOCK_CONST_METHOD0(AddRef, void());
     MOCK_CONST_METHOD0(Release, uint32_t());
 };
@@ -960,7 +960,7 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
     //  .WillOnce(::testing::Return(true));
 
     // Only call the mock, not the real implementation
-    bool result = manager.subscribeToDeviceInitializationEvent();
+    bool result = plugin_->subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
     delete(mockThunderClient);
 }
