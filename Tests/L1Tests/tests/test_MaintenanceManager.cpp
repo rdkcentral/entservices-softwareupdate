@@ -44,26 +44,37 @@ using ::testing::AssertionFailure;
 using ::testing::Return;
 using ::testing::DoAll;
 using ::testing::SetArgReferee;
+using ThunderLinkType = WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>;
 
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
 
 
-
+/*
 class MockThunderClient {
 public:
     //MOCK_METHOD(int32_t, Subscribe, (int timeout, const std::string& event, void (MaintenanceManager::*)(const JsonObject&), MaintenanceManager*), ());
     //MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
     MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
+    MOCK_METHOD1(getThunderPluginHandle, ThunderLinkType*(const char*));
     
+}; */
+
+class MockThunderClient : public ThunderLinkType {
+public:
+    MockThunderClient(const char* callsign, const std::string& a, bool b, const std::string& query)
+        : ThunderLinkType(callsign, a, b, query) {}
+    MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
 };
 
 class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
 public:
     MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
     //MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
-    MOCK_METHOD1(getThunderPluginHandle, MockMaintenanceManager*(const char*));
-    MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
+   
+    //MOCK_METHOD1(getThunderPluginHandle, MockMaintenanceManager*(const char*));
+    //MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
+    
     //MOCK_METHOD1(setDeviceInitializationContext, bool(const JsonObject&));
     //MOCK_METHOD0(subscribeToDeviceInitializationEvent, bool());
     MOCK_CONST_METHOD0(AddRef, void());
@@ -966,7 +977,7 @@ TEST_F(MaintenanceManagerTest, ReturnsHandleForKnownCallsign) {
     // EXPECT_EQ(handle->SomeProperty(), ExpectedValue);
 }
 */
-
+/*
 TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
    // MockThunderClient mockThunderClient;
     // Set up the manager mock to return our ThunderClient mock
@@ -991,7 +1002,23 @@ EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing:
     EXPECT_TRUE(result);
     delete mockThunderClient;
 }
+*/
 
+TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
+    const char* callsign = "test";
+    std::string query = "token=testtoken";
+    // You can use a real ThunderLinkType or a mock, as long as it matches the signature.
+    auto* mockThunderClient = new ThunderLinkType(callsign, "", false, query);
+    EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
+        .WillOnce(::testing::Return(mockThunderClient));
+    // You may also need to mock/intercept Subscribe on this object if it is virtual
+
+    // Proceed with your test as normal
+    bool result = manager.subscribeToDeviceInitializationEvent();
+    EXPECT_TRUE(result);
+
+    delete mockThunderClient;
+}
 
 /*
 
