@@ -940,6 +940,22 @@ thunder_client = new WPEFramework::JSONRPC::LinkType<Core::JSON::IElement>(calls
 }
 */
 
+TEST_F(MaintenanceManagerTest, ReturnsHandleForKnownCallsign) {
+    const char* knownCallsign = "KnownPlugin";
+    // You may need to set up the plugin system so that KnownPlugin exists.
+    // This might involve initializing WPEFramework or mocking dependencies.
+
+    auto* handle = manager.getThunderPluginHandle(knownCallsign);
+
+    // Depending on your framework, it might be nullptr if not set up correctly.
+    // If it's set up, check that the handle is not nullptr.
+    EXPECT_NE(handle, nullptr);
+
+    // Optionally, verify handle properties
+    // EXPECT_EQ(handle->SomeProperty(), ExpectedValue);
+}
+
+
 TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
    // MockThunderClient mockThunderClient;
     // Set up the manager mock to return our ThunderClient mock
