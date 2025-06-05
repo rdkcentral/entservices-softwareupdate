@@ -84,7 +84,7 @@ protected:
     MockThunderClient mockThunderClient;
     //WPEFramework::Plugin::MaintenanceManager Mg;
     //MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MaintenanceManager*(const char*));
-    MOCK_METHOD(void*, QueryInterfaceByCallsign, (const uint32_t, const string&), (override));
+    //MOCK_METHOD(void*, QueryInterfaceByCallsign, (const uint32_t, const string&), (override));
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
         , handler_(*plugin_)
@@ -952,7 +952,8 @@ TEST_F(MaintenanceManagerTest, ReturnsHandleForKnownCallsign) {
     // You may need to set up the plugin system so that KnownPlugin exists.
     // This might involve initializing WPEFramework or mocking dependencies.
 
-    auto* handle = manager.getThunderPluginHandle(knownCallsign);
+    auto* handle = plugin_->manager.getThunderPluginHandle(knownCallsign);
+   // auto* handle = manager.getThunderPluginHandle(knownCallsign);
 
     // Depending on your framework, it might be nullptr if not set up correctly.
     // If it's set up, check that the handle is not nullptr.
