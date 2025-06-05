@@ -807,6 +807,15 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	}
 }
 #endif
+TEST_F(MaintenanceManagerTest, InitTimerReturnsTrueOnSuccess) {
+    // Act
+    bool result = plugin_->maintenance_initTimer();
+
+    // Assert
+    EXPECT_TRUE(result);
+}
+
+
 TEST_F(MaintenanceManagerTest, SubscribeToDeviceInitializationEventReturnsTrueOnSuccess) {
     
     bool result = plugin_->subscribeToDeviceInitializationEvent();
