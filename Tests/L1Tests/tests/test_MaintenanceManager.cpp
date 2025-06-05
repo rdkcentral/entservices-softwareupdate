@@ -77,7 +77,7 @@ protected:
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
     MockMaintenanceManager manager;
     MockThunderClient mockThunderClient;
-    MOCK_METHOD1(getThunderPluginHandle, MaintenanceManager*(const char*));
+    MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MaintenanceManager*(const char*));
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
         , handler_(*plugin_)
