@@ -167,6 +167,14 @@ protected:
 
         dispatcher_ = static_cast<PLUGINHOST_DISPATCHER*>(plugin_->QueryInterface(PLUGINHOST_DISPATCHER_ID));
         dispatcher_->Activate(&service_);
+
+	EXPECT_CALL(service, QueryInterfaceByCallsign(::testing::_, ::testing::_))
+            .Times(1)
+            .WillOnce(::testing::Invoke(
+                [&](const uint32_t, const string& name) -> void* {
+                    EXPECT_EQ(name, string(_T("org.rdk.MaintenanceManager.1")));
+                    return nullptr;
+                }));
     }
 
     virtual ~MaintenanceManagerInitializedEventTest() override
