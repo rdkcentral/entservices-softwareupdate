@@ -52,9 +52,8 @@ extern "C" int __real_pclose(FILE* pipe);
 
 class MockThunderClient {
 public:
-    MOCK_METHOD(int32_t, Subscribe, (int timeout, const std::string& event,
-                                     void (MaintenanceManager::*)(const JsonObject&), MaintenanceManager*), ());
-    //MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
+    //MOCK_METHOD(int32_t, Subscribe, (int timeout, const std::string& event, void (MaintenanceManager::*)(const JsonObject&), MaintenanceManager*), ());
+    MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
     //MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
 };
 
