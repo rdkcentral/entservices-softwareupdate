@@ -1405,11 +1405,11 @@ namespace WPEFramework
             MM_LOGINFO("Attempting to subscribe for %s events", event.c_str());
 
             thunder_client = getThunderPluginHandle(secMgr_callsign_ver);
+            MM_LOGINFO("Reaching here %s", event.c_str());
             if (thunder_client == nullptr)
             {
                 MM_LOGINFO("Failed to get plugin handle");
             }
-            MM_LOGINFO("Reaching here %s", event.c_str());
             else
             {
                 MM_LOGINFO("Reaching here inside else %s", event.c_str());
