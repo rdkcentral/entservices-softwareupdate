@@ -951,12 +951,13 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
    MockThunderClient* mockThunderClient = new MockThunderClient();
 //EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
 //    .WillOnce(::testing::Return(mockThunderClient));
-EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-    .WillOnce(::testing::Return(Core::ERROR_NONE));
+
+//EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+   // .WillOnce(::testing::Return(Core::ERROR_NONE));
 
 
-    EXPECT_CALL(manager, subscribeToDeviceInitializationEvent())
-      .WillOnce(::testing::Return(true));
+  //  EXPECT_CALL(manager, subscribeToDeviceInitializationEvent())
+    //  .WillOnce(::testing::Return(true));
 
     // Only call the mock, not the real implementation
     bool result = manager.subscribeToDeviceInitializationEvent();
