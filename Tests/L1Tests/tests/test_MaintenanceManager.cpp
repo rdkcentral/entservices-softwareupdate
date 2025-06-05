@@ -70,6 +70,7 @@ public:
 class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
 public:
     MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
+    MOCK_METHOD1(getThunderPluginHandle, ThunderLinkType*(const char*));
     //MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
    
     //MOCK_METHOD1(getThunderPluginHandle, MockMaintenanceManager*(const char*));
