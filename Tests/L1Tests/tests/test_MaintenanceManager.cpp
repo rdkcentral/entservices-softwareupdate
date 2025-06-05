@@ -973,7 +973,7 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
    // EXPECT_CALL(mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
       //  .WillOnce(::testing::Return(Core::ERROR_NONE));
     // If subscribeToDeviceInitializationEvent is virtual and implemented in the mock:
-   MockThunderClient* mockThunderClient = new MockMaintenanceManager();
+   MockMaintenanceManager* mockThunderClient = new MockMaintenanceManager();
 EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
     .WillOnce(::testing::Return(mockThunderClient));
 
