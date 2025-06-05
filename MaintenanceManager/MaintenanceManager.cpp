@@ -1409,8 +1409,10 @@ namespace WPEFramework
             {
                 MM_LOGINFO("Failed to get plugin handle");
             }
+            MM_LOGINFO("Reaching here", event.c_str());
             else
             {
+                MM_LOGINFO("Reaching here inside else", event.c_str());
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
                 if (status == Core::ERROR_NONE)
                 {
