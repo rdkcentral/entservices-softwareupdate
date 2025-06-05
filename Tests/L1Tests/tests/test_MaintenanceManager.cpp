@@ -75,6 +75,8 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
+    MOCK_CONST_METHOD0(AddRef, void());
+    MOCK_CONST_METHOD0(Release, uint32_t());
     MockMaintenanceManager manager;
     MockThunderClient mockThunderClient;
     WPEFramework::Plugin::MaintenanceManager Mg;
