@@ -52,7 +52,9 @@ extern "C" int __real_pclose(FILE* pipe);
 
 class MockThunderClient {
 public:
-    MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
+    MOCK_METHOD(int32_t, Subscribe, (int timeout, const std::string& event,
+                                     void (MaintenanceManager::*)(const JsonObject&), MaintenanceManager*), ());
+    //MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
     //MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
 };
 
@@ -940,14 +942,20 @@ thunder_client = new WPEFramework::JSONRPC::LinkType<Core::JSON::IElement>(calls
 */
 
 TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
-    MockThunderClient mockThunderClient;
+   // MockThunderClient mockThunderClient;
     // Set up the manager mock to return our ThunderClient mock
     //EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
        // .WillOnce(::testing::Return(&mockThunderClient));
    // EXPECT_CALL(mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
       //  .WillOnce(::testing::Return(Core::ERROR_NONE));
     // If subscribeToDeviceInitializationEvent is virtual and implemented in the mock:
-   
+   MockThunderClient* mockThunderClient = new MockThunderClient();
+EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
+    .WillOnce(::testing::Return(mockThunderClient));
+EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    .WillOnce(::testing::Return(Core::ERROR_NONE));
+
+
     EXPECT_CALL(manager, subscribeToDeviceInitializationEvent())
       .WillOnce(::testing::Return(true));
 
