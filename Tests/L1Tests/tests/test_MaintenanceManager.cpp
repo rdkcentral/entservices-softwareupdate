@@ -62,8 +62,10 @@ public:
 
 class MockThunderClient : public ThunderLinkType {
 public:
-    MockThunderClient(const char* callsign, const std::string& a, bool b, const std::string& query)
-        : ThunderLinkType(callsign, a, b, query) {}
+    //MockThunderClient(const char* callsign, const std::string& a, bool b, const std::string& query)
+    //    : ThunderLinkType(callsign, a, b, query) {}
+    MockThunderClient(const std::string& callsign, bool directed = false, const std::string& query = "")
+        : WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>(callsign, directed, query) {}
     MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
 };
 
