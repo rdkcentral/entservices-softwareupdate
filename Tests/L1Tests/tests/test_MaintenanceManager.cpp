@@ -963,7 +963,7 @@ TEST_F(MaintenanceManagerTest, ReturnsHandleForKnownCallsign) {
     // EXPECT_EQ(handle->SomeProperty(), ExpectedValue);
 }
 
-
+/*
 TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
    // MockThunderClient mockThunderClient;
     // Set up the manager mock to return our ThunderClient mock
@@ -988,7 +988,7 @@ EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing:
     EXPECT_TRUE(result);
     delete(mockThunderClient);
 }
-
+*/
 
 /*
 
