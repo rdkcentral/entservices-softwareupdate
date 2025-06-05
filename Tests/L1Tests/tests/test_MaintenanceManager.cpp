@@ -986,7 +986,7 @@ EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing:
     // Only call the mock, not the real implementation
     bool result = manager.subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
-    delete(mockThunderClient);
+    delete mockThunderClient;
 }
 
 
