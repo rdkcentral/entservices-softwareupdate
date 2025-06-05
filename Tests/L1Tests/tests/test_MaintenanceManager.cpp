@@ -919,6 +919,14 @@ TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
 } 
 
 TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
+   
+
+    // Only call the mock, not the real implementation
+    bool result = plugin_->subscribeToDeviceInitializationEvent();
+    EXPECT_TRUE(result);
+}
+
+TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
     MockThunderClient mockThunderClient;
     // Set up the manager mock to return our ThunderClient mock
     EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
