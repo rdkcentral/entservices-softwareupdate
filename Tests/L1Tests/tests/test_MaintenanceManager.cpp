@@ -663,6 +663,14 @@ TEST_F(MaintenanceManagerTest, GetServiceState_Unavailable) {
     EXPECT_EQ(result, Core::ERROR_UNAVAILABLE);
 }
 
+TEST_F(MaintenanceManagerTest, SubscribeToDeviceInitializationEventReturnsTrueOnSuccess) {
+    
+    bool result = plugin_->subscribeToDeviceInitializationEvent();
+
+    // Check the expected result (assume true on success)
+    EXPECT_TRUE(result);
+}
+
 TEST_F(MaintenanceManagerTest, GetServiceState_Available) {
     PluginHost::IShell::state state;
     EXPECT_CALL(service, QueryInterfaceByCallsign("test"))
@@ -767,15 +775,7 @@ TEST_F(ParseConfTest, FileDoesNotExist) {
 
     EXPECT_FALSE(result);
 }
-TEST_F(MaintenanceManagerTest, SubscribeToDeviceInitializationEventReturnsTrueOnSuccess) {
-    // Setup any preconditions if needed
 
-    // Call the method
-    bool result = WPEFramework::Plugin::subscribeToDeviceInitializationEvent();
-
-    // Check the expected result (assume true on success)
-    EXPECT_TRUE(result);
-}
 
 TEST_F(ParseConfTest, KeyNotFound) {
     std::string value;
