@@ -79,7 +79,7 @@ protected:
     MOCK_CONST_METHOD0(Release, uint32_t());
     MockMaintenanceManager manager;
     MockThunderClient mockThunderClient;
-    WPEFramework::Plugin::MaintenanceManager Mg;
+    MaintenanceManager Mg;
     MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MaintenanceManager*(const char*));
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
