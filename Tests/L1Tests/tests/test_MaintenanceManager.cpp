@@ -61,7 +61,7 @@ class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
 public:
     MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
     //MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
-    MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MockMaintenanceManager*(const char*));
+    MOCK_METHOD1(getThunderPluginHandle, MockMaintenanceManager*(const char*));
     //MOCK_METHOD1(setDeviceInitializationContext, bool(const JsonObject&));
     //MOCK_METHOD0(subscribeToDeviceInitializationEvent, bool());
     MOCK_CONST_METHOD0(AddRef, void());
