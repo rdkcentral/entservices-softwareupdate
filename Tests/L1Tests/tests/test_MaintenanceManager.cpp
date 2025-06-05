@@ -61,7 +61,7 @@ class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
 public:
     MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
     //MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
-    MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MaintenanceManager*(const char*));
+    MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MockMaintenanceManager*(const char*));
     //MOCK_METHOD1(setDeviceInitializationContext, bool(const JsonObject&));
     //MOCK_METHOD0(subscribeToDeviceInitializationEvent, bool());
     MOCK_CONST_METHOD0(AddRef, void());
@@ -973,7 +973,7 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
    // EXPECT_CALL(mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
       //  .WillOnce(::testing::Return(Core::ERROR_NONE));
     // If subscribeToDeviceInitializationEvent is virtual and implemented in the mock:
-   MockThunderClient* mockThunderClient = new MaintenanceManager();
+   MockThunderClient* mockThunderClient = new MockMaintenanceManager();
 EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
     .WillOnce(::testing::Return(mockThunderClient));
 
