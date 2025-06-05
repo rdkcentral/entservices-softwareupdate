@@ -84,6 +84,7 @@ protected:
     MockThunderClient mockThunderClient;
     //WPEFramework::Plugin::MaintenanceManager Mg;
     //MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MaintenanceManager*(const char*));
+    MOCK_METHOD(void*, QueryInterfaceByCallsign, (const uint32_t, const string&), (override));
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
         , handler_(*plugin_)
