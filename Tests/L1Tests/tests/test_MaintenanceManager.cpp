@@ -690,8 +690,6 @@ TEST(GetTimeZoneTest, TimeZoneOffsetMapFileCreated) {
     remove("/tmp/device.properties");
     remove("/tmp/timeZone_offset_map");
 }
-#endif
-
 
 TEST_F(MaintenanceManagerTest, GetServiceState_Unavailable) {
     PluginHost::IShell::state state;
@@ -711,7 +709,7 @@ TEST_F(MaintenanceManagerTest, GetServiceState_Available) {
     EXPECT_EQ(result, Core::ERROR_NONE);
     EXPECT_EQ(state, PluginHost::IShell::state::ACTIVATED);
 }
-
+#endif
 
 /* ---- notifyStatusToString() ---- */
 TEST(MaintenanceManagerNotifyStatus, NotifyStatusToString) {
