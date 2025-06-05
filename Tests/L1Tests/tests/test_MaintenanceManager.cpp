@@ -75,13 +75,13 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
-public:
-    MOCK_CONST_METHOD0(AddRef, void());
-    MOCK_CONST_METHOD0(Release, uint32_t());
-protected:
+//public:
+//    MOCK_CONST_METHOD0(AddRef, void());
+//    MOCK_CONST_METHOD0(Release, uint32_t());
+//protected:
     MockMaintenanceManager manager;
     MockThunderClient mockThunderClient;
-    WPEFramework::Plugin::MaintenanceManager Mg;
+    //WPEFramework::Plugin::MaintenanceManager Mg;
     MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MaintenanceManager*(const char*));
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
@@ -948,8 +948,8 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
       //  .WillOnce(::testing::Return(Core::ERROR_NONE));
     // If subscribeToDeviceInitializationEvent is virtual and implemented in the mock:
    
- //EXPECT_CALL(manager, subscribeToDeviceInitializationEvent())
-      //  .WillOnce(::testing::Return(true));
+    EXPECT_CALL(manager, subscribeToDeviceInitializationEvent())
+      .WillOnce(::testing::Return(true));
 
     // Only call the mock, not the real implementation
     bool result = Mg.subscribeToDeviceInitializationEvent();
