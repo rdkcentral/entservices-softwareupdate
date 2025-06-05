@@ -767,6 +767,15 @@ TEST_F(ParseConfTest, FileDoesNotExist) {
 
     EXPECT_FALSE(result);
 }
+TEST_F(MaintenanceManagerTest, SubscribeToDeviceInitializationEventReturnsTrueOnSuccess) {
+    // Setup any preconditions if needed
+
+    // Call the method
+    bool result = WPEFramework::Plugin::subscribeToDeviceInitializationEvent();
+
+    // Check the expected result (assume true on success)
+    EXPECT_TRUE(result);
+}
 
 TEST_F(ParseConfTest, KeyNotFound) {
     std::string value;
