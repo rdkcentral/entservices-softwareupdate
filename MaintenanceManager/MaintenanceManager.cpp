@@ -1412,7 +1412,7 @@ namespace WPEFramework
             }
             else
             {
-                MM_LOGINFO("Reaching here inside else %s", event.c_str());
+                MM_LOGINFO("Reaching here inside else  %s", event.c_str());
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
                 if (status == Core::ERROR_NONE)
                 {
