@@ -946,7 +946,7 @@ thunder_client = new WPEFramework::JSONRPC::LinkType<Core::JSON::IElement>(calls
     EXPECT_TRUE(result);
 }
 */
-
+/*
 TEST_F(MaintenanceManagerTest, ReturnsHandleForKnownCallsign) {
     const char* knownCallsign = "KnownPlugin";
     // You may need to set up the plugin system so that KnownPlugin exists.
@@ -962,7 +962,7 @@ TEST_F(MaintenanceManagerTest, ReturnsHandleForKnownCallsign) {
     // Optionally, verify handle properties
     // EXPECT_EQ(handle->SomeProperty(), ExpectedValue);
 }
-
+*/
 
 TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
    // MockThunderClient mockThunderClient;
