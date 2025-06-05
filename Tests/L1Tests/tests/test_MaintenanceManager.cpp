@@ -926,7 +926,7 @@ const char *callsign = "null";
 WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
 thunder_client = new WPEFramework::JSONRPC::LinkType<Core::JSON::IElement>(callsign, "", false, query);
     // Set up the manager mock to return our ThunderClient mock
-    EXPECT_CALL(plugin_, getThunderPluginHandle(::testing::_))
+    EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
         .WillOnce(::testing::Return(&thunder_client));
     // Only call the mock, not the real implementation
     bool result = plugin_->subscribeToDeviceInitializationEvent();
