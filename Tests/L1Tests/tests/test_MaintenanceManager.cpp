@@ -98,7 +98,8 @@ protected:
 //    MOCK_CONST_METHOD0(Release, uint32_t());
 //protected:
     MockMaintenanceManager manager;
-    MockThunderClient mockThunderClient;
+    //MockThunderClient mockThunderClient;
+    MockThunderClient mockThunderClient{"test", false, ""};
     //WPEFramework::Plugin::MaintenanceManager Mg;
     //MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MaintenanceManager*(const char*));
     //MOCK_METHOD(void*, QueryInterfaceByCallsign, (const uint32_t, const string&), (override));
