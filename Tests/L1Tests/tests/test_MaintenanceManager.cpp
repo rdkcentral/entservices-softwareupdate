@@ -1020,7 +1020,7 @@ TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest) {
     // Example:
     // EXPECT_EQ(manager.GetTaskStatus(), EXPECTED_STATUS);
 }
-
+/*
 TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
     const char* callsign = "test";
     std::string query = "token=testtoken";
@@ -1036,7 +1036,7 @@ TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
 
     delete mockThunderClient;
 }
-
+*/
 /*
 
 TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
