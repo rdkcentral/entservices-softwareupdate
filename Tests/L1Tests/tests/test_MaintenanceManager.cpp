@@ -1008,6 +1008,19 @@ EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing:
 }
 */
 
+TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest) {
+    // Set up any required state for manager
+    // For example, if there are tasks to execute, add them here.
+
+    // Call the function to test. If it's private/protected, you may need to expose it for testing.
+    plugin_->task_execution_thread();
+
+    // Assert the expected outcomes.
+    // For example, if it modifies a state or calls other methods, check those effects.
+    // Example:
+    // EXPECT_EQ(manager.GetTaskStatus(), EXPECTED_STATUS);
+}
+
 TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
     const char* callsign = "test";
     std::string query = "token=testtoken";
