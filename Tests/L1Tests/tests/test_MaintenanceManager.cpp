@@ -30,6 +30,7 @@
 #include "WrapsMock.h"
 #include "ThunderPortability.h"
 
+
 using namespace WPEFramework;
 using ::testing::NiceMock;
 using ::testing::_;
