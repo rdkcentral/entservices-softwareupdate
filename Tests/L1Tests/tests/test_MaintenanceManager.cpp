@@ -139,7 +139,7 @@ protected:
 
 class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
 protected:
-    NiceMock<PluginHost::MockShell> mockService_;
+    NiceMock<MockShell> mockService_;
     NiceMock<Exchange::IAuthService> mockAuthServicePlugin_;
 
     MaintenanceManagerCheckActivatedStatusTest() {
