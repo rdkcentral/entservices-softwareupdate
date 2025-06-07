@@ -44,6 +44,9 @@ using ::testing::AssertionFailure;
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
 
+
+
+
 class MaintenanceManagerTest : public Test {
 protected:
     Core::ProxyType<Plugin::MaintenanceManager> plugin_;
@@ -94,6 +97,22 @@ protected:
 
     }
 };
+
+
+class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
+protected:
+    NiceMock<PluginHost::IShell> mockService_;
+    NiceMock<IAuthServicePlugin> mockAuthServicePlugin_;
+
+    MaintenanceManagerCheckActivatedStatusTest() {
+        // Assign mock plugins
+        plugin_->m_service = &mockService_;
+        plugin_->m_authservicePlugin = &mockAuthServicePlugin_;
+    }
+
+    virtual ~MaintenanceManagerCheckActivatedStatusTest() override {}
+};
+
 
 static AssertionResult isValidCtrlmRcuIarmEvent(IARM_EventId_t ctrlmRcuIarmEventId)
 {
@@ -806,3 +825,18 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	}
 }
 #endif
+TEST_F(MaintenanceManagerCheckActivatedStatusTest, ServiceNotActivated) {
+    PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
+    
+    // Mock getServiceState to simulate UNAVAILABLE state
+    EXPECT_CALL(mockService_, getServiceState(_, _, _))
+        .WillRepeatedly(DoAll(::testing::SetArgReferee<2>(state), Return(Core::ERROR_NONE)));
+
+    // Mock queryIAuthService to return false (no interface)
+    EXPECT_CALL(mockService_, queryIAuthService())
+        .WillOnce(Return(false));
+
+    // Test: Plugin is not activated after retries, expect "invalid"
+    std::string result = plugin_->checkActivatedStatus();
+    EXPECT_EQ(result, "invalid");
+}
