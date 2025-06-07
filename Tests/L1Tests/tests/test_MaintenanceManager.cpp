@@ -46,6 +46,13 @@ extern "C" int __real_pclose(FILE* pipe);
 
 class MockAuthServicePlugin : public WPEFramework::Exchange::IAuthService {
 public:
+    MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(uint32_t, Release, (), (const, override));
+    MOCK_METHOD(void*, QueryInterface, (const uint32_t), (override));
+    MOCK_METHOD(uint32_t, Register, (WPEFramework::Exchange::IAuthService::INotification*), (override));
+    MOCK_METHOD(uint32_t, Unregister, (WPEFramework::Exchange::IAuthService::INotification*), (override));
+    MOCK_METHOD(uint32_t, Configure, (), (override));
+    MOCK_METHOD(uint32_t, GetInfo, (WPEFramework::Exchange::IAuthService::GetInfoResult&), (override));
     MOCK_METHOD(uint32_t, GetActivationStatus, (ActivationStatusResult&), (override));
     // add other necessary mock methods if needed
 };
