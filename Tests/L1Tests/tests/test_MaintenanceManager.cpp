@@ -46,7 +46,7 @@ extern "C" int __real_pclose(FILE* pipe);
 
 class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
 public:
-    MOCK_METHOD(uint32_t, getServiceState, (...), (override));
+    MOCK_METHOD(uint32_t, getServiceState, (PluginHost::IShell *shell, const std::string &callsign, PluginHost::IShell::state &state), (override));
     //MOCK_METHOD(bool, queryIAuthService, (), (override));
     MOCK_METHOD(uint32_t, Release, (), (const, override));
     MOCK_METHOD(void*, QueryInterface, (const uint32_t), (override));
