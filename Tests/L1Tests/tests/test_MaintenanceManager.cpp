@@ -120,6 +120,32 @@ MOCK_METHOD(uint32_t, Configure, (), (override));
 MOCK_METHOD(uint32_t, GetInfo, (GetInfoResult&), (override));
 MOCK_METHOD(uint32_t, GetDeviceInfo, (GetDeviceInfoResult&), (override));
 MOCK_METHOD(uint32_t, GetDeviceId, (GetDeviceIdResult&), (override));
+
+
+MOCK_METHOD(uint32_t, SetDeviceId, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, SetPartnerId, (const std::string&, SetPartnerIdResult&), (override));
+MOCK_METHOD(uint32_t, GetAuthToken, (const bool, const bool, GetAuthTokenResult&), (override));
+MOCK_METHOD(uint32_t, GetSessionToken, (GetSessionTokenResult&), (override));
+MOCK_METHOD(uint32_t, SetSessionToken, (const int32_t&, const std::string&, uint32_t, const std::string&, const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetServiceAccessToken, (GetServiceAccessTokenResult&), (override));
+MOCK_METHOD(uint32_t, SetServiceAccessToken, (const int32_t&, const std::string&, uint32_t, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetServiceAccountId, (GetServiceAccountIdResult&), (override));
+MOCK_METHOD(uint32_t, SetServiceAccountId, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, SetAuthIdToken, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, Ready, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetBootstrapProperty, (const std::string&, GetBootstrapPropResult&), (override));
+MOCK_METHOD(uint32_t, ActivationStarted, (SuccessResult&), (override));
+MOCK_METHOD(uint32_t, ActivationComplete, (SuccessResult&), (override));
+MOCK_METHOD(uint32_t, GetLostAndFoundAccessToken, (std::string&, std::string&, bool&), (override));
+MOCK_METHOD(uint32_t, SetLostAndFoundAccessToken, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetXDeviceId, (GetXDeviceIdResult&), (override));
+MOCK_METHOD(uint32_t, SetXDeviceId, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetExperience, (GetExpResult&), (override));
+MOCK_METHOD(uint32_t, SetExperience, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetXifaId, (GetxifaIdResult&), (override));
+MOCK_METHOD(uint32_t, SetXifaId, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetAdvtOptOut, (AdvtOptOutResult&), (override));
+MOCK_METHOD(uint32_t, SetAdvtOptOut, (const bool&, SuccessMsgResult&), (override));
 // ... and so on, for all pure virtuals
     // Add any additional pure virtuals from base interfaces if compiler asks for them.
 };
