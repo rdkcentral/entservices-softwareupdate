@@ -851,7 +851,7 @@ TEST_F(MaintenanceManagerTest, AuthServiceNotActivated_ReturnsInvalid) {
     std::string status = plugin_->checkActivatedStatus();
     EXPECT_EQ(status, "invalid");
 }
-
+/*
 
 TEST_F(MaintenanceManagerTest, AuthServiceNotActivated_ReturnsInvalid) {
     EXPECT_CALL(manager, getServiceState(_, _, _))
@@ -896,7 +896,7 @@ TEST_F(MaintenanceManagerTest, GetActivationStatusFails_ReturnsInvalid) {
     std::string status = manager.checkActivatedStatus();
     EXPECT_EQ(status, "invalid");
 }
-
+*/
 TEST_F(MaintenanceManagerTest, InitTimerReturnsTrueOnSuccess) {
     // Act
     bool result = plugin_->maintenance_initTimer();
