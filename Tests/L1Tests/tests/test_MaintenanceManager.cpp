@@ -65,18 +65,18 @@ public:
     MOCK_METHOD(string, ProxyStubPath, (), (const, override));
     MOCK_METHOD(string, SystemPath, (), (const, override));
     MOCK_METHOD(string, SystemRootPath, (), (const, override));
-    MOCK_METHOD(Core::hresult, SystemRootPath, (const string&), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, SystemRootPath, (const string&), (override));
     MOCK_METHOD(PluginHost::IShell::startup, Startup, (), (const, override));
-    MOCK_METHOD(Core::hresult, Startup, (const PluginHost::IShell::startup), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Startup, (const PluginHost::IShell::startup), (override));
     MOCK_METHOD(string, Substitute, (const string&), (const, override));
     MOCK_METHOD(bool, Resumed, (), (const, override));
-    MOCK_METHOD(Core::hresult, Resumed, (const bool), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Resumed, (const bool), (override));
     MOCK_METHOD(string, HashKey, (), (const, override));
     MOCK_METHOD(string, ConfigLine, (), (const, override));
-    MOCK_METHOD(Core::hresult, ConfigLine, (const string&), (override));
-    MOCK_METHOD(Core::hresult, Metadata, (string&), (const, override));
+    MOCK_METHOD(WPEFramework::Core::hresult, ConfigLine, (const string&), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Metadata, (string&), (const, override));
     MOCK_METHOD(bool, IsSupported, (const uint8_t), (const, override));
-    //MOCK_METHOD(PluginHost::IShell::ISubSystem*, SubSystems, (), (override));
+    MOCK_METHOD(WPEFramework::PluginHost::ISubSystem*, SubSystems, (), (override));
     MOCK_METHOD(void, Notify, (const string&), (override));
     MOCK_METHOD(void, Register, (PluginHost::IPlugin::INotification*), (override));
     MOCK_METHOD(void, Unregister, (PluginHost::IPlugin::INotification*), (override));
@@ -85,16 +85,35 @@ public:
     MOCK_METHOD(void*, QueryInterface, (const uint32_t), (override));
     MOCK_METHOD(void, AddRef, (), (const, override));
     MOCK_METHOD(uint32_t, Release, (), (const, override));
-
     MOCK_METHOD(std::string, PluginPath, (), (const, override));
-    //MOCK_METHOD(WPEFramework::PluginHost::ISubSystem*, SubSystems, (), (override));
-    MOCK_METHOD(Core::hresult, Activate, (const reason), (override));
-    MOCK_METHOD(Core::hresult, Deactivate, (const reason), (override));
-    MOCK_METHOD(Core::hresult, Unavailable, (const reason), (override));
-    MOCK_METHOD(Core::hresult, Hibernate, (const uint32_t), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Activate, (const reason), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Deactivate, (const reason), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Unavailable, (const reason), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Hibernate, (const uint32_t), (override));
     MOCK_METHOD(reason, Reason, (), (const, override));
     MOCK_METHOD(uint32_t, Submit, (const uint32_t, const Core::ProxyType<Core::JSON::IElement>&), (override));
     MOCK_METHOD(ICOMLink*, COMLink, (), (override));
+    // Add any additional methods required by your build here.
+};
+
+class MockAuthService : public WPEFramework::Exchange::IAuthService {
+public:
+    MOCK_METHOD(uint32_t, GetActivationStatus, (ActivationStatusResult&), (override));
+    MOCK_METHOD(uint32_t, SetActivationStatus, (const std::string&, SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearAuthToken, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearSessionToken, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearServiceAccessToken, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearLostAndFoundAccessToken, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearServiceAccountId, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearCustomProperties, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, GetCustomProperties, (std::string&, bool&), (override));
+    MOCK_METHOD(uint32_t, SetCustomProperties, (const std::string&, bool&), (override));
+    MOCK_METHOD(uint32_t, GetAlternateIds, (std::string&, std::string&, bool&), (override));
+    MOCK_METHOD(uint32_t, SetAlternateIds, (const std::string&, std::string&, bool&), (override));
+    MOCK_METHOD(uint32_t, GetTransitionData, (std::string&, std::string&, bool&), (override));
+    MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(uint32_t, Release, (), (const, override));
+    // Add any additional pure virtuals from base interfaces if compiler asks for them.
 };
 
 class MaintenanceManagerTest : public Test {
@@ -152,7 +171,7 @@ protected:
 class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
 protected:
     NiceMock<MockShell> mockService_;
-    NiceMock<Exchange::IAuthService> mockAuthServicePlugin_;
+    NiceMock<MockAuthService> mockAuthServicePlugin_;
 
     MaintenanceManagerCheckActivatedStatusTest() {
         // Assign mock plugins
