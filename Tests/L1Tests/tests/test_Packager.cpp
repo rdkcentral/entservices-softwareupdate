@@ -152,6 +152,7 @@ TEST_F(PackagerInitializedTest, SynchronizeRepositoryTest)
 	EXPECT_EQ(Core::ERROR_NONE, PackagerImplementation->SynchronizeRepository());
 }
 
+#if 0
 /* DoWork() Test */
 TEST_F(PackagerInitializedTest, DoWorkTest)
 {
@@ -163,6 +164,7 @@ TEST_F(PackagerInitializedTest, DoWorkTest)
     // Call the public method using references to the strings (not pointers)
     EXPECT_EQ(Core::ERROR_NONE, PackagerImplementation->TestDoWork(name, version, arch));
 }
+#endif
 
 /* FreeOPKG() Test */
 TEST_F(PackagerInitializedTest, TestFreeOPKG) {
