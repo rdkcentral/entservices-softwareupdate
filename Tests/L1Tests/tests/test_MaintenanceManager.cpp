@@ -102,7 +102,7 @@ protected:
 class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
 protected:
     NiceMock<PluginHost::IShell> mockService_;
-    NiceMock<IAuthServicePlugin> mockAuthServicePlugin_;
+    NiceMock<Exchange::IAuthService> mockAuthServicePlugin_;
 
     MaintenanceManagerCheckActivatedStatusTest() {
         // Assign mock plugins
