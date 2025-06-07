@@ -59,7 +59,7 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
-    MaintenanceManager manager;
+    WPEFramework::Plugin::MaintenanceManager manager;
 
     void SetUp() override {
         // Assign mocks or initialize manager as needed
