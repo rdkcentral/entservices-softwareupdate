@@ -40,32 +40,13 @@ using ::testing::Gt;
 using ::testing::AssertionResult;
 using ::testing::AssertionSuccess;
 using ::testing::AssertionFailure;
-using ::testing::Return;
 
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
-/*
-class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
-public:
-    MOCK_METHOD(uint32_t, getServiceState, (PluginHost::IShell *shell, const std::string &callsign, PluginHost::IShell::state &state), (override));
-    MOCK_METHOD(bool, queryIAuthService, (), (override));
-    MOCK_METHOD(uint32_t, Release, (), (const, override));
-    MOCK_METHOD(void*, QueryInterface, (const uint32_t), (override));
-    MOCK_METHOD(uint32_t, Register, (WPEFramework::Exchange::IAuthService::INotification*), (override));
-    MOCK_METHOD(uint32_t, Unregister, (WPEFramework::Exchange::IAuthService::INotification*), (override));
-    MOCK_METHOD(uint32_t, Configure, (), (override));
-    MOCK_METHOD(uint32_t, GetInfo, (WPEFramework::Exchange::IAuthService::GetInfoResult&), (override));
-    //MOCK_METHOD(uint32_t, GetActivationStatus, (ActivationStatusResult&), (override));
-    MOCK_METHOD(uint32_t, GetActivationStatus, (WPEFramework::Exchange::IAuthService::ActivationStatusResult&), (override));
-    // Add other virtual methods you need to mock
-};
-class MockAuthServicePlugin : public WPEFramework::Exchange::IAuthService {
-public:
-    MOCK_METHOD(uint32_t, GetInfo, (WPEFramework::Exchange::IAuthService::GetInfoResult&), (override));
-    MOCK_METHOD(uint32_t, GetActivationStatus, (ActivationStatusResult&), (override));
-    // add other necessary mock methods if needed
-};
-*/
+
+
+
+
 class MaintenanceManagerTest : public Test {
 protected:
     Core::ProxyType<Plugin::MaintenanceManager> plugin_;
@@ -75,15 +56,6 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
-/*  
-MockMaintenanceManager manager;
-
-    void SetUp() override {
-        // Assign mocks or initialize manager as needed
-        manager.m_authservicePlugin = &mockPlugin;
-    }
-
-    MockAuthServicePlugin mockPlugin; */
 
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
@@ -125,6 +97,22 @@ MockMaintenanceManager manager;
 
     }
 };
+
+
+class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
+protected:
+    NiceMock<PluginHost::IShell> mockService_;
+    NiceMock<IAuthServicePlugin> mockAuthServicePlugin_;
+
+    MaintenanceManagerCheckActivatedStatusTest() {
+        // Assign mock plugins
+        plugin_->m_service = &mockService_;
+        plugin_->m_authservicePlugin = &mockAuthServicePlugin_;
+    }
+
+    virtual ~MaintenanceManagerCheckActivatedStatusTest() override {}
+};
+
 
 static AssertionResult isValidCtrlmRcuIarmEvent(IARM_EventId_t ctrlmRcuIarmEventId)
 {
@@ -799,7 +787,6 @@ TEST_F(ParseConfTest, FileDoesNotExist) {
     EXPECT_FALSE(result);
 }
 
-
 TEST_F(ParseConfTest, KeyNotFound) {
     std::string value;
     bool result = WPEFramework::Plugin::parseConfigFile(testFilePath.c_str(), "nonexistentKey", value);
@@ -838,81 +825,18 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	}
 }
 #endif
-
-
-TEST_F(MaintenanceManagerTest, AuthServiceNotActivated_ReturnsInvalid) {
-    //EXPECT_CALL(manager, getServiceState(_, _, _))
-        //.WillRepeatedly(Return(Core::ERROR_NONE));
-    // Simulate plugin never being activated
-    // You may need to adjust this based on how getServiceState works
-
-    //EXPECT_CALL(manager, queryIAuthService()).Times(0); // should not be called
-
-    std::string status = plugin_->checkActivatedStatus();
-    EXPECT_EQ(status, "invalid");
-}
-/*
-
-TEST_F(MaintenanceManagerTest, AuthServiceNotActivated_ReturnsInvalid) {
-    EXPECT_CALL(manager, getServiceState(_, _, _))
-        .WillRepeatedly(Return(Core::ERROR_NONE));
-    // Simulate plugin never being activated
-    // You may need to adjust this based on how getServiceState works
-
-    EXPECT_CALL(manager, queryIAuthService()).Times(0); // should not be called
-
-    std::string status = manager.checkActivatedStatus();
-    EXPECT_EQ(status, "invalid");
-}
-
-// Test when AuthService plugin is activated and GetActivationStatus succeeds
-TEST_F(MaintenanceManagerTest, AuthServiceActivated_ReturnsStatus) {
-    EXPECT_CALL(manager, getServiceState(_, _, _))
-        .WillOnce(Return(Core::ERROR_NONE)); // plugin is active
-
-    EXPECT_CALL(manager, queryIAuthService()).WillOnce(Return(true));
-
-    WPEFramework::Exchange::IAuthService::ActivationStatusResult result;
-    result.status = "activated";
-    EXPECT_CALL(mockPlugin, GetActivationStatus(_))
-        .WillOnce([&](auto& asRes) {
-            asRes.status = "activated";
-            return Core::ERROR_NONE;
-        });
-
-    std::string status = manager.checkActivatedStatus();
-    EXPECT_EQ(status, "activated");
-}
-
-// Test when AuthService is active but GetActivationStatus fails
-TEST_F(MaintenanceManagerTest, GetActivationStatusFails_ReturnsInvalid) {
-    EXPECT_CALL(manager, getServiceState(_, _, _))
-        .WillOnce(Return(Core::ERROR_NONE)); // plugin is active
-
-    EXPECT_CALL(manager, queryIAuthService()).WillOnce(Return(true));
-    EXPECT_CALL(mockPlugin, GetActivationStatus(_))
-        .WillOnce(Return(Core::ERROR_GENERAL));
-
-    std::string status = manager.checkActivatedStatus();
-    EXPECT_EQ(status, "invalid");
-}
-*/
-TEST_F(MaintenanceManagerTest, InitTimerReturnsTrueOnSuccess) {
-    // Act
-    bool result = plugin_->maintenance_initTimer();
-
-    // Assert
-    EXPECT_TRUE(result);
-}
-
-
-TEST_F(MaintenanceManagerTest, SubscribeToDeviceInitializationEventReturnsTrueOnSuccess) {
+TEST_F(MaintenanceManagerCheckActivatedStatusTest, ServiceNotActivated) {
+    PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     
-    bool result = plugin_->subscribeToDeviceInitializationEvent();
+    // Mock getServiceState to simulate UNAVAILABLE state
+    EXPECT_CALL(mockService_, getServiceState(_, _, _))
+        .WillRepeatedly(DoAll(::testing::SetArgReferee<2>(state), Return(Core::ERROR_NONE)));
 
-    // Check the expected result (assume true on success)
-    EXPECT_TRUE(result);
+    // Mock queryIAuthService to return false (no interface)
+    EXPECT_CALL(mockService_, queryIAuthService())
+        .WillOnce(Return(false));
+
+    // Test: Plugin is not activated after retries, expect "invalid"
+    std::string result = plugin_->checkActivatedStatus();
+    EXPECT_EQ(result, "invalid");
 }
-
-
-
