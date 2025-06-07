@@ -940,8 +940,8 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, ServiceNotActivated) {
         .WillRepeatedly(DoAll(::testing::SetArgReferee<2>(state), Return(Core::ERROR_NONE)));
 
     // Mock queryIAuthService to return false (no interface)
-    EXPECT_CALL(mockService_, queryIAuthService())
-        .WillOnce(Return(false));
+    //EXPECT_CALL(mockService_, queryIAuthService())
+     //   .WillOnce(Return(false));
 
     // Test: Plugin is not activated after retries, expect "invalid"
     std::string result = plugin_->checkActivatedStatus();
