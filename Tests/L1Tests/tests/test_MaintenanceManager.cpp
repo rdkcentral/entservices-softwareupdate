@@ -93,6 +93,8 @@ public:
     MOCK_METHOD(reason, Reason, (), (const, override));
     MOCK_METHOD(uint32_t, Submit, (const uint32_t, const Core::ProxyType<Core::JSON::IElement>&), (override));
     MOCK_METHOD(ICOMLink*, COMLink, (), (override));
+    MOCK_METHOD(Core::hresult, getServiceState, (const std::string&, const std::string&, PluginHost::IShell::state&), (override));
+    MOCK_METHOD(bool, queryIAuthService, (), ());
     // Add any additional methods required by your build here.
 };
 
