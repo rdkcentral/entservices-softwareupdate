@@ -44,7 +44,7 @@ using ::testing::Return;
 
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
-
+/*
 class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
 public:
     MOCK_METHOD(uint32_t, getServiceState, (PluginHost::IShell *shell, const std::string &callsign, PluginHost::IShell::state &state), (override));
@@ -65,7 +65,7 @@ public:
     MOCK_METHOD(uint32_t, GetActivationStatus, (ActivationStatusResult&), (override));
     // add other necessary mock methods if needed
 };
-
+*/
 class MaintenanceManagerTest : public Test {
 protected:
     Core::ProxyType<Plugin::MaintenanceManager> plugin_;
@@ -75,14 +75,15 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
-    MockMaintenanceManager manager;
+/*  
+MockMaintenanceManager manager;
 
     void SetUp() override {
         // Assign mocks or initialize manager as needed
         manager.m_authservicePlugin = &mockPlugin;
     }
 
-    MockAuthServicePlugin mockPlugin;
+    MockAuthServicePlugin mockPlugin; */
 
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
