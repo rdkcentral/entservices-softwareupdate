@@ -44,14 +44,21 @@ using ::testing::AssertionFailure;
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
 
-class MockAuthServicePlugin : public WPEFramework::Exchange::IAuthService {
+class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
 public:
-    MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(uint32_t, getServiceState, (...), (override));
+    //MOCK_METHOD(bool, queryIAuthService, (), (override));
     MOCK_METHOD(uint32_t, Release, (), (const, override));
     MOCK_METHOD(void*, QueryInterface, (const uint32_t), (override));
     MOCK_METHOD(uint32_t, Register, (WPEFramework::Exchange::IAuthService::INotification*), (override));
     MOCK_METHOD(uint32_t, Unregister, (WPEFramework::Exchange::IAuthService::INotification*), (override));
     MOCK_METHOD(uint32_t, Configure, (), (override));
+    MOCK_METHOD(uint32_t, GetInfo, (WPEFramework::Exchange::IAuthService::GetInfoResult&), (override));
+    MOCK_METHOD(uint32_t, GetActivationStatus, (ActivationStatusResult&), (override));
+    // Add other virtual methods you need to mock
+};
+class MockAuthServicePlugin : public WPEFramework::Exchange::IAuthService {
+public:
     MOCK_METHOD(uint32_t, GetInfo, (WPEFramework::Exchange::IAuthService::GetInfoResult&), (override));
     MOCK_METHOD(uint32_t, GetActivationStatus, (ActivationStatusResult&), (override));
     // add other necessary mock methods if needed
@@ -66,7 +73,7 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
-    WPEFramework::Plugin::MaintenanceManager manager;
+    MockMaintenanceManager manager;
 
     void SetUp() override {
         // Assign mocks or initialize manager as needed
