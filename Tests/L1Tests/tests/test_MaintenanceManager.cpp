@@ -838,6 +838,20 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 }
 #endif
 
+
+TEST_F(MaintenanceManagerTest, AuthServiceNotActivated_ReturnsInvalid) {
+    //EXPECT_CALL(manager, getServiceState(_, _, _))
+        //.WillRepeatedly(Return(Core::ERROR_NONE));
+    // Simulate plugin never being activated
+    // You may need to adjust this based on how getServiceState works
+
+    //EXPECT_CALL(manager, queryIAuthService()).Times(0); // should not be called
+
+    std::string status = plugin_->checkActivatedStatus();
+    EXPECT_EQ(status, "invalid");
+}
+
+
 TEST_F(MaintenanceManagerTest, AuthServiceNotActivated_ReturnsInvalid) {
     EXPECT_CALL(manager, getServiceState(_, _, _))
         .WillRepeatedly(Return(Core::ERROR_NONE));
