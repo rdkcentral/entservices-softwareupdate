@@ -45,7 +45,45 @@ extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
 
 
-
+class MockShell : public WPEFramework::PluginHost::IShell {
+public:
+    MOCK_METHOD(void, EnableWebServer, (const string&, const string&), (override));
+    MOCK_METHOD(void, DisableWebServer, (), (override));
+    MOCK_METHOD(string, Model, (), (const, override));
+    MOCK_METHOD(bool, Background, (), (const, override));
+    MOCK_METHOD(string, Accessor, (), (const, override));
+    MOCK_METHOD(string, WebPrefix, (), (const, override));
+    MOCK_METHOD(string, Locator, (), (const, override));
+    MOCK_METHOD(string, ClassName, (), (const, override));
+    MOCK_METHOD(string, Versions, (), (const, override));
+    MOCK_METHOD(string, Callsign, (), (const, override));
+    MOCK_METHOD(string, PersistentPath, (), (const, override));
+    MOCK_METHOD(string, VolatilePath, (), (const, override));
+    MOCK_METHOD(string, DataPath, (), (const, override));
+    MOCK_METHOD(string, ProxyStubPath, (), (const, override));
+    MOCK_METHOD(string, SystemPath, (), (const, override));
+    MOCK_METHOD(string, SystemRootPath, (), (const, override));
+    MOCK_METHOD(Core::hresult, SystemRootPath, (const string&), (override));
+    MOCK_METHOD(PluginHost::IShell::startup, Startup, (), (const, override));
+    MOCK_METHOD(Core::hresult, Startup, (const PluginHost::IShell::startup), (override));
+    MOCK_METHOD(string, Substitute, (const string&), (const, override));
+    MOCK_METHOD(bool, Resumed, (), (const, override));
+    MOCK_METHOD(Core::hresult, Resumed, (const bool), (override));
+    MOCK_METHOD(string, HashKey, (), (const, override));
+    MOCK_METHOD(string, ConfigLine, (), (const, override));
+    MOCK_METHOD(Core::hresult, ConfigLine, (const string&), (override));
+    MOCK_METHOD(Core::hresult, Metadata, (string&), (const, override));
+    MOCK_METHOD(bool, IsSupported, (const uint8_t), (const, override));
+    MOCK_METHOD(PluginHost::IShell::ISubSystem*, SubSystems, (), (override));
+    MOCK_METHOD(void, Notify, (const string&), (override));
+    MOCK_METHOD(void, Register, (PluginHost::IPlugin::INotification*), (override));
+    MOCK_METHOD(void, Unregister, (PluginHost::IPlugin::INotification*), (override));
+    MOCK_METHOD(PluginHost::IShell::state, State, (), (const, override));
+    MOCK_METHOD(void*, QueryInterfaceByCallsign, (const uint32_t, const string&), (override));
+    MOCK_METHOD(void*, QueryInterface, (const uint32_t), (override));
+    MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(uint32_t, Release, (), (const, override));
+};
 
 class MaintenanceManagerTest : public Test {
 protected:
@@ -101,7 +139,7 @@ protected:
 
 class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
 protected:
-    NiceMock<PluginHost::IShell> mockService_;
+    NiceMock<PluginHost::MockShell> mockService_;
     NiceMock<Exchange::IAuthService> mockAuthServicePlugin_;
 
     MaintenanceManagerCheckActivatedStatusTest() {
