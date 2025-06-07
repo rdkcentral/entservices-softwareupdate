@@ -131,6 +131,7 @@
 #define _FLASH_WRITE_FAILED "FLASH_WRITE_FAILED"
 #define _POSTWRITE_FIRMWARE_CHECK_FAILED "POSTWRITE_FIRMWARE_CHECK_FAILED"
 #define _POSTWRITE_SIGNATURE_CHECK_FAILED "POSTWRITE_SIGNATURE_CHECK_FAILED"
+#define _FIRMWARE_NOT_ACCESSIBLE "FIRMWARE_NOT_ACCESSIBLE"
 
 inline const char* ExtractFileName(const char* filePath) {
     const char* fileName = strrchr(filePath, '/');
@@ -201,7 +202,8 @@ std::map<std::string, WPEFramework::Exchange::IFirmwareUpdate::SubState> firmwar
     {"PREWRITE_SIGNATURE_CHECK_FAILED", WPEFramework::Exchange::IFirmwareUpdate::SubState::PREWRITE_SIGNATURE_CHECK_FAILED},
     {"FLASH_WRITE_FAILED", WPEFramework::Exchange::IFirmwareUpdate::SubState::FLASH_WRITE_FAILED},
     {"POSTWRITE_FIRMWARE_CHECK_FAILED", WPEFramework::Exchange::IFirmwareUpdate::SubState::POSTWRITE_FIRMWARE_CHECK_FAILED},
-    {"POSTWRITE_SIGNATURE_CHECK_FAILED", WPEFramework::Exchange::IFirmwareUpdate::SubState::POSTWRITE_SIGNATURE_CHECK_FAILED}
+    {"POSTWRITE_SIGNATURE_CHECK_FAILED", WPEFramework::Exchange::IFirmwareUpdate::SubState::POSTWRITE_SIGNATURE_CHECK_FAILED},
+    {"FIRMWARE_NOT_ACCESSIBLE", WPEFramework::Exchange::IFirmwareUpdate::SubState::FIRMWARE_NOT_ACCESSIBLE}
 };
 
 
