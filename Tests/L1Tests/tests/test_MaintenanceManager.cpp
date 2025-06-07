@@ -85,6 +85,16 @@ public:
     MOCK_METHOD(void*, QueryInterface, (const uint32_t), (override));
     MOCK_METHOD(void, AddRef, (), (const, override));
     MOCK_METHOD(uint32_t, Release, (), (const, override));
+
+    MOCK_METHOD(std::string, PluginPath, (), (const, override));
+    MOCK_METHOD(ISubSystem*, SubSystems, (), (override));
+    MOCK_METHOD(Core::hresult, Activate, (const reason), (override));
+    MOCK_METHOD(Core::hresult, Deactivate, (const reason), (override));
+    MOCK_METHOD(Core::hresult, Unavailable, (const reason), (override));
+    MOCK_METHOD(Core::hresult, Hibernate, (const uint32_t), (override));
+    MOCK_METHOD(reason, Reason, (), (const, override));
+    MOCK_METHOD(uint32_t, Submit, (const uint32_t, const Core::ProxyType<Core::JSON::IElement>&), (override));
+    MOCK_METHOD(ICOMLink*, COMLink, (), (override));
 };
 
 class MaintenanceManagerTest : public Test {
