@@ -113,6 +113,14 @@ public:
     MOCK_METHOD(uint32_t, GetTransitionData, (std::string&, std::string&, bool&), (override));
     MOCK_METHOD(void, AddRef, (), (const, override));
     MOCK_METHOD(uint32_t, Release, (), (const, override));
+    MOCK_METHOD(void*, QueryInterface, (uint32_t), (override));
+MOCK_METHOD(uint32_t, Register, (IAuthService::INotification*), (override));
+MOCK_METHOD(uint32_t, Unregister, (IAuthService::INotification*), (override));
+MOCK_METHOD(uint32_t, Configure, (), (override));
+MOCK_METHOD(uint32_t, GetInfo, (GetInfoResult&), (override));
+MOCK_METHOD(uint32_t, GetDeviceInfo, (GetDeviceInfoResult&), (override));
+MOCK_METHOD(uint32_t, GetDeviceId, (GetDeviceIdResult&), (override));
+// ... and so on, for all pure virtuals
     // Add any additional pure virtuals from base interfaces if compiler asks for them.
 };
 
