@@ -87,7 +87,7 @@ public:
     MOCK_METHOD(uint32_t, Release, (), (const, override));
 
     MOCK_METHOD(std::string, PluginPath, (), (const, override));
-    MOCK_METHOD(ISubSystem*, SubSystems, (), (override));
+    //MOCK_METHOD(ISubSystem*, SubSystems, (), (override));
     MOCK_METHOD(Core::hresult, Activate, (const reason), (override));
     MOCK_METHOD(Core::hresult, Deactivate, (const reason), (override));
     MOCK_METHOD(Core::hresult, Unavailable, (const reason), (override));
