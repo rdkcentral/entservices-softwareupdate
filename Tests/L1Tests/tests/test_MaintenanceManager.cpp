@@ -74,7 +74,7 @@ public:
     MOCK_METHOD(Core::hresult, ConfigLine, (const string&), (override));
     MOCK_METHOD(Core::hresult, Metadata, (string&), (const, override));
     MOCK_METHOD(bool, IsSupported, (const uint8_t), (const, override));
-    MOCK_METHOD(PluginHost::IShell::ISubSystem*, SubSystems, (), (override));
+    //MOCK_METHOD(PluginHost::IShell::ISubSystem*, SubSystems, (), (override));
     MOCK_METHOD(void, Notify, (const string&), (override));
     MOCK_METHOD(void, Register, (PluginHost::IPlugin::INotification*), (override));
     MOCK_METHOD(void, Unregister, (PluginHost::IPlugin::INotification*), (override));
