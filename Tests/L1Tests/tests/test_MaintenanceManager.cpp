@@ -947,3 +947,42 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, ServiceNotActivated) {
     std::string result = plugin_->checkActivatedStatus();
     EXPECT_EQ(result, "invalid");
 }
+// Test: Service Activated, No Interface
+TEST_F(MaintenanceManagerCheckActivatedStatusTest, ServiceActivatedNoInterface) {
+    PluginHost::IShell::state state = PluginHost::IShell::state::ACTIVATED;
+
+    // Mock getServiceState to simulate ACTIVATED state
+    EXPECT_CALL(mockService_, getServiceState(_, _, _))
+        .WillRepeatedly(DoAll(::testing::SetArgReferee<2>(state), Return(Core::ERROR_NONE)));
+
+    // Mock queryIAuthService to return false (no interface)
+    EXPECT_CALL(mockService_, queryIAuthService())
+        .WillOnce(Return(false));
+
+    // Test: No interface available, expect "invalid"
+    std::string result = plugin_->checkActivatedStatus();
+    EXPECT_EQ(result, "invalid");
+}
+
+// Test: Successful Activation Status Retrieval
+TEST_F(MaintenanceManagerCheckActivatedStatusTest, SuccessfulActivationStatus) {
+    PluginHost::IShell::state state = PluginHost::IShell::state::ACTIVATED;
+
+    // Mock getServiceState to simulate ACTIVATED state
+    EXPECT_CALL(mockService_, getServiceState(_, _, _))
+        .WillRepeatedly(DoAll(::testing::SetArgReferee<2>(state), Return(Core::ERROR_NONE)));
+
+    // Mock queryIAuthService to return true (interface available)
+    EXPECT_CALL(mockService_, queryIAuthService())
+        .WillOnce(Return(true));
+
+    // Mock GetActivationStatus to return a successful status
+    WPEFramework::Exchange::IAuthService::ActivationStatusResult asRes;
+    asRes.status = "activated";  // Simulating the status being "activated"
+    EXPECT_CALL(mockAuthServicePlugin_, GetActivationStatus(_))
+        .WillOnce(DoAll(::testing::SetArgReferee<0>(asRes), Return(Core::ERROR_NONE)));
+
+    // Test: Successfully retrieve the activation status, expect "activated"
+    std::string result = plugin_->checkActivatedStatus();
+    EXPECT_EQ(result, "activated");
+}
