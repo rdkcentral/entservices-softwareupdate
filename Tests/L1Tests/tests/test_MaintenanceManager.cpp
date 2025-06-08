@@ -222,7 +222,7 @@ protected:
     MockService* mockService;
 
     void SetUp() override {
-        manager = std::make_unique<MaintenanceManager>();
+        manager = std::make_unique<WPEFramework::Plugin::MaintenanceManager>();
         mockService = new NiceMock<MockService>();
         manager->m_service = mockService;  // Set private/protected with friend class or accessor
     }
