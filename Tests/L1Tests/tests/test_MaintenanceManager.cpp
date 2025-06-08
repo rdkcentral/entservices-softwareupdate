@@ -49,12 +49,64 @@ extern "C" int __real_pclose(FILE* pipe);
 
 class MockIAuthenticate : public PluginHost::IAuthenticate {
 public:
-    MOCK_METHOD3(CreateToken, uint32_t(uint16_t, const uint8_t*, string&));
-    MOCK_METHOD0(Release, void());
+    //MOCK_METHOD3(CreateToken, uint32_t(uint16_t, const uint8_t*, string&));
+    //MOCK_METHOD0(Release, void());
+    MOCK_METHOD(uint32_t, CreateToken, (uint16_t, const uint8_t*, std::string&));
+    MOCK_METHOD(void, Release, (), (override));
+    MOCK_METHOD(void*, QueryInterface, (uint32_t), (override));
+    MOCK_METHOD(void, AddRef, (), (const, override));
 };
 class MockService : public PluginHost::IShell {
 public:
     MOCK_METHOD1(QueryInterfaceByCallsign, void*(const string& callsign));
+    MOCK_METHOD(void, EnableWebServer, (const string&, const string&), (override));
+    MOCK_METHOD(void, DisableWebServer, (), (override));
+    MOCK_METHOD(string, Model, (), (const, override));
+    MOCK_METHOD(bool, Background, (), (const, override));
+    MOCK_METHOD(string, Accessor, (), (const, override));
+    MOCK_METHOD(string, WebPrefix, (), (const, override));
+    MOCK_METHOD(string, Locator, (), (const, override));
+    MOCK_METHOD(string, ClassName, (), (const, override));
+    MOCK_METHOD(string, Versions, (), (const, override));
+    MOCK_METHOD(string, Callsign, (), (const, override));
+    MOCK_METHOD(string, PersistentPath, (), (const, override));
+    MOCK_METHOD(string, VolatilePath, (), (const, override));
+    MOCK_METHOD(string, DataPath, (), (const, override));
+    MOCK_METHOD(string, ProxyStubPath, (), (const, override));
+    MOCK_METHOD(string, SystemPath, (), (const, override));
+    MOCK_METHOD(string, SystemRootPath, (), (const, override));
+    MOCK_METHOD(WPEFramework::Core::hresult, SystemRootPath, (const string&), (override));
+    MOCK_METHOD(PluginHost::IShell::startup, Startup, (), (const, override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Startup, (const PluginHost::IShell::startup), (override));
+    MOCK_METHOD(string, Substitute, (const string&), (const, override));
+    MOCK_METHOD(bool, Resumed, (), (const, override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Resumed, (const bool), (override));
+    MOCK_METHOD(string, HashKey, (), (const, override));
+    MOCK_METHOD(string, ConfigLine, (), (const, override));
+    MOCK_METHOD(WPEFramework::Core::hresult, ConfigLine, (const string&), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Metadata, (string&), (const, override));
+    MOCK_METHOD(bool, IsSupported, (const uint8_t), (const, override));
+    MOCK_METHOD(WPEFramework::PluginHost::ISubSystem*, SubSystems, (), (override));
+    MOCK_METHOD(void, Notify, (const string&), (override));
+    MOCK_METHOD(void, Register, (PluginHost::IPlugin::INotification*), (override));
+    MOCK_METHOD(void, Unregister, (PluginHost::IPlugin::INotification*), (override));
+    MOCK_METHOD(PluginHost::IShell::state, State, (), (const, override));
+    MOCK_METHOD(void*, QueryInterfaceByCallsign, (const uint32_t, const string&), (override));
+    MOCK_METHOD(void*, QueryInterface, (const uint32_t), (override));
+    MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(uint32_t, Release, (), (const, override));
+    MOCK_METHOD(std::string, PluginPath, (), (const, override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Activate, (const reason), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Deactivate, (const reason), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Unavailable, (const reason), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Hibernate, (const uint32_t), (override));
+    MOCK_METHOD(reason, Reason, (), (const, override));
+    MOCK_METHOD(uint32_t, Submit, (const uint32_t, const Core::ProxyType<Core::JSON::IElement>&), (override));
+    MOCK_METHOD(ICOMLink*, COMLink, (), (override));
+    //MOCK_METHOD(Core::hresult, getServiceState, (const std::string&, const std::string&, PluginHost::IShell::state&), (override));
+    MOCK_METHOD(uint32_t, getServiceState, (PluginHost::IShell* shell, const string& callsign, PluginHost::IShell::state& state));
+    //MOCK_METHOD(Core::hresult, getServiceState, (const string&, const string&, PluginHost::IShell::state&), (const, override));
+    MOCK_METHOD(bool, queryIAuthService, (), ());
     // Add more mock methods as needed.
 };
 
