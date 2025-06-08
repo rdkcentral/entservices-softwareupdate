@@ -219,11 +219,11 @@ protected:
 class MaintenanceManagerTest1 : public ::testing::Test {
 protected:
     std::unique_ptr<WPEFramework::Plugin::MaintenanceManager> manager;
-    MockService* mockService;
+    MockShell* mockService;
 
     void SetUp() override {
         manager = std::make_unique<WPEFramework::Plugin::MaintenanceManager>();
-        mockService = new NiceMock<MockService>();
+        mockService = new NiceMock<MockShell>();
         manager->m_service = mockService;  // Set private/protected with friend class or accessor
     }
 
@@ -1051,7 +1051,7 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoS
 }
 */
 TEST_F(MaintenanceManagerTest1, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent) {
-    auto* mockAuth = new NiceMock<MockShell>();
+    auto* mockAuth = new NiceMock<MockAuthService>();
 
     // Expectation: SecurityAgent is found
     EXPECT_CALL(*mockService, QueryInterfaceByCallsign("SecurityAgent"))
