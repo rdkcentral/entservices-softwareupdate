@@ -1051,7 +1051,7 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoS
 }
 */
 TEST_F(MaintenanceManagerTest1, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent) {
-    auto* mockAuth = new NiceMock<MockIAuthenticate>();
+    auto* mockAuth = new NiceMock<MockShell>();
 
     // Expectation: SecurityAgent is found
     EXPECT_CALL(*mockService, QueryInterfaceByCallsign("SecurityAgent"))
