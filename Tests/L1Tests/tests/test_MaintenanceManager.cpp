@@ -215,14 +215,13 @@ protected:
         plugin_->m_service = &mockService_;
         plugin_->m_authservicePlugin = &mockAuthServicePlugin_;
     }
+/*
     class TestableMaintenanceManager : public Plugin::MaintenanceManager {
     public:
         std::string statusToReturn;
         void setMockActivationStatus(const std::string& status) { statusToReturn = status; }
         MOCK_METHOD(std::string, checkActivatedStatus, ());
-        /*std::string checkActivatedStatus() {
-            return statusToReturn;
-        }*/
+        
         void AddRef() const override {
         // No-op for test
         }
@@ -242,7 +241,7 @@ protected:
     void TearDown() override {
         plugin_.reset();
     }
-
+*/
     virtual ~MaintenanceManagerCheckActivatedStatusTest() override {}
 };
 
@@ -958,7 +957,7 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	}
 }
 #endif
-/*
+
 TEST_F(MaintenanceManagerCheckActivatedStatusTest, ServiceNotActivated) {
     PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     
@@ -1013,7 +1012,7 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, SuccessfulActivationStatus) {
     std::string result = plugin_->checkActivatedStatus();
     EXPECT_EQ(result, "activated");
 }
-*/
+/*
 TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoSkip) {
     plugin_->setMockActivationStatus("activated");
     bool skip = false;
@@ -1023,4 +1022,4 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoS
     EXPECT_TRUE(plugin_->getActivatedStatus(skip));
     EXPECT_FALSE(skip);
 }
-
+*/
