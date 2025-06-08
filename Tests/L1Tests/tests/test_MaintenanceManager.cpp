@@ -41,8 +41,47 @@ using ::testing::AssertionResult;
 using ::testing::AssertionSuccess;
 using ::testing::AssertionFailure;
 
+using ::testing::Return;
+using ::testing::DoAll;
+using ::testing::SetArgReferee;
+using ThunderLinkType = WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>;
+
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
+
+
+class MockThunderClient {
+public:
+    //MOCK_METHOD(int32_t, Subscribe, (int timeout, const std::string& event, void (MaintenanceManager::*)(const JsonObject&), MaintenanceManager*), ());
+    //MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
+    MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
+    //MOCK_METHOD1(getThunderPluginHandle, ThunderLinkType*(const char*));
+    
+};
+/*
+class MockThunderClient : public ThunderLinkType {
+public:
+    //MockThunderClient(const char* callsign, const std::string& a, bool b, const std::string& query)
+    //    : ThunderLinkType(callsign, a, b, query) {}
+    MockThunderClient(const std::string& callsign, bool directed = false, const std::string& query = "")
+        : WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>(callsign, directed, query) {}
+    MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
+};
+*/
+class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
+public:
+    MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
+    MOCK_METHOD1(getThunderPluginHandle, ThunderLinkType*(const char*));
+    //MOCK_METHOD1(getThunderPluginHandle, MockThunderClient*(const char*));
+   
+    //MOCK_METHOD1(getThunderPluginHandle, MockMaintenanceManager*(const char*));
+    //MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
+    
+    //MOCK_METHOD1(setDeviceInitializationContext, bool(const JsonObject&));
+    //MOCK_METHOD0(subscribeToDeviceInitializationEvent, bool());
+    MOCK_CONST_METHOD0(AddRef, void());
+    MOCK_CONST_METHOD0(Release, uint32_t());
+};
 
 class MaintenanceManagerTest : public Test {
 protected:
@@ -53,7 +92,16 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
-
+//public:
+//    MOCK_CONST_METHOD0(AddRef, void());
+//    MOCK_CONST_METHOD0(Release, uint32_t());
+//protected:
+    MockMaintenanceManager manager;
+    MockThunderClient mockThunderClient;
+    //MockThunderClient mockThunderClient{"test", false, ""};
+    //WPEFramework::Plugin::MaintenanceManager Mg;
+    //MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MaintenanceManager*(const char*));
+    //MOCK_METHOD(void*, QueryInterfaceByCallsign, (const uint32_t, const string&), (override));
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
         , handler_(*plugin_)
@@ -137,6 +185,14 @@ protected:
 
         dispatcher_ = static_cast<PLUGINHOST_DISPATCHER*>(plugin_->QueryInterface(PLUGINHOST_DISPATCHER_ID));
         dispatcher_->Activate(&service_);
+
+	EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, ::testing::_))
+            .Times(1)
+            .WillOnce(::testing::Invoke(
+                [&](const uint32_t, const string& name) -> void* {
+                    EXPECT_EQ(name, string(_T("org.rdk.MaintenanceManager.1")));
+                    return nullptr;
+                }));
     }
 
     virtual ~MaintenanceManagerInitializedEventTest() override
@@ -653,8 +709,6 @@ TEST(GetTimeZoneTest, TimeZoneOffsetMapFileCreated) {
     remove("/tmp/timeZone_offset_map");
 }
 
-
-
 TEST_F(MaintenanceManagerTest, GetServiceState_Unavailable) {
     PluginHost::IShell::state state;
     EXPECT_CALL(service, QueryInterfaceByCallsign("test"))
@@ -806,3 +860,277 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	}
 }
 #endif
+TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Success)
+{
+    bool result = plugin_->maintenance_initTimer();
+    EXPECT_TRUE(result); 
+}
+TEST_F(MaintenanceManagerTest, TaskStartTimer_Success)
+{
+    // Ensure the timer is not already created
+    plugin_->maintenance_deleteTimer();
+
+    // Attempt to start the timer
+    bool result = plugin_->task_startTimer();
+
+    // The result should be true if the timer started successfully
+    EXPECT_TRUE(result);
+}
+TEST_F(MaintenanceManagerTest, TaskStopTimer_Success)
+{
+    // Ensure the timer is created and started
+    plugin_->task_startTimer();
+
+    // Attempt to stop the timer
+    bool result = plugin_->task_stopTimer();
+
+    // Should succeed
+    EXPECT_TRUE(result);
+}
+TEST_F(MaintenanceManagerTest, TaskStopTimer_Fail)
+{
+    // Ensure the timer is created and started
+    plugin_->task_startTimer();
+    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = false;
+    // Attempt to stop the timer
+    bool result = plugin_->task_stopTimer();
+
+    // Should succeed
+    EXPECT_FALSE(result);
+}
+
+
+TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
+{
+    // Ensure the timer is created first
+    plugin_->task_startTimer();
+    // Attempt to delete the timer
+    bool result = plugin_->maintenance_deleteTimer();
+
+    // Should succeed
+    EXPECT_TRUE(result);
+}
+TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Fail)
+{
+    // Ensure the timer is created first
+    plugin_->task_startTimer();
+    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = false;
+    // Attempt to delete the timer
+    bool result = plugin_->maintenance_deleteTimer();
+
+    // Should succeed
+    EXPECT_FALSE(result);
+}
+/*
+TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Fail1)
+{
+    // Ensure the timer is created first
+    plugin_->task_startTimer();
+    #define timer_delete(timerid) (-1)
+    // Attempt to delete the timer
+    bool result = plugin_->maintenance_deleteTimer();
+
+    // Should succeed
+    EXPECT_FALSE(result);
+} */
+TEST_F(MaintenanceManagerTest, TimerHandler_HandlesSignalCorrectly) {
+    int test_signo = SIGALRM; // or any relevant signal number
+    plugin_->timer_handler(test_signo);
+}
+
+TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
+    const char* owner = "TestOwner";
+    IARM_EventId_t eventId = 42; // Use an appropriate value
+    char data[100] = {0}; // Or whatever data is expected
+    size_t len = sizeof(data);
+
+    // Optionally, set up any necessary global or static state
+
+    plugin_->iarmEventHandler(owner, eventId, data, len);
+} 
+/*
+TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
+   
+MockThunderClient mockThunderClient;
+const char *callsign = "null";
+WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
+thunder_client = new WPEFramework::JSONRPC::LinkType<Core::JSON::IElement>(callsign, "", false, query);
+    // Set up the manager mock to return our ThunderClient mock
+    EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
+        .WillOnce(::testing::Return(&thunder_client));
+    // Only call the mock, not the real implementation
+    bool result = plugin_->subscribeToDeviceInitializationEvent();
+    EXPECT_TRUE(result);
+}
+*/
+/*
+TEST_F(MaintenanceManagerTest, ReturnsHandleForKnownCallsign) {
+    const char* knownCallsign = "KnownPlugin";
+    // You may need to set up the plugin system so that KnownPlugin exists.
+    // This might involve initializing WPEFramework or mocking dependencies.
+
+    auto* handle = plugin_->getThunderPluginHandle(knownCallsign);
+   // auto* handle = manager.getThunderPluginHandle(knownCallsign);
+
+    // Depending on your framework, it might be nullptr if not set up correctly.
+    // If it's set up, check that the handle is not nullptr.
+    EXPECT_NE(handle, nullptr);
+
+    // Optionally, verify handle properties
+    // EXPECT_EQ(handle->SomeProperty(), ExpectedValue);
+}
+*/
+
+TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
+   // MockThunderClient mockThunderClient;
+    // Set up the manager mock to return our ThunderClient mock
+    //EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
+       // .WillOnce(::testing::Return(&mockThunderClient));
+   // EXPECT_CALL(mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+      //  .WillOnce(::testing::Return(Core::ERROR_NONE));
+    // If subscribeToDeviceInitializationEvent is virtual and implemented in the mock:
+   MockMaintenanceManager* mockThunderClient = new MockMaintenanceManager();
+//EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
+    //.WillOnce(::testing::Return(mockThunderClient));\
+
+EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
+    .WillOnce(::testing::Return(static_cast<ThunderLinkType*>(mockThunderClient)));
+
+EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    .WillOnce(::testing::Return(Core::ERROR_NONE));
+
+
+  //  EXPECT_CALL(manager, subscribeToDeviceInitializationEvent())
+    //  .WillOnce(::testing::Return(true));
+
+    // Only call the mock, not the real implementation
+    bool result = manager.subscribeToDeviceInitializationEvent();
+    EXPECT_TRUE(result);
+    delete mockThunderClient;
+}
+
+
+TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest) {
+    // Set up any required state for manager
+    // For example, if there are tasks to execute, add them here.
+
+    // Call the function to test. If it's private/protected, you may need to expose it for testing.
+    plugin_->task_execution_thread();
+
+    // Assert the expected outcomes.
+    // For example, if it modifies a state or calls other methods, check those effects.
+    // Example:
+    // EXPECT_EQ(manager.GetTaskStatus(), EXPECTED_STATUS);
+}
+/*
+TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
+    const char* callsign = "test";
+    std::string query = "token=testtoken";
+    // You can use a real ThunderLinkType or a mock, as long as it matches the signature.
+    auto* mockThunderClient = new ThunderLinkType(callsign, "", false, query);
+    EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
+        .WillOnce(::testing::Return(mockThunderClient));
+    // You may also need to mock/intercept Subscribe on this object if it is virtual
+
+    // Proceed with your test as normal
+    bool result = manager.subscribeToDeviceInitializationEvent();
+    EXPECT_TRUE(result);
+
+    delete mockThunderClient;
+}
+*/
+/*
+
+TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
+    // Assume getThunderPluginHandle returns a valid pointer
+    // and Subscribe returns Core::ERROR_NONE
+    // Set up the mock or override as needed
+    auto mockThunderClient = new MockThunderClient();
+    ON_CALL(manager, subscribeToDeviceInitializationEvent())
+    .WillByDefault([&]() { 
+        // Call the real implementation
+        return manager.MaintenanceManager::subscribeToDeviceInitializationEvent(); 
+    });
+    EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
+        .WillOnce(::testing::Return(mockThunderClient));
+    EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(Core::ERROR_NONE));
+
+    // Assume manager is a MockMaintenanceManager
+    //EXPECT_CALL(manager, getThunderPluginHandle(::testing::_))
+    //    .WillOnce(::testing::Return(mockThunderClient));
+    bool result = manager.subscribeToDeviceInitializationEvent();
+    EXPECT_TRUE(result);
+    //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
+}
+*/
+
+/*
+TEST_F(MaintenanceManagerTest, ReturnsTrueAndSetsActiveStatus) {
+    std::string status;
+    // Optionally, set up any mocks or preconditions needed
+
+    bool result = plugin_->knowWhoAmI(status);
+
+    EXPECT_TRUE(result);
+    //EXPECT_EQ(status, "active"); 
+}
+*/
+/*
+TEST_F(MaintenanceManagerTest, SecManagerActive_DeviceContextSuccess1) {
+    std::string activation_status = "not-activated";
+    // ... various EXPECT_CALL statements ...
+    EXPECT_TRUE(manager.knowWhoAmI(activation_status));
+}*/
+/*
+TEST_F(MaintenanceManagerTest, SecManagerActive_DeviceContextSuccess1) {
+    std::string activation_status = "not-activated";
+    // Mock getServiceState to return ACTIVATED
+    EXPECT_CALL(manager, getServiceState(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<2>(PluginHost::IShell::state::ACTIVATED), Return(Core::ERROR_NONE)));
+    // Mock Thunder plugin handle
+    EXPECT_CALL(manager, getThunderPluginHandle(_)).WillOnce(Return(&mockThunderClient));
+    // Mock Thunder call to return success and context
+    EXPECT_CALL(mockThunderClient, Invoke(_, _, _, _))
+        .WillOnce([](int, const std::string&, const JsonObject&, JsonObject& out) {
+            out["success"] = true;
+            JsonObject context;
+            context["partnerId"] = "pid";
+            context["osClass"] = "osclass";
+            context["regionalConfigService"] = "rcs";
+            out["deviceInitializationContext"] = context;
+        });
+    // Mock context setter
+    EXPECT_CALL(manager, setDeviceInitializationContext(_)).WillOnce(Return(true));
+    // Mock event subscription
+    EXPECT_CALL(manager, subscribeToDeviceInitializationEvent()).WillOnce(Return(true));
+
+    EXPECT_TRUE(manager.knowWhoAmI(activation_status));
+}
+
+TEST_F(MaintenanceManagerTest, SecManagerActive_DeviceContextSuccess) {
+    std::string activation_status = "not-activated";
+    // getServiceState returns ACTIVE
+    EXPECT_CALL(manager, getServiceState(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<2>(PluginHost::IShell::state::ACTIVATED), Return(Core::ERROR_NONE)));
+    // Thunder plugin handle valid
+    EXPECT_CALL(manager, getThunderPluginHandle(_)).WillOnce(Return(&mockThunderClient));
+    // Thunder call returns success + deviceInitializationContext
+    EXPECT_CALL(mockThunderClient, Invoke(_, _, _, _))
+        .WillOnce([](int, const std::string&, const JsonObject&, JsonObject& out) {
+            out["success"] = true;
+            JsonObject context;
+            context["partnerId"] = "pid";
+            context["osClass"] = "osclass";
+            context["regionalConfigService"] = "rcs";
+            out["deviceInitializationContext"] = context;
+        });
+    // setDeviceInitializationContext returns true
+    EXPECT_CALL(manager, setDeviceInitializationContext(_)).WillOnce(Return(true));
+    // Event subscription logic
+    EXPECT_CALL(manager, subscribeToDeviceInitializationEvent()).WillOnce(Return(true));
+
+    EXPECT_TRUE(manager.knowWhoAmI(activation_status));
+}
+
+*/

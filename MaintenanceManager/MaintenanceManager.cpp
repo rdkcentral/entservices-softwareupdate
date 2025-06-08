@@ -24,6 +24,7 @@
  * @reference RDK-29959.
  */
 
+
 #include <stdlib.h>
 #include <errno.h>
 #include <cstdio>
@@ -391,10 +392,18 @@ namespace WPEFramework
              * "activated" */
             if (activationStatus)
             {
+#if !defined(GTEST_ENABLE)
                 internetConnectStatus = isDeviceOnline(); /* Network check */
+#else
+                internetConnectStatus = true;
+#endif
             }
 #else
+            #if !defined(GTEST_ENABLE)
             internetConnectStatus = isDeviceOnline(); /* Network check */
+            #else
+            internetConnectStatus = true;
+            #endif
 #endif
 
 #if defined(ENABLE_WHOAMI)
@@ -533,7 +542,9 @@ namespace WPEFramework
                     else /* system() executes successfully */
                     {
                         MM_LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
+                #if !defined(GTEST_ENABLE)
                         task_thread.wait(lck);
+                #endif
                         if (task_stopTimer())
                         {
                             MM_LOGINFO("Stopped Timer Successfully");
@@ -561,7 +572,7 @@ namespace WPEFramework
             MM_LOGINFO("Worker Thread Completed");
         } /* end of task_execution_thread() */
 
-#if defined(ENABLE_WHOAMI)
+#if defined(ENABLE_WHOAMI) || defined(GTEST_ENABLE)
         /**
          * @brief Determines the device identity by querying the Security Manager.
          *
@@ -1405,12 +1416,14 @@ namespace WPEFramework
             MM_LOGINFO("Attempting to subscribe for %s events", event.c_str());
 
             thunder_client = getThunderPluginHandle(secMgr_callsign_ver);
+            MM_LOGINFO("Reaching here %s", event.c_str());
             if (thunder_client == nullptr)
             {
                 MM_LOGINFO("Failed to get plugin handle");
             }
             else
             {
+                MM_LOGINFO("Reaching here inside else  %s", event.c_str());
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
                 if (status == Core::ERROR_NONE)
                 {

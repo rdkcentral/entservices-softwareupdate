@@ -37,8 +37,9 @@
 #include "sysMgr.h"
 #include "rfcapi.h"
 #include "cSettings.h"
-
 #include <interfaces/IAuthService.h>
+//#if defined(GTEST_ENABLE)
+//#endif
 
 /* ---- LOGGING ---- */
 #ifdef ENABLE_JOURNAL_LOGGING
@@ -170,7 +171,11 @@ namespace WPEFramework
 
         class MaintenanceManager : public PluginHost::IPlugin, public PluginHost::JSONRPC
         {
+#if defined(GTEST_ENABLE)
+        public:
+#else
         private:
+#endif
             typedef Core::JSON::String JString;
             typedef Core::JSON::ArrayType<JString> JStringArray;
             typedef Core::JSON::Boolean JBool;
@@ -235,7 +240,14 @@ namespace WPEFramework
             /* We do not allow this plugin to be copied !! */
             MaintenanceManager(const MaintenanceManager &) = delete;
             MaintenanceManager &operator=(const MaintenanceManager &) = delete;
-
+/*
+#if defined(GTEST_ENABLE)
+            friend class MaintenanceManagerTest;
+            FRIEND_TEST(MaintenanceManagerTest, iarmEventHandler);
+            public:
+                  using MaintenanceManager::iarmEventHandler;
+#endif
+*/
         private:
             class MaintenanceTask
             {

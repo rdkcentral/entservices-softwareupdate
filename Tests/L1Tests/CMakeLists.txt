@@ -119,7 +119,7 @@ set (FIRMWAREUPDATE_INC ${CMAKE_SOURCE_DIR}/../entservices-softwareupdate/Firmwa
 add_plugin_test_ex(PLUGIN_FIRMWAREUPDATE tests/test_FirmwareUpdate.cpp "${FIRMWAREUPDATE_INC}" "${FIRMWAREUPDATE_LIBS}")
 
 # PLUGIN_MAINTENANCEMANAGER
-set (MAINTENANCEMANAGER_INC ${CMAKE_SOURCE_DIR}/../entservices-softwareupdate/MaintenanceManager ${CMAKE_SOURCE_DIR}/../entservices-softwareupdate/helpers)
+set (MAINTENANCEMANAGER_INC ${CMAKE_SOURCE_DIR}/../entservices-softwareupdate/MaintenanceManager ${CMAKE_SOURCE_DIR}/../entservices-softwareupdate/helpers /usr/local/include)
 add_plugin_test_ex(PLUGIN_MAINTENANCEMANAGER tests/test_MaintenanceManager.cpp "${MAINTENANCEMANAGER_INC}" "${NAMESPACE}MaintenanceManager")
 
 add_library(${MODULE_NAME} SHARED ${TEST_SRC})
@@ -140,6 +140,8 @@ include_directories(${TEST_INC})
 target_link_directories(${MODULE_NAME} PUBLIC ${CMAKE_INSTALL_PREFIX}/lib/wpeframework/plugins)
 
 target_link_libraries(${MODULE_NAME} ${TEST_LIB})
+
+target_compile_definitions(${MODULE_NAME} PRIVATE GTEST_ENABLE)
 
 target_include_directories(${MODULE_NAME}
         PUBLIC
