@@ -218,7 +218,7 @@ protected:
 };
 class MaintenanceManagerTest1 : public ::testing::Test {
 protected:
-    std::unique_ptr<MaintenanceManager> manager;
+    std::unique_ptr<WPEFramework::Plugin::MaintenanceManager> manager;
     MockService* mockService;
 
     void SetUp() override {
