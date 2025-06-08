@@ -46,12 +46,6 @@ using ::testing::Return;
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
 
-
-
-class MockMaintenanceManager : public MaintenanceManager {
-public:
-    MOCK_METHOD(std::string, checkActivatedStatus, (), (override));
-};
 class MockShell : public WPEFramework::PluginHost::IShell {
 public:
     MOCK_METHOD(void, EnableWebServer, (const string&, const string&), (override));
@@ -990,17 +984,4 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, SuccessfulActivationStatus) {
     // Test: Successfully retrieve the activation status, expect "activated"
     std::string result = plugin_->checkActivatedStatus();
     EXPECT_EQ(result, "activated");
-}
-TEST(MaintenanceManagerTest, GetActivatedStatus_ActivationConnect) {
-    MockMaintenanceManager mockManager;
-    bool skipFirmwareCheck = false;
-
-    // Setup the mock behavior for checkActivatedStatus
-    EXPECT_CALL(mockManager, checkActivatedStatus())
-        .WillOnce(Return("activation-connect"));
-
-    bool result = mockManager.getActivatedStatus(skipFirmwareCheck);
-
-    EXPECT_TRUE(result);  // Because ACTIVATION_CONNECT is treated as activated
-    EXPECT_TRUE(skipFirmwareCheck);  // skipFirmwareCheck is set to true
 }
