@@ -1018,7 +1018,7 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoS
     plugin_->setMockActivationStatus("activated");
     bool skip = false;
     WPEFramework::Exchange::IAuthService::ActivationStatusResult asRes;
-    EXPECT_CALL(mockAuthServicePlugin_, checkActivatedStatus(_))
+    EXPECT_CALL(plugin_, checkActivatedStatus(_))
         .WillOnce(DoAll(Return(Core::ERROR_NONE)))
     EXPECT_TRUE(plugin_->getActivatedStatus(skip));
     EXPECT_FALSE(skip);
