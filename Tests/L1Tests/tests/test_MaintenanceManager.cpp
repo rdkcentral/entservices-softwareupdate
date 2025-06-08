@@ -219,7 +219,7 @@ protected:
     public:
         std::string statusToReturn;
         void setMockActivationStatus(const std::string& status) { statusToReturn = status; }
-        MOCK_METHOD(std::string, checkActivatedStatus, (), (override));
+        MOCK_METHOD(std::string, checkActivatedStatus, ());
         /*std::string checkActivatedStatus() {
             return statusToReturn;
         }*/
@@ -1017,8 +1017,9 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, SuccessfulActivationStatus) {
 TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoSkip) {
     plugin_->setMockActivationStatus("activated");
     bool skip = false;
-    EXPECT_CALL(mockAuthServicePlugin_, GetActivationStatus(_))
-        .WillOnce(DoAll(::testing::SetArgReferee<0>(asRes), Return(Core::ERROR_NONE)))
+    WPEFramework::Exchange::IAuthService::ActivationStatusResult asRes;
+    EXPECT_CALL(mockAuthServicePlugin_, checkActivatedStatus(_))
+        .WillOnce(DoAll(Return(Core::ERROR_NONE)))
     EXPECT_TRUE(plugin_->getActivatedStatus(skip));
     EXPECT_FALSE(skip);
 }
