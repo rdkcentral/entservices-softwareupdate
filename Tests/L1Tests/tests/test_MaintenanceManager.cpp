@@ -218,12 +218,12 @@ protected:
 };
 class MaintenanceManagerTest1 : public ::testing::Test {
 protected:
-    std::unique_ptr<WPEFramework::Plugin::MaintenanceManager> manager;
-    MockShell* mockService;
+    std::unique_ptr<MaintenanceManager> manager;
+    MockService* mockService;
 
     void SetUp() override {
-        manager = std::make_unique<WPEFramework::Plugin::MaintenanceManager>();
-        mockService = new NiceMock<MockShell>();
+        manager = std::make_unique<MaintenanceManager>();
+        mockService = new NiceMock<MockService>();
         manager->m_service = mockService;  // Set private/protected with friend class or accessor
     }
 
@@ -1050,6 +1050,7 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoS
     EXPECT_FALSE(skip);
 }
 */
+/*
 TEST_F(MaintenanceManagerTest1, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent) {
     auto* mockAuth = new NiceMock<MockAuthService>();
 
@@ -1074,5 +1075,29 @@ TEST_F(MaintenanceManagerTest1, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent
     // Optional: verify internal state of the returned handle (callsign, query param etc.)
     delete handle;
 }
+*/
+TEST_F(MaintenanceManagerTest1, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent) {
+    auto* mockAuth = new NiceMock<MockIAuthenticate>();
 
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(*mockService, QueryInterfaceByCallsign("SecurityAgent"))
+        .WillOnce(Return(static_cast<PluginHost::IAuthenticate*>(mockAuth)));
+
+    // Expectation: CreateToken succeeds and sets token
+    EXPECT_CALL(*mockAuth, CreateToken(_, _, _))
+        .WillOnce([](uint16_t, const uint8_t*, string& token) {
+            token = "mock_token";
+            return Core::ERROR_NONE;
+        });
+
+    EXPECT_CALL(*mockAuth, Release()).Times(1);
+
+    const char* callsign = "SomePlugin";
+
+    auto* handle = manager->getThunderPluginHandle(callsign);
+    ASSERT_NE(handle, nullptr);
+
+    // Optional: verify internal state of the returned handle (callsign, query param etc.)
+    delete handle;
+}
 
