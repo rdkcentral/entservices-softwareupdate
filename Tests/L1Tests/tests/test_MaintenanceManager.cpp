@@ -219,10 +219,10 @@ protected:
     public:
         std::string statusToReturn;
         void setMockActivationStatus(const std::string& status) { statusToReturn = status; }
-
-        std::string checkActivatedStatus() {
+        MOCK_METHOD(std::string, checkActivatedStatus, (), (override));
+        /*std::string checkActivatedStatus() {
             return statusToReturn;
-        }
+        }*/
         void AddRef() const override {
         // No-op for test
         }
@@ -1017,7 +1017,8 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, SuccessfulActivationStatus) {
 TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoSkip) {
     plugin_->setMockActivationStatus("activated");
     bool skip = false;
-
+    EXPECT_CALL(mockAuthServicePlugin_, GetActivationStatus(_))
+        .WillOnce(DoAll(::testing::SetArgReferee<0>(asRes), Return(Core::ERROR_NONE)))
     EXPECT_TRUE(plugin_->getActivatedStatus(skip));
     EXPECT_FALSE(skip);
 }
