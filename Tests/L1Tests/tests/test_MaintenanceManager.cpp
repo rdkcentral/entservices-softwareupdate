@@ -50,7 +50,6 @@ extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
 
 
-/*
 class MockThunderClient {
 public:
     //MOCK_METHOD(int32_t, Subscribe, (int timeout, const std::string& event, void (MaintenanceManager::*)(const JsonObject&), MaintenanceManager*), ());
@@ -58,8 +57,8 @@ public:
     MOCK_METHOD4(Invoke, void(int, const std::string&, const JsonObject&, JsonObject&));
     MOCK_METHOD1(getThunderPluginHandle, ThunderLinkType*(const char*));
     
-}; */
-
+};
+/*
 class MockThunderClient : public ThunderLinkType {
 public:
     //MockThunderClient(const char* callsign, const std::string& a, bool b, const std::string& query)
@@ -68,7 +67,7 @@ public:
         : WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>(callsign, directed, query) {}
     MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
 };
-
+*/
 class MockMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
 public:
     MOCK_METHOD3(getServiceState, uint32_t(PluginHost::IShell*, const std::string&, PluginHost::IShell::state&));
@@ -98,8 +97,8 @@ protected:
 //    MOCK_CONST_METHOD0(Release, uint32_t());
 //protected:
     MockMaintenanceManager manager;
-    //MockThunderClient mockThunderClient;
-    MockThunderClient mockThunderClient{"test", false, ""};
+    MockThunderClient mockThunderClient;
+    //MockThunderClient mockThunderClient{"test", false, ""};
     //WPEFramework::Plugin::MaintenanceManager Mg;
     //MOCK_METHOD1(getThunderPluginHandle, WPEFramework::Plugin::MaintenanceManager*(const char*));
     //MOCK_METHOD(void*, QueryInterfaceByCallsign, (const uint32_t, const string&), (override));
@@ -981,7 +980,7 @@ TEST_F(MaintenanceManagerTest, ReturnsHandleForKnownCallsign) {
     // EXPECT_EQ(handle->SomeProperty(), ExpectedValue);
 }
 */
-/*
+
 TEST_F(MaintenanceManagerTest, SubscribeSuccess) {
    // MockThunderClient mockThunderClient;
     // Set up the manager mock to return our ThunderClient mock
@@ -1006,7 +1005,7 @@ EXPECT_CALL(*mockThunderClient, Subscribe(::testing::_, ::testing::_, ::testing:
     EXPECT_TRUE(result);
     delete mockThunderClient;
 }
-*/
+
 
 TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest) {
     // Set up any required state for manager
