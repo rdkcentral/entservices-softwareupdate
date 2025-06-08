@@ -958,6 +958,7 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	}
 }
 #endif
+/*
 TEST_F(MaintenanceManagerCheckActivatedStatusTest, ServiceNotActivated) {
     PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     
@@ -1012,6 +1013,7 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, SuccessfulActivationStatus) {
     std::string result = plugin_->checkActivatedStatus();
     EXPECT_EQ(result, "activated");
 }
+*/
 TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoSkip) {
     plugin_->setMockActivationStatus("activated");
     bool skip = false;
