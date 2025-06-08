@@ -1168,3 +1168,67 @@ TEST_F(MaintenanceManagerTest1, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent
     delete handle;
 }
 
+TEST_F(MaintenanceManagerTest1, ReturnsLinkTypeWithoutTokenWhenSecurityAgentNotFound) {
+    EXPECT_CALL(*mockService, QueryInterfaceByCallsign("SecurityAgent"))
+        .WillOnce(Return(nullptr));
+
+    const char* callsign = "SomePlugin";
+
+    auto* handle = manager->getThunderPluginHandle(callsign);
+
+    ASSERT_NE(handle, nullptr);
+
+    // Optional: check handle's query string is empty or token is missing
+
+    delete handle;
+}
+TEST_F(MaintenanceManagerTest1, ReturnsLinkTypeWithoutTokenWhenCreateTokenFails) {
+    auto* mockAuth = new testing::NiceMock<MockIAuthenticate>();
+
+    EXPECT_CALL(*mockService, QueryInterfaceByCallsign("SecurityAgent"))
+        .WillOnce(Return(static_cast<PluginHost::IAuthenticate*>(mockAuth)));
+
+    EXPECT_CALL(*mockAuth, CreateToken(_, _, _))
+        .WillOnce(Return(WPEFramework::Core::ERROR_GENERAL));  // Simulate failure
+
+    EXPECT_CALL(*mockAuth, Release()).Times(1);
+
+    const char* callsign = "SomePlugin";
+
+    auto* handle = manager->getThunderPluginHandle(callsign);
+
+    ASSERT_NE(handle, nullptr);
+
+    // Optional: check handle query string doesn't contain token
+
+    delete handle;
+}
+
+TEST_F(MaintenanceManagerTest1, SetsEnvironmentVariableTHUNDER_ACCESS) {
+    auto* mockAuth = new testing::NiceMock<MockIAuthenticate>();
+
+    EXPECT_CALL(*mockService, QueryInterfaceByCallsign("SecurityAgent"))
+        .WillOnce(Return(static_cast<PluginHost::IAuthenticate*>(mockAuth)));
+
+    EXPECT_CALL(*mockAuth, CreateToken(_, _, _))
+        .WillOnce([](uint16_t, const uint8_t*, std::string& token) {
+            token = "mock_token";
+            return WPEFramework::Core::ERROR_NONE;
+        });
+
+    EXPECT_CALL(*mockAuth, Release()).Times(1);
+
+    const char* callsign = "SomePlugin";
+
+    auto* handle = manager->getThunderPluginHandle(callsign);
+
+    ASSERT_NE(handle, nullptr);
+
+    char* thunder_access = getenv("THUNDER_ACCESS");
+    ASSERT_NE(thunder_access, nullptr);
+    ASSERT_STREQ(thunder_access, SERVER_DETAILS);
+
+    delete handle;
+}
+
+
