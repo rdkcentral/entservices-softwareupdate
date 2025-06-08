@@ -298,6 +298,24 @@ protected:
     }
 };
 
+class TestableMaintenanceManager1 : public MaintenanceManager {
+public:
+    void setMockLink(WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>* link) {
+        mockLink = link;
+    }
+
+protected:
+    // Override the getThunderPluginHandle to return the mock if set
+    WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>* getThunderPluginHandle(const char* callsign) {
+        if (mockLink) return mockLink;
+        return MaintenanceManager::getThunderPluginHandle(callsign);
+    }
+
+private:
+    WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>* mockLink = nullptr;
+};
+
+
 class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
 protected:
     NiceMock<MockShell> mockService_;
@@ -1230,5 +1248,22 @@ TEST_F(MaintenanceManagerTest1, SetsEnvironmentVariableTHUNDER_ACCESS) {
 
     delete handle;
 }
+TEST(MaintenanceManagerTest, Subscribe_UsesMockLink) {
+    TestableMaintenanceManager1 manager;
+
+    auto* mockLink = new MockLinkType();
+
+    EXPECT_CALL(*mockLink, Subscribe(_, "onDeviceInitializationContextUpdate", _, &manager))
+        .WillOnce(Return(Core::ERROR_NONE));
+
+    manager.setMockLink(mockLink);
+
+    bool result = manager.subscribeToDeviceInitializationEvent();
+
+    EXPECT_TRUE(result);
+
+    delete mockLink;
+}
+
 
 
