@@ -218,11 +218,11 @@ protected:
 };
 class MaintenanceManagerTest1 : public ::testing::Test {
 protected:
-    std::unique_ptr<MaintenanceManager> manager;
+    std::unique_ptr<WPEFramework::Plugin::MaintenanceManager> manager;
     MockService* mockService;
 
     void SetUp() override {
-        manager = std::make_unique<MaintenanceManager>();
+        manager = std::make_unique<WPEFramework::Plugin::MaintenanceManager>();
         mockService = new NiceMock<MockService>();
         manager->m_service = mockService;  // Set private/protected with friend class or accessor
     }
