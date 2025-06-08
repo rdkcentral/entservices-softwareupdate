@@ -220,7 +220,7 @@ protected:
         std::string statusToReturn;
         void setMockActivationStatus(const std::string& status) { statusToReturn = status; }
 
-        std::string checkActivatedStatus() override {
+        std::string checkActivatedStatus() {
             return statusToReturn;
         }
         void AddRef() const override {
