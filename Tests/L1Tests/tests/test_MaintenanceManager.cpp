@@ -215,6 +215,26 @@ protected:
         plugin_->m_service = &mockService_;
         plugin_->m_authservicePlugin = &mockAuthServicePlugin_;
     }
+    class TestableMaintenanceManager : public Plugin::MaintenanceManager {
+    public:
+        std::string statusToReturn;
+        void setMockActivationStatus(const std::string& status) { statusToReturn = status; }
+
+        std::string checkActivatedStatus() override {
+            return statusToReturn;
+        }
+    };
+
+    std::unique_ptr<TestableMaintenanceManager> plugin_;
+    
+    void SetUp() override {
+        MaintenanceManagerTest::SetUp();
+        plugin_ = std::make_unique<TestableMaintenanceManager>();
+    }
+
+    void TearDown() override {
+        plugin_.reset();
+    }
 
     virtual ~MaintenanceManagerCheckActivatedStatusTest() override {}
 };
@@ -985,3 +1005,11 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, SuccessfulActivationStatus) {
     std::string result = plugin_->checkActivatedStatus();
     EXPECT_EQ(result, "activated");
 }
+TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoSkip) {
+    plugin_->setMockActivationStatus("activated");
+    bool skip = false;
+
+    EXPECT_TRUE(plugin_->getActivatedStatus(skip));
+    EXPECT_FALSE(skip);
+}
+
