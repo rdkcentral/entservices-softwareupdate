@@ -46,6 +46,19 @@ using ::testing::Return;
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
 
+
+class MockIAuthenticate : public PluginHost::IAuthenticate {
+public:
+    MOCK_METHOD3(CreateToken, uint32_t(uint16_t, const uint8_t*, string&));
+    MOCK_METHOD0(Release, void());
+};
+class MockService : public PluginHost::IShell {
+public:
+    MOCK_METHOD1(QueryInterfaceByCallsign, void*(const string& callsign));
+    // Add more mock methods as needed.
+};
+
+
 class MockShell : public WPEFramework::PluginHost::IShell {
 public:
     MOCK_METHOD(void, EnableWebServer, (const string&, const string&), (override));
@@ -203,7 +216,21 @@ protected:
 
     }
 };
+class MaintenanceManagerTest1 : public ::testing::Test {
+protected:
+    std::unique_ptr<MaintenanceManager> manager;
+    MockService* mockService;
 
+    void SetUp() override {
+        manager = std::make_unique<MaintenanceManager>();
+        mockService = new NiceMock<MockService>();
+        manager->m_service = mockService;  // Set private/protected with friend class or accessor
+    }
+
+    void TearDown() override {
+        manager.reset();
+    }
+};
 
 class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
 protected:
@@ -1023,3 +1050,29 @@ TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoS
     EXPECT_FALSE(skip);
 }
 */
+TEST_F(MaintenanceManagerTest1, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent) {
+    auto* mockAuth = new NiceMock<MockIAuthenticate>();
+
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(*mockService, QueryInterfaceByCallsign("SecurityAgent"))
+        .WillOnce(Return(static_cast<PluginHost::IAuthenticate*>(mockAuth)));
+
+    // Expectation: CreateToken succeeds and sets token
+    EXPECT_CALL(*mockAuth, CreateToken(_, _, _))
+        .WillOnce([](uint16_t, const uint8_t*, string& token) {
+            token = "mock_token";
+            return Core::ERROR_NONE;
+        });
+
+    EXPECT_CALL(*mockAuth, Release()).Times(1);
+
+    const char* callsign = "SomePlugin";
+
+    auto* handle = manager->getThunderPluginHandle(callsign);
+    ASSERT_NE(handle, nullptr);
+
+    // Optional: verify internal state of the returned handle (callsign, query param etc.)
+    delete handle;
+}
+
+
