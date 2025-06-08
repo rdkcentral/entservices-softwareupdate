@@ -269,12 +269,23 @@ protected:
 
     }
 };
+namespace WPEFramework {
+namespace Plugin {
+class TestableMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
+public:
+    void AddRef() const override {}
+    uint32_t Release() const override { return 0; }
+    void* QueryInterface(const uint32_t) override { return nullptr; }
+};
+}
+}
 class MaintenanceManagerTest1 : public ::testing::Test {
 protected:
     std::unique_ptr<WPEFramework::Plugin::MaintenanceManager> manager;
     MockService* mockService;
 
     void SetUp() override {
+        using WPEFramework::Plugin::TestableMaintenanceManager;
         manager = std::make_unique<WPEFramework::Plugin::TestableMaintenanceManager>();
         mockService = new NiceMock<MockService>();
         manager->m_service = mockService;  // Set private/protected with friend class or accessor
@@ -283,12 +294,6 @@ protected:
     void TearDown() override {
         manager.reset();
     }
-};
-class TestableMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
-public:
-    void AddRef() const override {}
-    uint32_t Release() const override { return 0; }
-    void* QueryInterface(const uint32_t) override { return nullptr; }
 };
 
 class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
