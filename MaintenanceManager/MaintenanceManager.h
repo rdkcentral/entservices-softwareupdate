@@ -114,7 +114,7 @@ typedef enum
 
 #define BASE_CLOCK CLOCK_BOOTTIME
 
-#define WHOAMI_PROP_KEY "WHOAMI_ENABLED"
+#define WHOAMI_PROP_KEY "WHOAMI_SUPPORT"
 #define DEVICE_PROP_FILE "/etc/device.properties"
 
 #define FOREGROUND_MODE "FOREGROUND"
