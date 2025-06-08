@@ -223,6 +223,13 @@ protected:
         std::string checkActivatedStatus() override {
             return statusToReturn;
         }
+        void AddRef() const override {
+        // No-op for test
+        }
+
+    uint32_t Release() const override {
+        return 0; // Dummy return
+        }
     };
 
     std::unique_ptr<TestableMaintenanceManager> plugin_;
