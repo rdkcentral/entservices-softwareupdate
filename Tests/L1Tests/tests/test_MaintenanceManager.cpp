@@ -52,7 +52,9 @@ public:
     //MOCK_METHOD3(CreateToken, uint32_t(uint16_t, const uint8_t*, string&));
     //MOCK_METHOD0(Release, void());
     MOCK_METHOD(uint32_t, CreateToken, (uint16_t, const uint8_t*, std::string&));
-    MOCK_METHOD(void, Release, ());
+    //MOCK_METHOD(void, Release, ());
+    //MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(uint32_t, Release, (), (const, override));
     MOCK_METHOD(void*, QueryInterface, (uint32_t), (override));
     MOCK_METHOD(void, AddRef, (), (const, override));
     MOCK_METHOD(WPEFramework::PluginHost::ISecurity*, Officer, (const std::string& token), (override));
@@ -1141,7 +1143,8 @@ TEST_F(MaintenanceManagerTest1, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent
 }
 */
 TEST_F(MaintenanceManagerTest1, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent) {
-    auto* mockAuth = new NiceMock<MockIAuthenticate>();
+    //auto* mockAuth = new NiceMock<MockIAuthenticate>();
+    auto* mockAuth = new testing::NiceMock<MockIAuthenticate>();
 
     // Expectation: SecurityAgent is found
     EXPECT_CALL(*mockService, QueryInterfaceByCallsign("SecurityAgent"))
