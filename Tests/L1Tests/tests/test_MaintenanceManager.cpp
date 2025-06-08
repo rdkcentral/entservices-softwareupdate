@@ -298,7 +298,7 @@ protected:
     }
 };
 
-class TestableMaintenanceManager1 : public MaintenanceManager {
+class TestableMaintenanceManager1 : public WPEFramework::Plugin::MaintenanceManager {
 public:
     void setMockLink(WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>* link) {
         mockLink = link;
