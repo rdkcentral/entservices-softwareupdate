@@ -55,6 +55,7 @@ public:
     MOCK_METHOD(void, Release, ());
     MOCK_METHOD(void*, QueryInterface, (uint32_t), (override));
     MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(WPEFramework::PluginHost::ISecurity*, Officer, (const std::string& token), (override));
 };
 class MockService : public PluginHost::IShell {
 public:
@@ -274,7 +275,7 @@ protected:
     MockService* mockService;
 
     void SetUp() override {
-        manager = std::make_unique<WPEFramework::Plugin::MaintenanceManager>();
+        manager = std::make_unique<WPEFramework::Plugin::TestableMaintenanceManager>();
         mockService = new NiceMock<MockService>();
         manager->m_service = mockService;  // Set private/protected with friend class or accessor
     }
@@ -282,6 +283,12 @@ protected:
     void TearDown() override {
         manager.reset();
     }
+};
+class TestableMaintenanceManager : public WPEFramework::Plugin::MaintenanceManager {
+public:
+    void AddRef() const override {}
+    uint32_t Release() const override { return 0; }
+    void* QueryInterface(const uint32_t) override { return nullptr; }
 };
 
 class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
