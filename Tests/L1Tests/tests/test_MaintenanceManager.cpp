@@ -300,6 +300,9 @@ protected:
 
 class MockLinkType : public WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> {
 public:
+      using Base = WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>;
+    MockLinkType()
+        : Base(_T("http://localhost:9998"), _T("MaintenanceManager"), _T("")) {} 
    // MOCK_METHOD4(Subscribe,
        // uint32_t(uint32_t,
                //  const std::string&,
