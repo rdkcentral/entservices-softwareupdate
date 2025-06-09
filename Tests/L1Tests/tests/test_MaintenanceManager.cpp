@@ -1423,7 +1423,13 @@ private:
     std::vector<bool> _checkSequence;
     size_t _checkIndex;
 };
-TEST_F(TestableMaintenanceManager_DeviceOnline, OnlineAfterRetries) {
+class MaintenanceManager_IsDeviceOnline_Test : public ::testing::Test {
+protected:
+    void SetUp() override {}
+    void TearDown() override {}
+};
+
+TEST_F(MaintenanceManager_IsDeviceOnline_Test, OnlineAfterRetries) {
     std::vector<bool> sequence = {false, false, true};  // Fails twice, then success
     TestableMaintenanceManager_DeviceOnline manager(sequence);
 
@@ -1431,7 +1437,7 @@ TEST_F(TestableMaintenanceManager_DeviceOnline, OnlineAfterRetries) {
     EXPECT_EQ(manager.sleepCalls, 2);
 }
 
-TEST_F(TestableMaintenanceManager_DeviceOnline, OfflineEvenAfterMaxRetries) {
+TEST_F(MaintenanceManager_IsDeviceOnline_Test, OfflineEvenAfterMaxRetries) {
     std::vector<bool> sequence = {false, false, false, false};
     TestableMaintenanceManager_DeviceOnline manager(sequence);
 
