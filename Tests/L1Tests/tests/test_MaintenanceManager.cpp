@@ -1304,7 +1304,7 @@ class TestableMaintenanceManager_setpartnerid : public WPEFramework::Plugin::Mai
 public:
     bool queryIAuthServiceResult = true;
 
-    TestableMaintenanceManager() {
+    TestableMaintenanceManager_setpartnerid() {
         // Avoid calling base class constructor that needs full initialization
     }
 
