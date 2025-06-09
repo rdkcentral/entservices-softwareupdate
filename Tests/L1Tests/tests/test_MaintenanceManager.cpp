@@ -1391,9 +1391,83 @@ TEST_F(MaintenanceManagerTest_setpartnerid, AuthServiceUnavailable) {
 
     manager.setPartnerId("ignoredPartner");
 }
-
-
 */
+
+
+
+
+
+
+TestThunderClient* globalMockThunderClient = nullptr;
+
+// Mock Thunder client
+class TestThunderClient : public JSONRPC::LinkType<Core::JSON::IElement> {
+public:
+    std::function<int32_t(uint32_t, const string&, void(*)(const JsonObject&), void*)> subscribeMock;
+
+    int32_t Subscribe(uint32_t timeout, const string& event,
+                      void(*handler)(const JsonObject&), void* userdata) {
+        if (subscribeMock) {
+            return subscribeMock(timeout, event, handler, userdata);
+        }
+        return Core::ERROR_GENERAL;
+    }
+};
+
+//Add this interposed function here in test file
+extern "C" WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>*
+getThunderPluginHandle(const char* callsign)
+{
+    return globalMockThunderClient;
+}
+
+TEST_F(MaintenanceManagerTest, Subscribe_Success) {
+    TestThunderClient client;
+    client.subscribeMock = [](uint32_t timeout, const string& event,
+                               void(*handler)(const JsonObject&), void* userdata) {
+        EXPECT_EQ(event, "onDeviceInitializationContextUpdate");
+        return Core::ERROR_NONE;
+    };
+
+    globalMockThunderClient = &client;
+
+    WPEFramework::Plugin::MaintenanceManager manager;
+    EXPECT_TRUE(manager.subscribeToDeviceInitializationEvent());
+}
+
+TEST_F(MaintenanceManagerTest, Subscribe_FailToGetClient) {
+    globalMockThunderClient = nullptr;
+
+    WPEFramework::Plugin::MaintenanceManager manager;
+    EXPECT_FALSE(manager.subscribeToDeviceInitializationEvent());
+}
+
+TEST_F(MaintenanceManagerTest, Subscribe_SubscribeFails) {
+    TestThunderClient client;
+    client.subscribeMock = [](uint32_t timeout, const string& event,
+                               void(*handler)(const JsonObject&), void* userdata) {
+        return Core::ERROR_GENERAL;
+    };
+
+    globalMockThunderClient = &client;
+
+    WPEFramework::Plugin::MaintenanceManager manager;
+    EXPECT_FALSE(manager.subscribeToDeviceInitializationEvent());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class TestableMaintenanceManager_DeviceOnline : public WPEFramework::Plugin::MaintenanceManager {
 public:
  //   TestableMaintenanceManager_DeviceOnline(const std::vector<bool>& checkSequence)
