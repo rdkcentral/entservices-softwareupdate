@@ -1311,7 +1311,7 @@ TEST(MaintenanceManagerSimpleTest, SetPartnerId_NoAuthService) {
     // Should early-return with log
     manager.setPartnerId("TestPartner");
 }
-TEST_F(MaintenanceManagerTest, SetPartnerId_Failure) {
+TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerId_Failure) {
     std::string partnerId = "InvalidPartner";
 
     EXPECT_CALL(*mockAuth, SetPartnerId(partnerId, testing::_))
