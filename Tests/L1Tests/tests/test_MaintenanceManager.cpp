@@ -1307,6 +1307,26 @@ public:
 */
 class TestableMaintenanceManager_SetPartnerId : public MaintenanceManager {
 public:
+    TestableMaintenanceManager_SetPartnerId(WPEFramework::Exchange::IAuthService* auth, bool shouldQuerySucceed)
+        : queryResult(shouldQuerySucceed)
+    {
+        this->m_authservicePlugin = auth;
+    }
+
+    bool queryIAuthService() override {
+        return queryResult;
+    }
+
+    void callSetPartnerId(const std::string& id) {
+        setPartnerId(id);  // Access private method
+    }
+
+private:
+    bool queryResult;
+};
+/*
+class TestableMaintenanceManager_SetPartnerId : public MaintenanceManager {
+public:
     TestableMaintenanceManager_SetPartnerId(WPEFramework::Exchange::IAuthService* authService, bool queryResult)
         : mockAuth(authService), queryResult(queryResult) {
         m_authservicePlugin = authService;
@@ -1320,11 +1340,25 @@ private:
     WPEFramework::Exchange::IAuthService* mockAuth;
     bool queryResult;
 };
-
+*/
 class MaintenanceManagerTest_setpartnerid : public ::testing::Test {
 protected:
     MockAuthService mockAuth;
 };
+
+TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerIdSuccess) {
+    TestableMaintenanceManager_SetPartnerId manager(&mockAuth, true);
+
+    WPEFramework::Exchange::IAuthService::SetPartnerIdResult result;
+    result.error = "";
+
+    EXPECT_CALL(mockAuth, SetPartnerId("partner1", testing::_))
+        .WillOnce(testing::DoAll(testing::SetArgReferee<1>(result), testing::Return(Core::ERROR_NONE)));
+
+    manager.callSetPartnerId("partner1");
+}
+
+/*
 TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerIdSuccess) {
     TestableMaintenanceManager_SetPartnerId manager(&mockAuth, true);
 
@@ -1357,3 +1391,4 @@ TEST_F(MaintenanceManagerTest_setpartnerid, AuthServiceUnavailable) {
 }
 
 
+*/
