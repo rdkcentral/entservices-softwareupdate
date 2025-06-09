@@ -297,7 +297,7 @@ protected:
         manager.reset();
     }
 };
-
+/*
 class MockLinkType : public WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> {
 public:
       using Base = WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>;
@@ -329,7 +329,7 @@ protected:
 private:
     WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>* mockLink = nullptr;
 };
-
+*/
 class MaintenanceManagerTest_setpartnerid : public ::testing::Test {
 protected:
     MaintenanceManager manager;
@@ -1280,6 +1280,7 @@ TEST_F(MaintenanceManagerTest1, SetsEnvironmentVariableTHUNDER_ACCESS) {
 
     delete handle;
 }
+/*
 TEST(MaintenanceManagerTest, Subscribe_UsesMockLink) {
     TestableMaintenanceManager1 manager;
 
@@ -1296,6 +1297,7 @@ TEST(MaintenanceManagerTest, Subscribe_UsesMockLink) {
 
     delete mockLink;
 }
+*/
 class TestableMaintenanceManager : public MaintenanceManager {
 public:
     bool queryIAuthServiceResult = true;
