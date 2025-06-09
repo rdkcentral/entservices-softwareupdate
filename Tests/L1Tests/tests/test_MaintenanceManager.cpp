@@ -1316,11 +1316,11 @@ public:
     bool queryIAuthService() override {
         return queryResult;
     }
-
+/*
     void callSetPartnerId(const std::string& id) {
         setPartnerId(id);  // Access private method
     }
-
+*/
 private:
     bool queryResult;
 };
@@ -1355,7 +1355,7 @@ TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerIdSuccess) {
     EXPECT_CALL(mockAuth, SetPartnerId("partner1", testing::_))
         .WillOnce(testing::DoAll(testing::SetArgReferee<1>(result), testing::Return(Core::ERROR_NONE)));
 
-    manager.callSetPartnerId("partner1");
+    manager.setPartnerId("partner1");
 }
 
 /*
