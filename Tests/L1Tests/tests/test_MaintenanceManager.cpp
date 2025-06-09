@@ -1394,3 +1394,46 @@ TEST_F(MaintenanceManagerTest_setpartnerid, AuthServiceUnavailable) {
 
 
 */
+class TestableMaintenanceManager_DeviceOnline : public WPEFramework::Plugin::MaintenanceManager {
+public:
+    TestableMaintenanceManager_DeviceOnline(const std::vector<bool>& checkSequence)
+        : _checkSequence(checkSequence), _checkIndex(0), sleepCalls(0) {}
+
+    bool isDeviceOnlinePublic() {
+        return this->isDeviceOnline();  // Call actual method
+    }
+
+    int sleepCalls;
+
+protected:
+    // Shadow the method
+    bool checkNetwork() {
+        if (_checkIndex < _checkSequence.size()) {
+            return _checkSequence[_checkIndex++];
+        }
+        return false;
+    }
+
+    void sleep(unsigned int seconds) {
+        ++sleepCalls;
+    }
+
+private:
+    std::vector<bool> _checkSequence;
+    size_t _checkIndex;
+};
+TEST(MaintenanceManagerTest, OnlineAfterRetries) {
+    std::vector<bool> sequence = {false, false, true};  // Fails twice, then success
+    TestableMaintenanceManager_DeviceOnline manager(sequence);
+
+    EXPECT_TRUE(manager.isDeviceOnlinePublic());
+    EXPECT_EQ(manager.sleepCalls, 2);
+}
+
+TEST(MaintenanceManagerTest, OfflineEvenAfterMaxRetries) {
+    std::vector<bool> sequence = {false, false, false, false};
+    TestableMaintenanceManager_DeviceOnline manager(sequence);
+
+    EXPECT_FALSE(manager.isDeviceOnlinePublic());
+    EXPECT_EQ(manager.sleepCalls, 3);
+}
