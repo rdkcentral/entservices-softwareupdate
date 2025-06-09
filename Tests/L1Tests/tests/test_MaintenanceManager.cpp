@@ -1300,52 +1300,59 @@ TEST(MaintenanceManagerTest, Subscribe_UsesMockLink) {
 }
 */
 
-class TestableMaintenanceManager_setpartnerid : public WPEFramework::Plugin::MaintenanceManager {
+class MockAuthService1 : public WPEFramework::Exchange::IAuthService {
 public:
-    bool queryIAuthServiceResult = true;
-
-    TestableMaintenanceManager_setpartnerid() {
-        // Avoid calling base class constructor that needs full initialization
+    MOCK_METHOD(uint32_t, SetPartnerId, (const std::string&, SetPartnerIdResult&), (override));
+};
+class TestableMaintenanceManager_SetPartnerId : public MaintenanceManager {
+public:
+    TestableMaintenanceManager_SetPartnerId(WPEFramework::Exchange::IAuthService* authService, bool queryResult)
+        : mockAuth(authService), queryResult(queryResult) {
+        m_authservicePlugin = authService;
     }
 
-    // Stub the pure virtuals to satisfy the linker
-    void AddRef() const override {}
-    uint32_t Release() const override { return 1; }
-
-    // Also mock IPlugin required functions
-    const string Initialize(PluginHost::IShell* /*service*/) override { return {}; }
-    void Deinitialize(PluginHost::IShell* /*service*/) override {}
-    string Information() const override { return {}; }
-
-    // Override the method you want to stub
-    bool queryIAuthService()  {
-        return queryIAuthServiceResult;
+    bool queryIAuthService() override {
+        return queryResult;
     }
 
-    // Expose `setPartnerId` if it's protected
-    using WPEFramework::Plugin::MaintenanceManager::setPartnerId;
+private:
+    WPEFramework::Exchange::IAuthService* mockAuth;
+    bool queryResult;
 };
 
-/*
-TEST(MaintenanceManagerSimpleTest, SetPartnerId_NoAuthService) {
-    TestableMaintenanceManager_setpartnerid  manager;
-    manager.queryIAuthServiceResult = false;
+class MaintenanceManagerTest_setpartnerid : public ::testing::Test {
+protected:
+    MockAuthService1 mockAuth;
+};
+TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerIdSuccess) {
+    TestableMaintenanceManager manager(&mockAuth, true);
 
-    // Should early-return with log
-    manager.setPartnerId("TestPartner");
+    WPEFramework::Exchange::IAuthService::SetPartnerIdResult result;
+    result.error = "";
+
+    EXPECT_CALL(mockAuth, SetPartnerId("partner1", _))
+        .WillOnce(DoAll(SetArgReferee<1>(result), Return(Core::ERROR_NONE)));
+
+    manager.setPartnerId("partner1");
 }
-*/
-TEST_F(TestableMaintenanceManager_setpartnerid, SetPartnerId_Failure) {
-    std::string partnerId = "InvalidPartner";
+TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerIdFailure) {
+    TestableMaintenanceManager manager(&mockAuth, true);
 
-    EXPECT_CALL(*mockAuth, SetPartnerId(partnerId, testing::_))
-        .WillOnce([](const std::string&, WPEFramework::Exchange::IAuthService::SetPartnerIdResult& res) {
-            res.error = "Invalid ID";
-            return Core::ERROR_GENERAL;
-        });
+    WPEFramework::Exchange::IAuthService::SetPartnerIdResult result;
+    result.error = "Auth failure";
 
-    manager.setPartnerId(partnerId);
+    EXPECT_CALL(mockAuth, SetPartnerId("partnerX", _))
+        .WillOnce(DoAll(SetArgReferee<1>(result), Return(1)));
+
+    manager.setPartnerId("partnerX");
 }
+TEST_F(MaintenanceManagerTest_setpartnerid, AuthServiceUnavailable) {
+    TestableMaintenanceManager manager(nullptr, false);
 
+    // Should not even attempt SetPartnerId
+    EXPECT_CALL(mockAuth, SetPartnerId(_, _)).Times(0);
+
+    manager.setPartnerId("ignoredPartner");
+}
 
 
