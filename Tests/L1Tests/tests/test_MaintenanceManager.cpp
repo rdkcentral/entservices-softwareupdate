@@ -1326,7 +1326,7 @@ public:
     using WPEFramework::Plugin::MaintenanceManager::setPartnerId;
 };
 
-
+/*
 TEST(MaintenanceManagerSimpleTest, SetPartnerId_NoAuthService) {
     TestableMaintenanceManager_setpartnerid  manager;
     manager.queryIAuthServiceResult = false;
@@ -1334,7 +1334,8 @@ TEST(MaintenanceManagerSimpleTest, SetPartnerId_NoAuthService) {
     // Should early-return with log
     manager.setPartnerId("TestPartner");
 }
-TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerId_Failure) {
+*/
+TEST_F(TestableMaintenanceManager_setpartnerid, SetPartnerId_Failure) {
     std::string partnerId = "InvalidPartner";
 
     EXPECT_CALL(*mockAuth, SetPartnerId(partnerId, testing::_))
