@@ -1488,7 +1488,7 @@ public:
     {}
 
     int32_t Subscribe(uint32_t timeout, const string& event,
-                      void(*handler)(const JsonObject&), void* userdata) override {
+                      void(*handler)(const JsonObject&), void* userdata) {
         if (subscribeMock) return subscribeMock(timeout, event, handler, userdata);
         return Core::ERROR_GENERAL;
     }
