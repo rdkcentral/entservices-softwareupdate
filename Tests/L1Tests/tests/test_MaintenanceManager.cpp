@@ -1305,7 +1305,7 @@ public:
     MOCK_METHOD(uint32_t, SetPartnerId, (const std::string&, SetPartnerIdResult&), (override));
 };
 */
-class TestableMaintenanceManager_SetPartnerId : public MaintenanceManager {
+class TestableMaintenanceManager_SetPartnerId : public WPEFramework::Plugin::MaintenanceManager {
 public:
     TestableMaintenanceManager_SetPartnerId(WPEFramework::Exchange::IAuthService* auth, bool shouldQuerySucceed)
         : queryResult(shouldQuerySucceed)
