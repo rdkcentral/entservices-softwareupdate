@@ -300,11 +300,12 @@ protected:
 
 class MockLinkType : public WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> {
 public:
-    MOCK_METHOD4(Subscribe,
-        uint32_t(uint32_t,
-                 const std::string&,
-                 WPEFramework::Core::JSON::IElement::Handler*,
-                 void*));
+   // MOCK_METHOD4(Subscribe,
+       // uint32_t(uint32_t,
+               //  const std::string&,
+              //   WPEFramework::Core::JSON::IElement::Handler*,
+              //   void*));
+MOCK_METHOD4(Subscribe, uint32_t(const std::string&, const std::string&, const JsonObject&, JsonObject&));
 };
 
 class TestableMaintenanceManager1 : public WPEFramework::Plugin::MaintenanceManager {
