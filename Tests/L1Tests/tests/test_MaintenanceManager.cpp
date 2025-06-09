@@ -1397,7 +1397,7 @@ TEST_F(MaintenanceManagerTest_setpartnerid, AuthServiceUnavailable) {
 class TestableMaintenanceManager_DeviceOnline : public WPEFramework::Plugin::MaintenanceManager {
 public:
     TestableMaintenanceManager_DeviceOnline(const std::vector<bool>& checkSequence)
-        : _checkSequence(checkSequence), sleepCalls(0), _checkIndex(0) {}
+        : sleepCalls(0), _checkIndex(0), _checkSequence(checkSequence), {}
 
     bool isDeviceOnlinePublic() {
         return this->isDeviceOnline();  // Call actual method
