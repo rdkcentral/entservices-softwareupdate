@@ -330,6 +330,7 @@ private:
     WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>* mockLink = nullptr;
 };
 */
+/*
 class MaintenanceManagerTest_setpartnerid : public ::testing::Test {
 protected:
     WPEFramework::Plugin::MaintenanceManager manager;
@@ -347,7 +348,7 @@ protected:
         delete mockAuth;
     }
 };
-
+*/
 class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
 protected:
     NiceMock<MockShell> mockService_;
@@ -1298,14 +1299,36 @@ TEST(MaintenanceManagerTest, Subscribe_UsesMockLink) {
     delete mockLink;
 }
 */
-class TestableMaintenanceManager : public MaintenanceManager {
+
+class TestableMaintenanceManager_setpartnerid : public WPEFramework::Plugin::MaintenanceManager {
 public:
     bool queryIAuthServiceResult = true;
-    bool queryIAuthService() override { return queryIAuthServiceResult; }
+
+    TestableMaintenanceManager() {
+        // Avoid calling base class constructor that needs full initialization
+    }
+
+    // Stub the pure virtuals to satisfy the linker
+    void AddRef() const override {}
+    uint32_t Release() const override { return 1; }
+
+    // Also mock IPlugin required functions
+    const string Initialize(PluginHost::IShell* /*service*/) override { return {}; }
+    void Deinitialize(PluginHost::IShell* /*service*/) override {}
+    string Information() const override { return {}; }
+
+    // Override the method you want to stub
+    bool queryIAuthService() override {
+        return queryIAuthServiceResult;
+    }
+
+    // Expose `setPartnerId` if it's protected
+    using WPEFramework::Plugin::MaintenanceManager::setPartnerId;
 };
 
+
 TEST(MaintenanceManagerSimpleTest, SetPartnerId_NoAuthService) {
-    TestableMaintenanceManager manager;
+    TestableMaintenanceManager_setpartnerid  manager;
     manager.queryIAuthServiceResult = false;
 
     // Should early-return with log
