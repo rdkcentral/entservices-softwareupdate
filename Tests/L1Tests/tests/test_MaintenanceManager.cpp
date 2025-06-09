@@ -1483,8 +1483,8 @@ public:
 
     SubscribeFunc subscribeMock;
 
-    TestThunderClient(const Core::NodeId& node, const string& path, bool autoclose)
-        : JSONRPC::LinkType<Core::JSON::IElement>(node, path, autoclose)
+    TestThunderClient(const std::string& callsign, const char* localCallsign, bool directed)
+        : JSONRPC::LinkType<Core::JSON::IElement>(callsign, localCallsign, directed)
     {}
 
     int32_t Subscribe(uint32_t timeout, const string& event,
@@ -1524,9 +1524,9 @@ protected:
         manager = std::make_unique<TestMaintenanceManager>();
 
         // Create test Thunder client
-        client = std::make_unique<TestThunderClient>(
-            Core::NodeId("127.0.0.1"), "/ServiceURL", false
-        );
+    client = std::make_unique<TestThunderClient>(
+    "org.rdk.Maintenance.1", "TestLocalCallsign", false
+     );
 
         globalMockThunderClient = nullptr;
     }
