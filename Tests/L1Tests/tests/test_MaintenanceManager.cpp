@@ -1318,7 +1318,7 @@ public:
     string Information() const override { return {}; }
 
     // Override the method you want to stub
-    bool queryIAuthService() override {
+    bool queryIAuthService()  {
         return queryIAuthServiceResult;
     }
 
