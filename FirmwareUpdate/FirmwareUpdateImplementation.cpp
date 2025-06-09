@@ -675,7 +675,7 @@ namespace WPEFramework {
             {
                 if (!copyFileToDirectory(upgrade_file.c_str(), USB_TMP_COPY)) {
                     SWUPDATEERR("File copy operation failed.\n");
-                    dispatchAndUpdateEvent(_VALIDATION_FAILED,_FIRMWARE_NOT_ACCESSIBLE);
+                    dispatchAndUpdateEvent(_VALIDATION_FAILED,_FIRMWARE_NOT_FOUND);
                     isFlashingInProgress = false; // Reset the flag if exiting early
                     snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                     snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
@@ -711,9 +711,6 @@ namespace WPEFramework {
             if(firmwareFilepath == "")
             {
                 SWUPDATEERR("firmwareFilepath is empty");
-                state =  _VALIDATION_FAILED;
-                substate =  _FIRMWARE_NOT_FOUND;
-                FirmwareStatus(state,substate,"write");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareFilepath is empty\n");
@@ -724,9 +721,6 @@ namespace WPEFramework {
             else if (!(Utils::fileExists(firmwareFilepath.c_str()))) {
                 SWUPDATEERR("firmwareFile is not present %s",firmwareFilepath.c_str());
                 SWUPDATEERR("Local image Download Failed"); //Existing marker
-                state =  _VALIDATION_FAILED;
-                substate =  _FIRMWARE_NOT_FOUND;
-                FirmwareStatus(state,substate,"write");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareFile is not present\n");
@@ -738,9 +732,6 @@ namespace WPEFramework {
             if(firmwareType !=""){
                 if (firmwareType != "PCI" && firmwareType != "DRI") {
                     SWUPDATEERR("firmwareType must be either 'PCI' or 'DRI'.");
-                    state =  _VALIDATION_FAILED;
-                    substate =  "";
-                    FirmwareStatus(state,substate,"write");
                     snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                     snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                     snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareType must be either 'PCI' or 'DRI'.\n");
@@ -752,9 +743,6 @@ namespace WPEFramework {
             else
             {
                 SWUPDATEERR("firmwareType is empty");
-                state =  _VALIDATION_FAILED;
-                substate =  "";
-                FirmwareStatus(state,substate,"write");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareType is empty\n");
@@ -783,9 +771,6 @@ namespace WPEFramework {
             {
 
                 SWUPDATEERR("FW version of the active image and the image to be upgraded are the same. No upgrade required. imagename : %s" ,name.c_str());
-                state =  _VALIDATION_FAILED;
-                substate = _FIRMWARE_UPTODATE;
-                FirmwareStatus(state,substate,"write");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|No upgrade needed\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|No upgrade needed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|No upgrade needed\n");
@@ -1367,11 +1352,7 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
 
     // Extract file name from the source file path
     const char *file_name = strrchr(source_file, '/');
-    if (!file_name) {
-        SWUPDATEERR("Invalid source file path: %s\n", source_file);
-        return false;
-    }
-    file_name++; // Skip the '/' character
+    file_name = file_name ? file_name + 1 : source_file;
 
     // Construct the destination file path
     std::string dest_file_path = std::string(destination_dir) + "/" + file_name;
@@ -1399,12 +1380,16 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
         return false;
     }
 
+    if (src.peek() == std::ifstream::traits_type::eof()) {
+        SWUPDATEINFO("Source file is empty. Copying as empty file.\n");
+    }
+
     // Copy the file content
     dest << src.rdbuf();
 
-    // Check if the copy was successful
-    if (!src || !dest) {
-        SWUPDATEERR("Error: File copy failed.\n");
+    // Check for actual I/O errors (ignore EOF)
+    if (src.bad() || dest.bad()) {
+        SWUPDATEERR("Error: File copy failed due to I/O error.\n");
         return false;
     }
 
