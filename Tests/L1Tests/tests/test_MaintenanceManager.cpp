@@ -1397,7 +1397,7 @@ TEST_F(MaintenanceManagerTest_setpartnerid, AuthServiceUnavailable) {
 
 
 
-
+class TestThunderClient;
 TestThunderClient* globalMockThunderClient = nullptr;
 
 // Mock Thunder client
