@@ -332,7 +332,7 @@ private:
 */
 class MaintenanceManagerTest_setpartnerid : public ::testing::Test {
 protected:
-    MaintenanceManager manager;
+    WPEFramework::Plugin::MaintenanceManager manager;
     MockAuthService* mockAuth;
 
     void SetUp() override {
