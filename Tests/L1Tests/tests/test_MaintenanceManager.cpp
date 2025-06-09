@@ -1299,11 +1299,12 @@ TEST(MaintenanceManagerTest, Subscribe_UsesMockLink) {
     delete mockLink;
 }
 */
-
+/*
 class MockAuthService1 : public WPEFramework::Exchange::IAuthService {
 public:
     MOCK_METHOD(uint32_t, SetPartnerId, (const std::string&, SetPartnerIdResult&), (override));
 };
+*/
 class TestableMaintenanceManager_SetPartnerId : public MaintenanceManager {
 public:
     TestableMaintenanceManager_SetPartnerId(WPEFramework::Exchange::IAuthService* authService, bool queryResult)
@@ -1322,7 +1323,7 @@ private:
 
 class MaintenanceManagerTest_setpartnerid : public ::testing::Test {
 protected:
-    MockAuthService1 mockAuth;
+    MockAuthService mockAuth;
 };
 TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerIdSuccess) {
     TestableMaintenanceManager_SetPartnerId manager(&mockAuth, true);
