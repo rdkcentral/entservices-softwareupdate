@@ -1421,7 +1421,21 @@ getThunderPluginHandle(const char* callsign)
     return globalMockThunderClient;
 }
 
-TEST_F(MaintenanceManagerTest, Subscribe_Success) {
+class MaintenanceManagerTest_ubscribeToDeviceInitializationEvent : public ::testing::Test {
+protected:
+    WPEFramework::Plugin::MaintenanceManager manager;
+    TestThunderClient mockClient;
+
+    void SetUp() override {
+        globalMockThunderClient = nullptr;  // Always reset before each test
+    }
+
+    void TearDown() override {
+        globalMockThunderClient = nullptr;  // Clean up after each test
+    }
+};
+
+TEST_F(MaintenanceManagerTest_ubscribeToDeviceInitializationEvent, Subscribe_Success) {
     TestThunderClient client;
     client.subscribeMock = [](uint32_t timeout, const string& event,
                                void(*handler)(const JsonObject&), void* userdata) {
@@ -1435,14 +1449,14 @@ TEST_F(MaintenanceManagerTest, Subscribe_Success) {
     EXPECT_TRUE(manager.subscribeToDeviceInitializationEvent());
 }
 
-TEST_F(MaintenanceManagerTest, Subscribe_FailToGetClient) {
+TEST_F(MaintenanceManagerTest_ubscribeToDeviceInitializationEvent, Subscribe_FailToGetClient) {
     globalMockThunderClient = nullptr;
 
     WPEFramework::Plugin::MaintenanceManager manager;
     EXPECT_FALSE(manager.subscribeToDeviceInitializationEvent());
 }
 
-TEST_F(MaintenanceManagerTest, Subscribe_SubscribeFails) {
+TEST_F(MaintenanceManagerTest_ubscribeToDeviceInitializationEvent, Subscribe_SubscribeFails) {
     TestThunderClient client;
     client.subscribeMock = [](uint32_t timeout, const string& event,
                                void(*handler)(const JsonObject&), void* userdata) {
