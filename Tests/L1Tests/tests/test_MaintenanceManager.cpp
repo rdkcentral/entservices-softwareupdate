@@ -1396,7 +1396,7 @@ TEST_F(MaintenanceManagerTest_setpartnerid, AuthServiceUnavailable) {
 
 
 
-
+/*
 class TestThunderClient;
 TestThunderClient* globalMockThunderClient = nullptr;
 
@@ -1468,10 +1468,110 @@ TEST_F(MaintenanceManagerTest_ubscribeToDeviceInitializationEvent, Subscribe_Sub
     WPEFramework::Plugin::MaintenanceManager manager;
     EXPECT_FALSE(manager.subscribeToDeviceInitializationEvent());
 }
+*/
 
 
+class TestThunderClient;
+TestThunderClient* globalMockThunderClient = nullptr;
 
+// ------------------------
+// Mock Thunder Client
+// ------------------------
+class TestThunderClient : public JSONRPC::LinkType<Core::JSON::IElement> {
+public:
+    using SubscribeFunc = std::function<int32_t(uint32_t, const string&, void(*)(const JsonObject&), void*)>;
 
+    SubscribeFunc subscribeMock;
+
+    TestThunderClient(const Core::NodeId& node, const string& path, bool autoclose)
+        : JSONRPC::LinkType<Core::JSON::IElement>(node, path, autoclose)
+    {}
+
+    int32_t Subscribe(uint32_t timeout, const string& event,
+                      void(*handler)(const JsonObject&), void* userdata) override {
+        if (subscribeMock) return subscribeMock(timeout, event, handler, userdata);
+        return Core::ERROR_GENERAL;
+    }
+};
+
+// ------------------------
+// Link-time override
+// ------------------------
+extern "C" JSONRPC::LinkType<Core::JSON::IElement>*
+getThunderPluginHandle(const char* callsign) {
+    return globalMockThunderClient;
+}
+
+// ------------------------
+// Concrete class for testing
+// (implements pure virtuals)
+// ------------------------
+class TestMaintenanceManager : public Plugin::MaintenanceManager {
+public:
+    void AddRef() const override {}
+    uint32_t Release() const override { return 0; }
+};
+
+// ------------------------
+// GTest Fixture
+// ------------------------
+class MaintenanceManagerTest_subscribeToDeviceInitializationEvent : public ::testing::Test {
+protected:
+    std::unique_ptr<TestThunderClient> client;
+    std::unique_ptr<TestMaintenanceManager> manager;
+
+    void SetUp() override {
+        manager = std::make_unique<TestMaintenanceManager>();
+
+        // Create test Thunder client
+        client = std::make_unique<TestThunderClient>(
+            Core::NodeId("127.0.0.1"), "/ServiceURL", false
+        );
+
+        globalMockThunderClient = nullptr;
+    }
+
+    void TearDown() override {
+        globalMockThunderClient = nullptr;
+    }
+};
+
+// ------------------------
+// Test: Subscribe success
+// ------------------------
+TEST_F(MaintenanceManagerTest_subscribeToDeviceInitializationEvent, Subscribe_Success) {
+    client->subscribeMock = [](uint32_t timeout, const string& event,
+                               void(*handler)(const JsonObject&), void* userdata) {
+        EXPECT_EQ(event, "onDeviceInitializationContextUpdate");
+        return Core::ERROR_NONE;
+    };
+
+    globalMockThunderClient = client.get();
+
+    EXPECT_TRUE(manager->subscribeToDeviceInitializationEvent());
+}
+
+// ------------------------
+// Test: Subscribe fails (plugin handle null)
+// ------------------------
+TEST_F(MaintenanceManagerTest_subscribeToDeviceInitializationEvent, Subscribe_NoPluginHandle) {
+    globalMockThunderClient = nullptr;
+
+    EXPECT_FALSE(manager->subscribeToDeviceInitializationEvent());
+}
+
+// ------------------------
+// Test: Subscribe fails (Subscribe() fails)
+// ------------------------
+TEST_F(MaintenanceManagerTest_subscribeToDeviceInitializationEvent, Subscribe_SubscribeFails) {
+    client->subscribeMock = [](uint32_t, const string&, void(*)(const JsonObject&), void*) {
+        return Core::ERROR_GENERAL;
+    };
+
+    globalMockThunderClient = client.get();
+
+    EXPECT_FALSE(manager->subscribeToDeviceInitializationEvent());
+}
 
 
 
