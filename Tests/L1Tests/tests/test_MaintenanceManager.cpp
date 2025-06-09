@@ -1402,7 +1402,8 @@ public:
     bool isDeviceOnlinePublic() {
         return this->isDeviceOnline();  // Call actual method
     }
-
+    void AddRef() const override {}
+    uint32_t Release() const override { return 0; }
     int sleepCalls;
 
 protected:
