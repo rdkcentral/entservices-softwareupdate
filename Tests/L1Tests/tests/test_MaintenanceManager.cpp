@@ -1315,7 +1315,7 @@ public:
      void AddRef() const override {}
     uint32_t Release() const override { return 0; }
 
-    bool queryIAuthService() override {
+    bool queryIAuthService() {
         return queryResult;
     }
 /*
