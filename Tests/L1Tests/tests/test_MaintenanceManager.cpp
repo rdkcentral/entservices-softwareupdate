@@ -1325,7 +1325,7 @@ protected:
     MockAuthService1 mockAuth;
 };
 TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerIdSuccess) {
-    TestableMaintenanceManager manager(&mockAuth, true);
+    TestableMaintenanceManager_SetPartnerId manager(&mockAuth, true);
 
     WPEFramework::Exchange::IAuthService::SetPartnerIdResult result;
     result.error = "";
@@ -1336,7 +1336,7 @@ TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerIdSuccess) {
     manager.setPartnerId("partner1");
 }
 TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerIdFailure) {
-    TestableMaintenanceManager manager(&mockAuth, true);
+    TestableMaintenanceManager_SetPartnerId manager(&mockAuth, true);
 
     WPEFramework::Exchange::IAuthService::SetPartnerIdResult result;
     result.error = "Auth failure";
@@ -1347,7 +1347,7 @@ TEST_F(MaintenanceManagerTest_setpartnerid, SetPartnerIdFailure) {
     manager.setPartnerId("partnerX");
 }
 TEST_F(MaintenanceManagerTest_setpartnerid, AuthServiceUnavailable) {
-    TestableMaintenanceManager manager(nullptr, false);
+    TestableMaintenanceManager_SetPartnerId manager(nullptr, false);
 
     // Should not even attempt SetPartnerId
     EXPECT_CALL(mockAuth, SetPartnerId(_, _)).Times(0);
