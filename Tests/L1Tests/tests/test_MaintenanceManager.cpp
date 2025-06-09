@@ -330,6 +330,23 @@ private:
     WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>* mockLink = nullptr;
 };
 
+class MaintenanceManagerTest_setpartnerid : public ::testing::Test {
+protected:
+    MaintenanceManager manager;
+    MockAuthService* mockAuth;
+
+    void SetUp() override {
+        mockAuth = new ::testing::NiceMock<MockAuthService>();
+        manager.m_authservicePlugin = mockAuth;
+
+        // Optionally, stub queryIAuthService() to return true if it's overrideable or mockable.
+        // If not, you must ensure it returns true in your test environment.
+    }
+
+    void TearDown() override {
+        delete mockAuth;
+    }
+};
 
 class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
 protected:
@@ -1278,6 +1295,30 @@ TEST(MaintenanceManagerTest, Subscribe_UsesMockLink) {
     EXPECT_TRUE(result);
 
     delete mockLink;
+}
+class TestableMaintenanceManager : public MaintenanceManager {
+public:
+    bool queryIAuthServiceResult = true;
+    bool queryIAuthService() override { return queryIAuthServiceResult; }
+};
+
+TEST(MaintenanceManagerSimpleTest, SetPartnerId_NoAuthService) {
+    TestableMaintenanceManager manager;
+    manager.queryIAuthServiceResult = false;
+
+    // Should early-return with log
+    manager.setPartnerId("TestPartner");
+}
+TEST_F(MaintenanceManagerTest, SetPartnerId_Failure) {
+    std::string partnerId = "InvalidPartner";
+
+    EXPECT_CALL(*mockAuth, SetPartnerId(partnerId, testing::_))
+        .WillOnce([](const std::string&, WPEFramework::Exchange::IAuthService::SetPartnerIdResult& res) {
+            res.error = "Invalid ID";
+            return Core::ERROR_GENERAL;
+        });
+
+    manager.setPartnerId(partnerId);
 }
 
 
