@@ -310,6 +310,8 @@ protected:
         if (mockLink) return mockLink;
         return MaintenanceManager::getThunderPluginHandle(callsign);
     }
+    void AddRef() const override {}
+    uint32_t Release() const override { return 0; }
 
 private:
     WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>* mockLink = nullptr;
