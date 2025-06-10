@@ -1510,26 +1510,6 @@ public:
     }
 };
 
-
-
-/*
-class TestThunderClient : public JSONRPC::LinkType<Core::JSON::IElement> {
-public:
-    using SubscribeFunc = std::function<int32_t(uint32_t, const string&, void(*)(const JsonObject&), void*)>;
-
-    SubscribeFunc subscribeMock;
-
-    TestThunderClient(const std::string& callsign, const char* localCallsign, bool directed)
-        : JSONRPC::LinkType<Core::JSON::IElement>(callsign, localCallsign, directed)
-    {}
-
-    int32_t Subscribe(uint32_t timeout, const string& event,
-                      void(*handler)(const JsonObject&), void* userdata) {
-        if (subscribeMock) return subscribeMock(timeout, event, handler, userdata);
-        return Core::ERROR_GENERAL;
-    }
-};
-*/
 // ------------------------
 // Link-time override
 // ------------------------
@@ -1547,10 +1527,80 @@ public:
     void AddRef() const override {}
     uint32_t Release() const override { return 0; }
 };
+class MaintenanceManagerTest_subscribeToDeviceInitializationEvent : public ::testing::Test {
+protected:
+    std::unique_ptr<TestThunderClient> client;
+    std::unique_ptr<TestMaintenanceManager> manager;
+
+    void SetUp() override {
+        manager = std::make_unique<TestMaintenanceManager>();
+
+        // Create test Thunder client
+        client = std::make_unique<TestThunderClient>(
+            "org.rdk.Maintenance.1", "TestLocalCallsign", false
+        );
+
+        globalMockThunderClient = nullptr;
+    }
+
+    void TearDown() override {
+        globalMockThunderClient = nullptr;
+    }
+};
+
+// ------------------------
+// Test: Subscribe success
+// ------------------------
+TEST_F(MaintenanceManagerTest_subscribeToDeviceInitializationEvent, Subscribe_Success) {
+    client->subscribeMock = [](uint32_t timeout, const string& event,
+                               void(*handler)(const JsonObject&), void* userdata) {
+        EXPECT_EQ(event, "onDeviceInitializationContextUpdate");
+
+        // Create mock payload
+        JsonObject json;
+        json["deviceId"] = "Device001";
+        json["context"] = "booted";
+
+        // Call the handler with a non-const copy (avoid const.JsonObject.String() error)
+        if (handler) {
+            JsonObject copy = json;  // Make copy to safely call String()
+            handler(copy);
+        }
+
+        return Core::ERROR_NONE;
+    };
+
+    globalMockThunderClient = client.get();
+
+    EXPECT_TRUE(manager->subscribeToDeviceInitializationEvent());
+}
+
+// ------------------------
+// Test: Subscribe fails (plugin handle null)
+// ------------------------
+TEST_F(MaintenanceManagerTest_subscribeToDeviceInitializationEvent, Subscribe_NoPluginHandle) {
+    globalMockThunderClient = nullptr;
+
+    EXPECT_FALSE(manager->subscribeToDeviceInitializationEvent());
+}
+
+// ------------------------
+// Test: Subscribe fails (Subscribe() fails)
+// ------------------------
+TEST_F(MaintenanceManagerTest_subscribeToDeviceInitializationEvent, Subscribe_SubscribeFails) {
+    client->subscribeMock = [](uint32_t, const string&, void(*)(const JsonObject&), void*) {
+        return Core::ERROR_GENERAL;
+    };
+
+    globalMockThunderClient = client.get();
+
+    EXPECT_FALSE(manager->subscribeToDeviceInitializationEvent());
+}
 
 // ------------------------
 // GTest Fixture
 // ------------------------
+/*
 class MaintenanceManagerTest_subscribeToDeviceInitializationEvent : public ::testing::Test {
 protected:
     std::unique_ptr<TestThunderClient> client;
@@ -1608,7 +1658,7 @@ TEST_F(MaintenanceManagerTest_subscribeToDeviceInitializationEvent, Subscribe_Su
 
     EXPECT_FALSE(manager->subscribeToDeviceInitializationEvent());
 }
-
+*/
 
 
 
