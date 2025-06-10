@@ -230,7 +230,7 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
-    NiceMock<MockShell> mockService_;
+    NiceMock<ServiceMock> mockService_;
     NiceMock<MockAuthService> mockAuthServicePlugin_;
 
     MaintenanceManagerTest()
