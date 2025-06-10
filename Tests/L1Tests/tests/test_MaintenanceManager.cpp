@@ -1477,6 +1477,41 @@ TestThunderClient* globalMockThunderClient = nullptr;
 // ------------------------
 // Mock Thunder Client
 // ------------------------
+
+class TestThunderClient : public JSONRPC::LinkType<Core::JSON::IElement> {
+public:
+    using SubscribeFunc = std::function<int32_t(uint32_t, const string&, void(*)(const JsonObject&), void*)>;
+
+    SubscribeFunc subscribeMock;
+
+    TestThunderClient(const std::string& callsign, const char* localCallsign, bool directed)
+        : JSONRPC::LinkType<Core::JSON::IElement>(callsign, localCallsign, directed)
+    {}
+
+    int32_t Subscribe(uint32_t timeout, const string& event,
+                      void(*handler)(const JsonObject&), void* userdata) {
+        if (subscribeMock) return subscribeMock(timeout, event, handler, userdata);
+        return Core::ERROR_GENERAL;
+    }
+
+    template <typename PARAM>
+    uint32_t Subscribe(const uint32_t timeout, const string& event,
+                       void (*handler)(const PARAM&), void* userdata)
+    {
+        // Convert typed handler to JsonObject handler for mocking
+        auto wrapper = [handler](const JsonObject& json) {
+            PARAM param;
+            param.FromString(Core::ToString(json));
+            handler(param);
+        };
+        if (subscribeMock) return subscribeMock(timeout, event, wrapper, userdata);
+        return Core::ERROR_GENERAL;
+    }
+};
+
+
+
+/*
 class TestThunderClient : public JSONRPC::LinkType<Core::JSON::IElement> {
 public:
     using SubscribeFunc = std::function<int32_t(uint32_t, const string&, void(*)(const JsonObject&), void*)>;
@@ -1493,7 +1528,7 @@ public:
         return Core::ERROR_GENERAL;
     }
 };
-
+*/
 // ------------------------
 // Link-time override
 // ------------------------
