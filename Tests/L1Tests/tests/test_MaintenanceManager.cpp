@@ -1494,20 +1494,19 @@ public:
         return Core::ERROR_GENERAL;
     }
 
-    template <typename PARAM>
-    uint32_t Subscribe(const uint32_t timeout, const string& event,
-                       void (*handler)(const PARAM&), void* userdata)
-    {
-        // Convert typed handler to JsonObject handler for mocking
-        auto wrapper = [handler](const JsonObject& json) {
-            PARAM param;
-	    param.FromString(json.String());
-            //param.FromString(Core::ToString(json));
-            handler(param);
-        };
-        if (subscribeMock) return subscribeMock(timeout, event, wrapper, userdata);
-        return Core::ERROR_GENERAL;
-    }
+   template <typename PARAM>
+uint32_t Subscribe(const uint32_t timeout, const string& event,
+                   void (*handler)(const PARAM&), void* userdata)
+{
+    // Convert typed handler to JsonObject handler for mocking
+    auto wrapper = [handler](const JsonObject& json) {
+        PARAM param;
+        param.FromString(Core::ToString(json));  // <-- Fixed here
+        handler(param);
+    };
+    if (subscribeMock) return subscribeMock(timeout, event, wrapper, userdata);
+    return Core::ERROR_GENERAL;
+}
 };
 
 // ------------------------
