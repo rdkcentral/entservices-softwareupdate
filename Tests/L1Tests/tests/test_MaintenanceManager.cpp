@@ -1398,7 +1398,7 @@ TEST_F(MaintenanceManagerTest_setpartnerid, AuthServiceUnavailable) {
 
 
 
-class MockThunderClient : public WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> : public MaintenanceManagerTest {
+class MockThunderClient : public WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> , public MaintenanceManagerTest {
 public:
     MockThunderClient() : WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>("", "", false) {}
 
