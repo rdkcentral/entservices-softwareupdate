@@ -1501,7 +1501,8 @@ public:
         // Convert typed handler to JsonObject handler for mocking
         auto wrapper = [handler](const JsonObject& json) {
             PARAM param;
-            param.FromString(Core::ToString(json));
+	    param.FromString(json.String());
+            //param.FromString(Core::ToString(json));
             handler(param);
         };
         if (subscribeMock) return subscribeMock(timeout, event, wrapper, userdata);
