@@ -1001,7 +1001,7 @@ TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
     PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     
     // Mock getServiceState to simulate UNAVAILABLE state
-    EXPECT_CALL(mockService_, getServiceState(_, _, _))
+    EXPECT_CALL(plugin_, getServiceState(_, _, _))
         .WillRepeatedly(DoAll(::testing::SetArgReferee<2>(state), Return(Core::ERROR_NONE)));
 
     // Mock queryIAuthService to return false (no interface)
