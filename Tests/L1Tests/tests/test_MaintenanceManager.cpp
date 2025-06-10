@@ -1017,15 +1017,8 @@ TEST_F(MaintenanceManagerTest, ServiceActivatedNoInterface) {
     PluginHost::IShell::state state = PluginHost::IShell::state::ACTIVATED;
 
     // Mock getServiceState to simulate ACTIVATED state
-    //EXPECT_CALL(mockService_, getServiceState(_, _, _))
-      //  .WillRepeatedly(DoAll(::testing::SetArgReferee<2>(state), Return(Core::ERROR_NONE)));
-
-
-	EXPECT_CALL(mockService_, getServiceState(_, "org.rdk.AuthService", _))
-        .WillOnce([](auto, auto, auto& state) {
-            state = WPEFramework::PluginHost::IShell::state::ACTIVATED;
-            return Core::ERROR_NONE;
-        });
+    EXPECT_CALL(mockService_, getServiceState(_, _, _))
+        .WillRepeatedly(DoAll(::testing::SetArgReferee<2>(state), Return(Core::ERROR_NONE)));
 
     // Mock queryIAuthService to return false (no interface)
     EXPECT_CALL(mockService_, queryIAuthService())
