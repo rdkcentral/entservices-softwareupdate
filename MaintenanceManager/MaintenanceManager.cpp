@@ -1096,7 +1096,9 @@ namespace WPEFramework
             std::string ret_status("invalid");
 
             /* check if plugin active */
+    #if !defined(GTEST_ENABLE)
             PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
+    #endif
             if ((getServiceState(m_service, "org.rdk.AuthService", state) != Core::ERROR_NONE) || (state != PluginHost::IShell::state::ACTIVATED))
             {
                 MM_LOGERR("AuthService plugin is not activated.Retrying");
