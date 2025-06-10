@@ -217,8 +217,6 @@ MOCK_METHOD(uint32_t, GetXifaId, (GetxifaIdResult&), (override));
 MOCK_METHOD(uint32_t, SetXifaId, (const std::string&, SuccessMsgResult&), (override));
 MOCK_METHOD(uint32_t, GetAdvtOptOut, (AdvtOptOutResult&), (override));
 MOCK_METHOD(uint32_t, SetAdvtOptOut, (const bool&, SuccessMsgResult&), (override));
-// ... and so on, for all pure virtuals
-    // Add any additional pure virtuals from base interfaces if compiler asks for them.
 };
 
 class MaintenanceManagerTest : public Test {
@@ -230,7 +228,7 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
-    NiceMock<ServiceMock> mockService_;
+    NiceMock<MockShell> mockService_;
     NiceMock<MockAuthService> mockAuthServicePlugin_;
 
     MaintenanceManagerTest()
@@ -301,7 +299,7 @@ static AssertionResult isValidCtrlmRcuIarmEvent(IARM_EventId_t ctrlmRcuIarmEvent
 class MaintenanceManagerInitializedEventTest : public MaintenanceManagerTest {
 protected:
     IARM_EventHandler_t               controlEventHandler_;
-    NiceMock<ServiceMock>             service_;
+    NiceMock<MockShell>             service_;
     NiceMock<FactoriesImplementation> factoriesImplementation_;
     PLUGINHOST_DISPATCHER* dispatcher_;
     Core::JSONRPC::Message message_;
