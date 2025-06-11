@@ -891,7 +891,7 @@ TEST_F(MaintenanceManagerInitializedEventTest, QueryIAuthService_FailsWhenPlugin
     plugin_->m_authservicePlugin = nullptr;
 
     // Simulate failure in QueryInterfaceByCallsign (returns nullptr)
-    EXPECT_CALL(service_, QueryInterfaceByCallsign("org.rdk.AuthService"))
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
         .WillOnce(::testing::Return(nullptr));
 
     bool result = plugin_->queryIAuthService();
