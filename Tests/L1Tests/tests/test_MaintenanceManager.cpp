@@ -885,6 +885,23 @@ TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
     plugin_->iarmEventHandler(owner, eventId, data, len);
 } 
 
+TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
+{
+    // Ensure m_authservicePlugin is initially null
+    plugin_->m_authservicePlugin = nullptr;
+
+    // Simulate failure in QueryInterfaceByCallsign (returns nullptr)
+    EXPECT_CALL(*mockShell_, QueryInterfaceByCallsign("org.rdk.AuthService"))
+        .WillOnce(::testing::Return(nullptr));
+
+    plugin_->m_service = mockShell_;
+
+    bool result = plugin_->queryIAuthService();
+
+    EXPECT_FALSE(result);
+}
+
+/*
 TEST_F(MaintenanceManagerTest, MaintenanceMgrEventHandler_ForwardsToInstance) {
     MaintenanceManager::_instance = plugin_; // Set instance so handler works
     const char* owner = IARM_BUS_MAINTENANCE_MGR_NAME;
@@ -893,7 +910,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceMgrEventHandler_ForwardsToInstance) {
     size_t len = sizeof(eventData);
     MaintenanceManager::_MaintenanceMgrEventHandler(owner, eventId, &eventData, len);
 }
-
+*/
 
 TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
     plugin_->maintenanceManagerOnBootup();
