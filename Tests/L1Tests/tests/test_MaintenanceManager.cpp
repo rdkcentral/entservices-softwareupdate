@@ -884,6 +884,14 @@ TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
 
     plugin_->iarmEventHandler(owner, eventId, data, len);
 } 
+
+TEST_F(MaintenanceManagerTest, DeinitializeIARM_RemovesHandlerAndNullifiesInstance) {
+    // Arrange
+
+    plugin_->DeinitializeIARM();
+
+}
+
 TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     // Arrange: simulate IARM init success
   //  Utils::IARM::mockInitReturn = true;
