@@ -903,10 +903,10 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
 TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
 {
     // Ensure m_authservicePlugin is initially null
-    plugin_->m_authservicePlugin = &service_;
+    plugin_->m_authservicePlugin = reinterpret_cast<IAuthService*>(0x1234);
     plugin_->m_service = &service_;
-    EXPECT_CALL(service, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
-        .WillOnce(Return(&service));
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
+        .WillOnce(::testing::Return(nullptr));
     bool result = plugin_->queryIAuthService();
 
     EXPECT_TRUE(result);
