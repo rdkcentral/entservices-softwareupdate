@@ -885,16 +885,14 @@ TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
     plugin_->iarmEventHandler(owner, eventId, data, len);
 } 
 
-TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
+TEST_F(MaintenanceManagerInitializedEventTest, QueryIAuthService_FailsWhenPluginIsNull)
 {
     // Ensure m_authservicePlugin is initially null
     plugin_->m_authservicePlugin = nullptr;
 
     // Simulate failure in QueryInterfaceByCallsign (returns nullptr)
-    EXPECT_CALL(*mockShell_, QueryInterfaceByCallsign("org.rdk.AuthService"))
+    EXPECT_CALL(service_, QueryInterfaceByCallsign("org.rdk.AuthService"))
         .WillOnce(::testing::Return(nullptr));
-
-    plugin_->m_service = mockShell_;
 
     bool result = plugin_->queryIAuthService();
 
