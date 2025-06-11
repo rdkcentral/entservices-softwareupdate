@@ -900,6 +900,17 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
 
     EXPECT_FALSE(result);
 }
+TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
+{
+    // Ensure m_authservicePlugin is initially null
+    plugin_->m_authservicePlugin = &service_;
+    plugin_->m_service = &service_;
+    EXPECT_CALL(service, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
+        .WillOnce(Return(&service));
+    bool result = plugin_->queryIAuthService();
+
+    EXPECT_TRUE(result);
+}
 
 /*
 TEST_F(MaintenanceManagerTest, MaintenanceMgrEventHandler_ForwardsToInstance) {
