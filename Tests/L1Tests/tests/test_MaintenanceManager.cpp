@@ -54,6 +54,7 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
+    NiceMock<ServiceMock>             service_;
 
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
@@ -885,7 +886,7 @@ TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
     plugin_->iarmEventHandler(owner, eventId, data, len);
 } 
 
-TEST_F(MaintenanceManagerInitializedEventTest, QueryIAuthService_FailsWhenPluginIsNull)
+TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
 {
     // Ensure m_authservicePlugin is initially null
     plugin_->m_authservicePlugin = nullptr;
