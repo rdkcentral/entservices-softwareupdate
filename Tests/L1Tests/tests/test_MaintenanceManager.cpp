@@ -885,11 +885,7 @@ TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
 } 
 TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     // Arrange: simulate IARM init success
-    Utils::IARM::mockInitReturn = true;
-
-    // Reset static flags used for verification
-    g_eventHandlerRegistered = false;
-    g_maintenanceBootupCalled = false;
+  //  Utils::IARM::mockInitReturn = true;
 
     // Act: Call the method under test
     plugin_->InitializeIARM();
