@@ -914,30 +914,28 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
 }
 */
 
+
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
 {
-    // Setup key-value maps (simulate required initialization)
+    // Init parameter maps
     plugin_->m_param_map["partnerId"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_PartnerID";
-    plugin_->m_paramType_map["partnerId"] = STRING;
+    plugin_->m_paramType_map["partnerId"] = DATA_TYPE::STRING;
 
     plugin_->m_param_map["regionalConfigService"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RegionalConfig";
-    plugin_->m_paramType_map["regionalConfigService"] = STRING;
+    plugin_->m_paramType_map["regionalConfigService"] = DATA_TYPE::STRING;
 
-    // Simulate expected key list
-    const_cast<std::vector<std::string>&>(kDeviceInitContextKeyVals) = { "partnerId", "regionalConfigService" };
+    plugin_->m_param_map["deviceManagementService"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_DeviceMgmtService";
+    plugin_->m_paramType_map["deviceManagementService"] = DATA_TYPE::STRING;
 
-    // Construct input JsonObject
-    JsonObject initCtx;
-    initCtx["partnerId"] = "sky";
-    initCtx["regionalConfigService"] = "service.region.com";
+    JsonObject deviceInitCtx;
+    deviceInitCtx["partnerId"] = "sky";
+    deviceInitCtx["regionalConfigService"] = "region.example.com";
+    deviceInitCtx["deviceManagementService"] = "mgmt.example.com";
 
     JsonObject response;
-    response["deviceInitializationContext"] = initCtx;
+    response["deviceInitializationContext"] = deviceInitCtx;
 
-    // Run test
     bool result = plugin_->setDeviceInitializationContext(response);
-
-    // Validate
     EXPECT_TRUE(result);
 }
 
