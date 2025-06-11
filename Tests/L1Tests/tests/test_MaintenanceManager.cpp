@@ -806,3 +806,80 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	}
 }
 #endif
+TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Success)
+{
+    bool result = plugin_->maintenance_initTimer();
+    EXPECT_TRUE(result); 
+}
+TEST_F(MaintenanceManagerTest, TaskStartTimer_Success)
+{
+    // Ensure the timer is not already created
+    plugin_->maintenance_deleteTimer();
+
+    // Attempt to start the timer
+    bool result = plugin_->task_startTimer();
+
+    // The result should be true if the timer started successfully
+    EXPECT_TRUE(result);
+}
+TEST_F(MaintenanceManagerTest, TaskStopTimer_Success)
+{
+    // Ensure the timer is created and started
+    plugin_->task_startTimer();
+
+    // Attempt to stop the timer
+    bool result = plugin_->task_stopTimer();
+
+    // Should succeed
+    EXPECT_TRUE(result);
+}
+TEST_F(MaintenanceManagerTest, TaskStopTimer_Fail)
+{
+    // Ensure the timer is created and started
+    plugin_->task_startTimer();
+    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = false;
+    // Attempt to stop the timer
+    bool result = plugin_->task_stopTimer();
+
+    // Should succeed
+    EXPECT_FALSE(result);
+}
+
+
+TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
+{
+    // Ensure the timer is created first
+    plugin_->task_startTimer();
+    // Attempt to delete the timer
+    bool result = plugin_->maintenance_deleteTimer();
+
+    // Should succeed
+    EXPECT_TRUE(result);
+}
+TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Fail)
+{
+    // Ensure the timer is created first
+    plugin_->task_startTimer();
+    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = false;
+    // Attempt to delete the timer
+    bool result = plugin_->maintenance_deleteTimer();
+
+    // Should succeed
+    EXPECT_FALSE(result);
+}
+
+TEST_F(MaintenanceManagerTest, TimerHandler_HandlesSignalCorrectly) {
+    int test_signo = SIGALRM; // or any relevant signal number
+    plugin_->timer_handler(test_signo);
+}
+
+TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
+    const char* owner = "TestOwner";
+    IARM_EventId_t eventId = 42; // Use an appropriate value
+    char data[100] = {0}; // Or whatever data is expected
+    size_t len = sizeof(data);
+
+    // Optionally, set up any necessary global or static state
+
+    plugin_->iarmEventHandler(owner, eventId, data, len);
+} 
