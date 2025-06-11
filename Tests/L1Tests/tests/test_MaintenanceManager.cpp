@@ -29,6 +29,7 @@
 #include "ServiceMock.h"
 #include "WrapsMock.h"
 #include "ThunderPortability.h"
+#include "UtilsIarm.h"
 
 using namespace WPEFramework;
 using ::testing::NiceMock;
