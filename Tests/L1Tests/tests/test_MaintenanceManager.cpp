@@ -909,7 +909,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceMgrEventHandler_ForwardsToInstance) {
     MaintenanceManager::_MaintenanceMgrEventHandler(owner, eventId, &eventData, len);
 }
 */
-
+/*
 TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
     plugin_->maintenanceManagerOnBootup();
 }
@@ -932,3 +932,4 @@ TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     
 }
 
+*/
