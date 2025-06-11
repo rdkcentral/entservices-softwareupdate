@@ -382,6 +382,7 @@ namespace WPEFramework
 #if defined(SUPPRESS_MAINTENANCE)
             if (!g_whoami_support_enabled)
             {   
+                MM_LOGINFO("WHOAMI_SUPPORT is disabled\n");
                 isMaintenanceSuppressed = true;
                 bool skipFirmwareCheck = false;
                 bool activationStatus = getActivatedStatus(skipFirmwareCheck); /* Activation check */
@@ -403,6 +404,7 @@ namespace WPEFramework
 
             if (g_whoami_support_enabled)
             {
+                MM_LOGINFO("WHOAMI_SUPPORT is enabled\n");
                 if (UNSOLICITED_MAINTENANCE == g_maintenance_type)
                 {
                     string activation_status = checkActivatedStatus(); /* Device Activation Status Check */
@@ -432,6 +434,7 @@ namespace WPEFramework
             }
             else
             {
+                MM_LOGINFO("WHOAMI_SUPPORT is disabled\n");
                 if (!internetConnectStatus)
                 {
                     exitOnNoNetwork = true;
@@ -1479,6 +1482,7 @@ namespace WPEFramework
             m_service = service;
             m_service->AddRef();
             if (g_whoami_support_enabled) {
+                MM_LOGINFO("WHOAMI_SUPPORT is enabled\n");
                 subscribeToDeviceInitializationEvent();
             }
 
