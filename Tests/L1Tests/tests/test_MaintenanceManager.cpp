@@ -885,6 +885,16 @@ TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
     plugin_->iarmEventHandler(owner, eventId, data, len);
 } 
 
+TEST_F(MaintenanceManagerTest, MaintenanceMgrEventHandler_ForwardsToInstance) {
+    MaintenanceManager::_instance = plugin_; // Set instance so handler works
+    const char* owner = IARM_BUS_MAINTENANCE_MGR_NAME;
+    IARM_EventId_t eventId = IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE;
+    IARM_Bus_MaintMGR_EventData_t eventData {};
+    size_t len = sizeof(eventData);
+    MaintenanceManager::_MaintenanceMgrEventHandler(owner, eventId, &eventData, len);
+}
+
+
 TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
     plugin_->maintenanceManagerOnBootup();
 }
