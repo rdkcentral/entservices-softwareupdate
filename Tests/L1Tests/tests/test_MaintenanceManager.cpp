@@ -902,3 +902,6 @@ TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     // Assert: Verify internal effects
     
 }
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
+    plugin_->maintenanceManagerOnBootup();
+}
