@@ -900,7 +900,7 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
 
     EXPECT_FALSE(result);
 }
-TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
+TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
 {
     // Ensure m_authservicePlugin is initially null
     plugin_->m_authservicePlugin = &service_;
@@ -911,6 +911,29 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
 
     EXPECT_TRUE(result);
 }
+
+TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_AllParamsPresent_ReturnsTrue)
+{
+    JsonObject response_data;
+    JsonObject context;
+    context["partnerId"] = "myPartner";
+    context["regionalConfigService"] = "config.service.com";
+    // Add other expected keys as needed
+    response_data["deviceInitializationContext"] = context;
+
+    plugin_->m_param_map["partnerId"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_PartnerID";
+    plugin_->m_param_map["regionalConfigService"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RCS";
+
+    plugin_->m_paramType_map["partnerId"] = DATA_TYPE_STRING;
+    plugin_->m_paramType_map["regionalConfigService"] = DATA_TYPE_STRING;
+
+    EXPECT_CALL(*p_wrapsImplMock, setRFC(::testing::_, ::testing::_, ::testing::_)).Times(2);
+    EXPECT_CALL(*p_wrapsImplMock, setPartnerId("myPartner")).Times(1);
+
+    bool result = plugin_->setDeviceInitializationContext(response_data);
+    EXPECT_TRUE(result);
+}
+
 
 /*
 TEST_F(MaintenanceManagerTest, MaintenanceMgrEventHandler_ForwardsToInstance) {
