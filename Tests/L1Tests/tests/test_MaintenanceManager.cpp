@@ -885,6 +885,10 @@ TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
     plugin_->iarmEventHandler(owner, eventId, data, len);
 } 
 
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
+    plugin_->maintenanceManagerOnBootup();
+}
+
 TEST_F(MaintenanceManagerTest, DeinitializeIARM_RemovesHandlerAndNullifiesInstance) {
     // Arrange
 
@@ -902,6 +906,4 @@ TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     // Assert: Verify internal effects
     
 }
-TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
-    plugin_->maintenanceManagerOnBootup();
-}
+
