@@ -890,6 +890,7 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
 {
     // Ensure m_authservicePlugin is initially null
     plugin_->m_authservicePlugin = nullptr;
+    plugin_->m_service = &service_;
 
     // Simulate failure in QueryInterfaceByCallsign (returns nullptr)
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
