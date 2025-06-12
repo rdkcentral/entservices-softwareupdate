@@ -907,7 +907,7 @@ TEST_F(MaintenanceManagerTest, setpartnerid)
     plugin_->m_service = &service_;
     plugin_->setPartnerId("partner1");
 }
-TEST_F(MaintenanceManagerTest, setpartnerid)
+TEST_F(MaintenanceManagerTest, setpartnerid1)
 {
     
     plugin_->m_service = &service_;
