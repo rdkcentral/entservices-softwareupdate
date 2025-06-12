@@ -960,11 +960,12 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent)
 }
 
 TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
-    PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
+    //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
     // Mock getServiceState to simulate UNAVAILABLE state
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
-        .WillOnce(Return(&service_));
+	.Times(5);
+        .WillRepeatedly(Return(nullptr));
 
     // Test: Plugin is not activated after retries, expect "invalid"
     std::string result = plugin_->checkActivatedStatus();
