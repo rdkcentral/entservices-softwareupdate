@@ -995,8 +995,9 @@ TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
         .WillRepeatedly(::testing::Return(&service_));
 
     // Test: Plugin is not activated after retries, expect "invalid"
-    std::string result = plugin_->getActivatedStatus(skipCheck);
-    //EXPECT_EQ(result, "invalid");
+    bool result = plugin_->getActivatedStatus(skipCheck);
+    EXPECT_TRUE(result);
+    EXPECT_FALSE(skipCheck);
 }
 
 
