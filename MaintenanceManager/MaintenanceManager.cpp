@@ -1417,7 +1417,6 @@ namespace WPEFramework
             WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
 
             // subscribe to onDeviceInitializationContextUpdate event
-            MM_LOGINFO("Attempting to subscribe for %s events", event.c_str());
 
             thunder_client = getThunderPluginHandle(secMgr_callsign_ver);
             MM_LOGINFO("Reaching here %s", event.c_str());
@@ -1427,7 +1426,6 @@ namespace WPEFramework
             }
             else
             {
-                MM_LOGINFO("Reaching here inside else  %s", event.c_str());
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
             #if defined(GTEST_ENABLE)
                 status = Core::ERROR_NONE;
