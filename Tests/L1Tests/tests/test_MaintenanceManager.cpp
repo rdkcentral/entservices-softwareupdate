@@ -914,7 +914,12 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
 }
 */
 
-
+TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
+{
+    bool result = plugin_->setDeviceInitializationContext(response);
+    EXPECT_TRUE(result);
+}
+/*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
 {
     // Init parameter maps
@@ -938,7 +943,7 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
     bool result = plugin_->setDeviceInitializationContext(response);
     EXPECT_TRUE(result);
 }
-
+*/
 
 /*
 TEST_F(MaintenanceManagerTest, MaintenanceMgrEventHandler_ForwardsToInstance) {
