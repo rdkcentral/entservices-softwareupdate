@@ -1024,7 +1024,7 @@ TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
 
-    mockAuth = new NiceMock<MockAuthenticate>();
+    mockAuth = new NiceMock<MockIAuthenticate>();
 
 /*    ON_CALL(service, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
         .WillByDefault([this](const uint32_t, const std::string& name) -> void* {
