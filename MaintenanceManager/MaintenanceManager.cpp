@@ -1245,8 +1245,6 @@ namespace WPEFramework
             string token;
             #if defined(GTEST_ENABLE)
             state = PluginHost::IShell::state::ACTIVATED;
-            #endif
-            #if defined(GTEST_ENABLE)
             if(state == PluginHost::IShell::state::ACTIVATED)
             #else
             if ((getServiceState(m_service, "org.rdk.Network", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
