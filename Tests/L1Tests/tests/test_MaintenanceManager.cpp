@@ -903,10 +903,19 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
 
 TEST_F(MaintenanceManagerTest, setpartnerid)
 {
-    // Ensure m_authservicePlugin is initially null
+   
     plugin_->m_service = &service_;
     plugin_->setPartnerId("partner1");
 }
+TEST_F(MaintenanceManagerTest, setpartnerid)
+{
+    
+    plugin_->m_service = &service_;
+    //plugin->m_authservicePlugin = m_service->QueryInterfaceByCallsign<Exchange::IAuthService>("org.rdk.AuthService");
+    plugin_->m_authservicePlugin = reinterpret_cast<WPEFramework::Exchange::IAuthService*>(0x1);
+    plugin_->setPartnerId("partner1");
+}
+
 
 
 /*
