@@ -40,9 +40,118 @@ using ::testing::Gt;
 using ::testing::AssertionResult;
 using ::testing::AssertionSuccess;
 using ::testing::AssertionFailure;
+using ::testing::DoAll;
+using ::testing::Return;
 
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
+
+class MockShell : public WPEFramework::PluginHost::IShell {
+public:
+    MOCK_METHOD(void, EnableWebServer, (const string&, const string&), (override));
+    MOCK_METHOD(void, DisableWebServer, (), (override));
+    MOCK_METHOD(string, Model, (), (const, override));
+    MOCK_METHOD(bool, Background, (), (const, override));
+    MOCK_METHOD(string, Accessor, (), (const, override));
+    MOCK_METHOD(string, WebPrefix, (), (const, override));
+    MOCK_METHOD(string, Locator, (), (const, override));
+    MOCK_METHOD(string, ClassName, (), (const, override));
+    MOCK_METHOD(string, Versions, (), (const, override));
+    MOCK_METHOD(string, Callsign, (), (const, override));
+    MOCK_METHOD(string, PersistentPath, (), (const, override));
+    MOCK_METHOD(string, VolatilePath, (), (const, override));
+    MOCK_METHOD(string, DataPath, (), (const, override));
+    MOCK_METHOD(string, ProxyStubPath, (), (const, override));
+    MOCK_METHOD(string, SystemPath, (), (const, override));
+    MOCK_METHOD(string, SystemRootPath, (), (const, override));
+    MOCK_METHOD(WPEFramework::Core::hresult, SystemRootPath, (const string&), (override));
+    MOCK_METHOD(PluginHost::IShell::startup, Startup, (), (const, override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Startup, (const PluginHost::IShell::startup), (override));
+    MOCK_METHOD(string, Substitute, (const string&), (const, override));
+    MOCK_METHOD(bool, Resumed, (), (const, override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Resumed, (const bool), (override));
+    MOCK_METHOD(string, HashKey, (), (const, override));
+    MOCK_METHOD(string, ConfigLine, (), (const, override));
+    MOCK_METHOD(WPEFramework::Core::hresult, ConfigLine, (const string&), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Metadata, (string&), (const, override));
+    MOCK_METHOD(bool, IsSupported, (const uint8_t), (const, override));
+    MOCK_METHOD(WPEFramework::PluginHost::ISubSystem*, SubSystems, (), (override));
+    MOCK_METHOD(void, Notify, (const string&), (override));
+    MOCK_METHOD(void, Register, (PluginHost::IPlugin::INotification*), (override));
+    MOCK_METHOD(void, Unregister, (PluginHost::IPlugin::INotification*), (override));
+    MOCK_METHOD(PluginHost::IShell::state, State, (), (const, override));
+    MOCK_METHOD(void*, QueryInterfaceByCallsign, (const uint32_t, const string&), (override));
+    MOCK_METHOD(void*, QueryInterface, (const uint32_t), (override));
+    MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(uint32_t, Release, (), (const, override));
+    MOCK_METHOD(std::string, PluginPath, (), (const, override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Activate, (const reason), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Deactivate, (const reason), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Unavailable, (const reason), (override));
+    MOCK_METHOD(WPEFramework::Core::hresult, Hibernate, (const uint32_t), (override));
+    MOCK_METHOD(reason, Reason, (), (const, override));
+    MOCK_METHOD(uint32_t, Submit, (const uint32_t, const Core::ProxyType<Core::JSON::IElement>&), (override));
+    MOCK_METHOD(ICOMLink*, COMLink, (), (override));
+    //MOCK_METHOD(Core::hresult, getServiceState, (const std::string&, const std::string&, PluginHost::IShell::state&), (override));
+    MOCK_METHOD(uint32_t, getServiceState, (PluginHost::IShell* shell, const string& callsign, PluginHost::IShell::state& state));
+    //MOCK_METHOD(Core::hresult, getServiceState, (const string&, const string&, PluginHost::IShell::state&), (const, override));
+    MOCK_METHOD(bool, queryIAuthService, (), ());
+    // Add any additional methods required by your build here.
+};
+
+class MockAuthService : public WPEFramework::Exchange::IAuthService {
+public:
+    MOCK_METHOD(uint32_t, GetActivationStatus, (ActivationStatusResult&), (override));
+    MOCK_METHOD(uint32_t, SetActivationStatus, (const std::string&, SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearAuthToken, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearSessionToken, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearServiceAccessToken, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearLostAndFoundAccessToken, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearServiceAccountId, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, ClearCustomProperties, (SuccessMsgResult&), (override));
+    MOCK_METHOD(uint32_t, GetCustomProperties, (std::string&, bool&), (override));
+    MOCK_METHOD(uint32_t, SetCustomProperties, (const std::string&, bool&), (override));
+    MOCK_METHOD(uint32_t, GetAlternateIds, (std::string&, std::string&, bool&), (override));
+    MOCK_METHOD(uint32_t, SetAlternateIds, (const std::string&, std::string&, bool&), (override));
+    MOCK_METHOD(uint32_t, GetTransitionData, (std::string&, std::string&, bool&), (override));
+    MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(uint32_t, Release, (), (const, override));
+    MOCK_METHOD(void*, QueryInterface, (uint32_t), (override));
+MOCK_METHOD(uint32_t, Register, (IAuthService::INotification*), (override));
+MOCK_METHOD(uint32_t, Unregister, (IAuthService::INotification*), (override));
+MOCK_METHOD(uint32_t, Configure, (), (override));
+MOCK_METHOD(uint32_t, GetInfo, (GetInfoResult&), (override));
+MOCK_METHOD(uint32_t, GetDeviceInfo, (GetDeviceInfoResult&), (override));
+MOCK_METHOD(uint32_t, GetDeviceId, (GetDeviceIdResult&), (override));
+
+
+MOCK_METHOD(uint32_t, SetDeviceId, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, SetPartnerId, (const std::string&, SetPartnerIdResult&), (override));
+MOCK_METHOD(uint32_t, GetAuthToken, (const bool, const bool, GetAuthTokenResult&), (override));
+MOCK_METHOD(uint32_t, GetSessionToken, (GetSessionTokenResult&), (override));
+MOCK_METHOD(uint32_t, SetSessionToken, (const int32_t&, const std::string&, uint32_t, const std::string&, const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetServiceAccessToken, (GetServiceAccessTokenResult&), (override));
+MOCK_METHOD(uint32_t, SetServiceAccessToken, (const int32_t&, const std::string&, uint32_t, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetServiceAccountId, (GetServiceAccountIdResult&), (override));
+MOCK_METHOD(uint32_t, SetServiceAccountId, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, SetAuthIdToken, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, Ready, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetBootstrapProperty, (const std::string&, GetBootstrapPropResult&), (override));
+MOCK_METHOD(uint32_t, ActivationStarted, (SuccessResult&), (override));
+MOCK_METHOD(uint32_t, ActivationComplete, (SuccessResult&), (override));
+MOCK_METHOD(uint32_t, GetLostAndFoundAccessToken, (std::string&, std::string&, bool&), (override));
+MOCK_METHOD(uint32_t, SetLostAndFoundAccessToken, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetXDeviceId, (GetXDeviceIdResult&), (override));
+MOCK_METHOD(uint32_t, SetXDeviceId, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetExperience, (GetExpResult&), (override));
+MOCK_METHOD(uint32_t, SetExperience, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetXifaId, (GetxifaIdResult&), (override));
+MOCK_METHOD(uint32_t, SetXifaId, (const std::string&, SuccessMsgResult&), (override));
+MOCK_METHOD(uint32_t, GetAdvtOptOut, (AdvtOptOutResult&), (override));
+MOCK_METHOD(uint32_t, SetAdvtOptOut, (const bool&, SuccessMsgResult&), (override));
+// ... and so on, for all pure virtuals
+    // Add any additional pure virtuals from base interfaces if compiler asks for them.
+};
 
 class MaintenanceManagerTest : public Test {
 protected:
@@ -94,6 +203,48 @@ protected:
 
     }
 };
+
+
+class MaintenanceManagerCheckActivatedStatusTest : public MaintenanceManagerTest {
+protected:
+    NiceMock<MockShell> mockService_;
+    NiceMock<MockAuthService> mockAuthServicePlugin_;
+
+    MaintenanceManagerCheckActivatedStatusTest() {
+        // Assign mock plugins
+        plugin_->m_service = &mockService_;
+        plugin_->m_authservicePlugin = &mockAuthServicePlugin_;
+    }
+/*
+    class TestableMaintenanceManager : public Plugin::MaintenanceManager {
+    public:
+        std::string statusToReturn;
+        void setMockActivationStatus(const std::string& status) { statusToReturn = status; }
+        MOCK_METHOD(std::string, checkActivatedStatus, ());
+        
+        void AddRef() const override {
+        // No-op for test
+        }
+
+    uint32_t Release() const override {
+        return 0; // Dummy return
+        }
+    };
+
+    std::unique_ptr<TestableMaintenanceManager> plugin_;
+    
+    void SetUp() override {
+        MaintenanceManagerTest::SetUp();
+        plugin_ = std::make_unique<TestableMaintenanceManager>();
+    }
+
+    void TearDown() override {
+        plugin_.reset();
+    }
+*/
+    virtual ~MaintenanceManagerCheckActivatedStatusTest() override {}
+};
+
 
 static AssertionResult isValidCtrlmRcuIarmEvent(IARM_EventId_t ctrlmRcuIarmEventId)
 {
@@ -806,3 +957,69 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	}
 }
 #endif
+
+TEST_F(MaintenanceManagerCheckActivatedStatusTest, ServiceNotActivated) {
+    PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
+    
+    // Mock getServiceState to simulate UNAVAILABLE state
+    EXPECT_CALL(mockService_, getServiceState(_, _, _))
+        .WillRepeatedly(DoAll(::testing::SetArgReferee<2>(state), Return(Core::ERROR_NONE)));
+
+    // Mock queryIAuthService to return false (no interface)
+    //EXPECT_CALL(mockService_, queryIAuthService())
+     //   .WillOnce(Return(false));
+
+    // Test: Plugin is not activated after retries, expect "invalid"
+    std::string result = plugin_->checkActivatedStatus();
+    EXPECT_EQ(result, "invalid");
+}
+// Test: Service Activated, No Interface
+TEST_F(MaintenanceManagerCheckActivatedStatusTest, ServiceActivatedNoInterface) {
+    PluginHost::IShell::state state = PluginHost::IShell::state::ACTIVATED;
+
+    // Mock getServiceState to simulate ACTIVATED state
+    EXPECT_CALL(mockService_, getServiceState(_, _, _))
+        .WillRepeatedly(DoAll(::testing::SetArgReferee<2>(state), Return(Core::ERROR_NONE)));
+
+    // Mock queryIAuthService to return false (no interface)
+    EXPECT_CALL(mockService_, queryIAuthService())
+        .WillOnce(Return(false));
+
+    // Test: No interface available, expect "invalid"
+    std::string result = plugin_->checkActivatedStatus();
+    EXPECT_EQ(result, "invalid");
+}
+
+// Test: Successful Activation Status Retrieval
+TEST_F(MaintenanceManagerCheckActivatedStatusTest, SuccessfulActivationStatus) {
+    PluginHost::IShell::state state = PluginHost::IShell::state::ACTIVATED;
+
+    // Mock getServiceState to simulate ACTIVATED state
+    EXPECT_CALL(mockService_, getServiceState(_, _, _))
+        .WillRepeatedly(DoAll(::testing::SetArgReferee<2>(state), Return(Core::ERROR_NONE)));
+
+    // Mock queryIAuthService to return true (interface available)
+    EXPECT_CALL(mockService_, queryIAuthService())
+        .WillOnce(Return(true));
+
+    // Mock GetActivationStatus to return a successful status
+    WPEFramework::Exchange::IAuthService::ActivationStatusResult asRes;
+    asRes.status = "activated";  // Simulating the status being "activated"
+    EXPECT_CALL(mockAuthServicePlugin_, GetActivationStatus(_))
+        .WillOnce(DoAll(::testing::SetArgReferee<0>(asRes), Return(Core::ERROR_NONE)));
+
+    // Test: Successfully retrieve the activation status, expect "activated"
+    std::string result = plugin_->checkActivatedStatus();
+    EXPECT_EQ(result, "activated");
+}
+/*
+TEST_F(MaintenanceManagerCheckActivatedStatusTest, ActivatedStatusReturnsTrueNoSkip) {
+    plugin_->setMockActivationStatus("activated");
+    bool skip = false;
+    WPEFramework::Exchange::IAuthService::ActivationStatusResult asRes;
+    EXPECT_CALL(plugin_, checkActivatedStatus(_))
+        .WillOnce(DoAll(Return(Core::ERROR_NONE)))
+    EXPECT_TRUE(plugin_->getActivatedStatus(skip));
+    EXPECT_FALSE(skip);
+}
+*/
