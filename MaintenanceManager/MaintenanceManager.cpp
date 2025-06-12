@@ -24,7 +24,6 @@
  * @reference RDK-29959.
  */
 
-
 #include <stdlib.h>
 #include <errno.h>
 #include <cstdio>
