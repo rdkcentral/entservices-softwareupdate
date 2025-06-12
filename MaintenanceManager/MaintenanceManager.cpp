@@ -2082,6 +2082,7 @@ namespace WPEFramework
                     pclose(fp);
                     return -1;
                 }
+                pclose(fp);
                 tz_offset_pos = offset[0];
                 int offset_value = atoi(&offset[1]);
 
