@@ -1023,19 +1023,31 @@ TEST_F(MaintenanceManagerTest, subscribeForInternetStatus) {
 TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
- class DummyReturnType {
-public:
-    virtual ~DummyReturnType() = default;
-};
 
- DummyReturnType dummyObject;
+    mockAuth = new NiceMock<MockAuthenticate>();
+
+/*    ON_CALL(service, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
+        .WillByDefault([this](const uint32_t, const std::string& name) -> void* {
+         mockAuth->AddRef();
+         return static_cast<void*>(mockAuth);
+         ); */
+    
+    ON_CALL(service, QueryInterfaceByCallsign(::testing::_, ::testing::_))
+    .WillByDefault([this](const uint32_t, const std::string& name) -> void* {
+        if (name == "org.rdk.Network") {
+            mockAuth->AddRef();
+            return static_cast<void*>(mockAuth);
+        }
+        return nullptr;
+    });
+ 
  
  /*
  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
         .WillOnce(Return(&service_)); */
 
-   EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
-           .WillOnce(::testing::Return(static_cast<void*>(&service_)));
+ /*  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
+           .WillOnce(::testing::Return(static_cast<void*>(&service_))); */
     
    	
     bool result = plugin_->checkNetwork();
