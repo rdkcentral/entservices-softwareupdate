@@ -912,7 +912,7 @@ TEST_F(MaintenanceManagerTest, setpartnerid)
 TEST_F(MaintenanceManagerTest, setpartnerid1)
 {
     plugin_->m_service = &service_;
-    plugin->m_authservicePlugin = iauthservice_;
+    plugin->m_authservicePlugin = &iauthservice_;
 
     plugin_->setPartnerId("partner1");
 }
