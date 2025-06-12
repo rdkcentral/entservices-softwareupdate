@@ -1023,7 +1023,7 @@ TEST_F(MaintenanceManagerTest, subscribeForInternetStatus) {
 TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
-
+    NiceMock<MockIAuthenticate>* mockAuth = nullptr;
     mockAuth = new NiceMock<MockIAuthenticate>();
 
 /*    ON_CALL(service, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
