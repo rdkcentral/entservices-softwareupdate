@@ -919,13 +919,13 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
 {
     // Init parameter maps
     plugin_->m_param_map["partnerId"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_PartnerID";
-    plugin_->m_paramType_map["partnerId"] = DATA_TYPE::eDataType;
+    plugin_->m_paramType_map["partnerId"] = DATA_TYPE eDataType;
 
     plugin_->m_param_map["regionalConfigService"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RegionalConfig";
-    plugin_->m_paramType_map["regionalConfigService"] = DATA_TYPE::eDataType;
+    plugin_->m_paramType_map["regionalConfigService"] = DATA_TYPE eDataType;
 
     plugin_->m_param_map["deviceManagementService"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_DeviceMgmtService";
-    plugin_->m_paramType_map["deviceManagementService"] = DATA_TYPE::eDataType;
+    plugin_->m_paramType_map["deviceManagementService"] = DATA_TYPE eDataType;
 
     JsonObject deviceInitCtx;
     deviceInitCtx["partnerId"] = "sky";
