@@ -58,7 +58,7 @@ MOCK_METHOD(uint32_t, GetAdvtOptOut, (AdvtOptOutResult&), (override));
 MOCK_METHOD(uint32_t, SetAdvtOptOut, (const bool&, SuccessMsgResult&), (override));
 };
 
-class MockIAuthenticate : public PluginHost::IAuthenticate {
+class MockIAuthenticate : public WPEFramework::PluginHost::IAuthenticate {
 public:
     //MOCK_METHOD3(CreateToken, uint32_t(uint16_t, const uint8_t*, string&));
     //MOCK_METHOD0(Release, void());
