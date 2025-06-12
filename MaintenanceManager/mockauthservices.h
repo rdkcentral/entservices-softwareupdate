@@ -57,7 +57,6 @@ MOCK_METHOD(uint32_t, SetXifaId, (const std::string&, SuccessMsgResult&), (overr
 MOCK_METHOD(uint32_t, GetAdvtOptOut, (AdvtOptOutResult&), (override));
 MOCK_METHOD(uint32_t, SetAdvtOptOut, (const bool&, SuccessMsgResult&), (override));
 };
-#endif
 
 class MockIAuthenticate : public PluginHost::IAuthenticate {
 public:
@@ -71,3 +70,4 @@ public:
     MOCK_METHOD(void, AddRef, (), (const, override));
     MOCK_METHOD(WPEFramework::PluginHost::ISecurity*, Officer, (const std::string& token), (override));
 };
+#endif
