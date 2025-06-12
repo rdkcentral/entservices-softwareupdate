@@ -1023,9 +1023,20 @@ TEST_F(MaintenanceManagerTest, subscribeForInternetStatus) {
 TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
-   
+ class DummyReturnType {
+public:
+    virtual ~DummyReturnType() = default;
+};
+
+ DummyReturnType dummyObject;
+ 
+ /*
  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
-        .WillOnce(Return(&service_));
+        .WillOnce(Return(&service_)); */
+
+   EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
+           .WillOnce(Return(static_cast<void*>(&dummyObject)));
+    
    	
     bool result = plugin_->checkNetwork();
     EXPECT_TRUE(result);
