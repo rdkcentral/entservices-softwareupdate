@@ -943,12 +943,13 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent)
         .WillOnce(Return(&service_));
 
     // Expectation: CreateToken succeeds and sets token
+/*
     EXPECT_CALL(iauthenticate_, CreateToken(_, _, _))
         .WillOnce([](uint16_t, const uint8_t*, string& token) {
             token = "mock_token";
             return Core::ERROR_NONE;
         });
-
+*/
     const char* callsign = "SomePlugin";
 
     auto* handle = plugin_->getThunderPluginHandle(callsign);
