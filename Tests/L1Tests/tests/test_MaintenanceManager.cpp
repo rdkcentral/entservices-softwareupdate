@@ -1001,6 +1001,18 @@ TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
 }
 
 
+TEST_F(MaintenanceManagerTest, subscribe) {
+    plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+
+    bool result = plugin_->subscribeToDeviceInitializationEvent();
+    EXPECT_TRUE(result);
+}
+
+
+
 
 /*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
