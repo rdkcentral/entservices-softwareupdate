@@ -1052,8 +1052,12 @@ ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, ::testing::_))
  */
  
  
- EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
-        .WillOnce(Return(&service_)); 
+ 
+EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+
+/*EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
+        .WillOnce(Return(&service_)); SecurityAgent */
 
  /*  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
            .WillOnce(::testing::Return(static_cast<void*>(&service_))); */
