@@ -121,10 +121,14 @@ typedef enum
 #define MAINTENANCE_TASK_SKIPPED        0x200
 
 #define MAX_NETWORK_RETRIES             4
+
 #define INTERNET_CONNECTED_STATE        3
 #define NETWORK_RETRY_INTERVAL          30
-
+#if defined(GTEST_ENABLE)
+#define MAX_ACTIVATION_RETRIES          1
+#else
 #define MAX_ACTIVATION_RETRIES          4
+#endif
 #define SECMGR_RETRY_INTERVAL           5
 
 #define TASK_RETRY_COUNT                1
