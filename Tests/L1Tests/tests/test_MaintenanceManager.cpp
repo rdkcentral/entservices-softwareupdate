@@ -1035,7 +1035,7 @@ public:
         .WillOnce(Return(&service_)); */
 
    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
-           .WillOnce(::testing::Return(static_cast<void*>(&dummyObject)));
+           .WillOnce(::testing::Return(static_cast<void*>(&service_)));
     
    	
     bool result = plugin_->checkNetwork();
