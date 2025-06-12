@@ -904,6 +904,7 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
 TEST_F(MaintenanceManagerTest, setpartnerid)
 {
     // Ensure m_authservicePlugin is initially null
+    plugin_->m_service = &service_;
     plugin_->setPartnerId("partner1");
 }
 
