@@ -62,7 +62,7 @@ class MockIAuthenticate : public WPEFramework::PluginHost::IAuthenticate {
 public:
     //MOCK_METHOD3(CreateToken, uint32_t(uint16_t, const uint8_t*, string&));
     //MOCK_METHOD0(Release, void());
-    MOCK_METHOD(void*, QueryInterfaceByCallsign, (const uint32_t, const string&), (override));
+    MOCK_METHOD(void*, QueryInterfaceByCallsign, (const uint32_t, const string&));
     MOCK_METHOD(uint32_t, CreateToken, (uint16_t, const uint8_t*, std::string&));
     //MOCK_METHOD(void, Release, ());
     //MOCK_METHOD(void, AddRef, (), (const, override));
