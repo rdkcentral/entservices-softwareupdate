@@ -7,8 +7,9 @@
 
 class MockAuthService : public WPEFramework::Exchange::IAuthService {
 public:
-    virtual ~ServiceMock() = default;
-
+    virtual ~MockAuthService() = default;
+    MOCK_METHOD(uint32_t, GetActivationStatus, (ActivationStatusResult&), (override));
+    MOCK_METHOD(uint32_t, SetActivationStatus, (const std::string&, SuccessMsgResult&), (override));
     MOCK_METHOD(uint32_t, ClearAuthToken, (SuccessMsgResult&), (override));
     MOCK_METHOD(uint32_t, ClearSessionToken, (SuccessMsgResult&), (override));
     MOCK_METHOD(uint32_t, ClearServiceAccessToken, (SuccessMsgResult&), (override));
