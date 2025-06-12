@@ -113,6 +113,7 @@ class MaintenanceManagerInitializedEventTest : public MaintenanceManagerTest {
 protected:
     IARM_EventHandler_t               controlEventHandler_;
     NiceMock<ServiceMock>             service_;
+    NiceMock<MockAuthService>         iauthservice_;
     NiceMock<FactoriesImplementation> factoriesImplementation_;
     PLUGINHOST_DISPATCHER* dispatcher_;
     Core::JSONRPC::Message message_;
@@ -910,17 +911,8 @@ TEST_F(MaintenanceManagerTest, setpartnerid)
 }
 TEST_F(MaintenanceManagerTest, setpartnerid1)
 {
-    
-    struct MockAuthService : public WPEFramework::Exchange::IAuthService {
-        MOCK_METHOD(void, AddRef, (), (override));
-        MOCK_METHOD(uint32_t, Release, (), (override));
-    };
-
-    // Create and use the mock object
-    auto* mockAuth = new NiceMock<MockAuthService>();
-
     plugin_->m_service = &service_;
-    plugin->m_authservicePlugin = mockAuth;
+    plugin->m_authservicePlugin = iauthservice_;
 
     plugin_->setPartnerId("partner1");
 }
