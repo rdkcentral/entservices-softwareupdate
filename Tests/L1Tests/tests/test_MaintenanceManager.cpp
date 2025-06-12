@@ -986,6 +986,7 @@ TEST_F(MaintenanceManagerTest, checkServiceActivated) {
 }
 
 TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
+    bool skipCheck = false;
     //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
     // Mock getServiceState to simulate UNAVAILABLE state
@@ -994,7 +995,7 @@ TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
         .WillRepeatedly(::testing::Return(&service_));
 
     // Test: Plugin is not activated after retries, expect "invalid"
-    std::string result = plugin_->getActivatedStatus();
+    std::string result = plugin_->getActivatedStatus(&skipCheck);
     EXPECT_EQ(result, "invalid");
 }
 
