@@ -930,9 +930,9 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
         .WillOnce(::testing::Return(&service_));
     bool result = plugin_->queryIAuthService();
 
-    //EXPECT_TRUE(result);
+    EXPECT_TRUE(result);
 }
-*/
+
 /*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
 {
