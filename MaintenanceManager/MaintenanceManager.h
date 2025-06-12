@@ -124,11 +124,11 @@ typedef enum
 
 #define INTERNET_CONNECTED_STATE        3
 #define NETWORK_RETRY_INTERVAL          30
-#if defined(GTEST_ENABLE)
-#define MAX_ACTIVATION_RETRIES          1
-#else
+//#if defined(GTEST_ENABLE)
+//#define MAX_ACTIVATION_RETRIES          1
+//#else
 #define MAX_ACTIVATION_RETRIES          4
-#endif
+//#endif
 #define SECMGR_RETRY_INTERVAL           5
 
 #define TASK_RETRY_COUNT                1
