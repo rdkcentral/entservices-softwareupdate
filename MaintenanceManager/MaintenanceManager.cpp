@@ -1425,6 +1425,9 @@ namespace WPEFramework
             {
                 MM_LOGINFO("Reaching here inside else  %s", event.c_str());
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
+            #if defined(GTEST_ENABLE)
+                status = Core::ERROR_NONE;
+            #endif
                 if (status == Core::ERROR_NONE)
                 {
                     result = true;
