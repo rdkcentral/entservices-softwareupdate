@@ -1040,6 +1040,16 @@ TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
         }
         return nullptr;
     });
+/*
+ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, ::testing::_))
+    .WillByDefault([this, mockAuth](const uint32_t, const std::string& name) -> void* {
+        if (name == "org.rdk.Network") {
+            mockAuth->AddRef();
+            return static_cast<void*>(mockAuth);
+        }
+        return nullptr;
+    });
+.*/
  
  
  /*
