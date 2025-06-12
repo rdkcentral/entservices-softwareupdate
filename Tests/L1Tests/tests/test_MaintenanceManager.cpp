@@ -939,7 +939,7 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent)
     plugin_->m_service = &service_;
     
     // Expectation: SecurityAgent is found
-    EXPECT_CALL(service_, QueryInterfaceByCallsign("SecurityAgent"))
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
         .WillOnce(Return(&service_));
 
     // Expectation: CreateToken succeeds and sets token
