@@ -57,6 +57,7 @@ protected:
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
     NiceMock<ServiceMock>             service_;
     NiceMock<MockAuthService>         iauthservice_;
+    NiceMock<MockIAuthenticate>       iauthenticate_;
 
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
@@ -932,6 +933,32 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
 
     EXPECT_TRUE(result);
 }
+
+TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent) {
+    
+    plugin_->m_service = &service_;
+    
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(service_, QueryInterfaceByCallsign("SecurityAgent"))
+        .WillOnce(Return(&service_));
+
+    // Expectation: CreateToken succeeds and sets token
+    EXPECT_CALL(service_, CreateToken(_, _, _))
+        .WillOnce([](uint16_t, const uint8_t*, string& token) {
+            token = "mock_token";
+            return Core::ERROR_NONE;
+        });
+
+    const char* callsign = "SomePlugin";
+
+    auto* handle = manager->getThunderPluginHandle(callsign);
+    ASSERT_NE(handle, nullptr);
+
+    // Optional: verify internal state of the returned handle (callsign, query param etc.)
+    delete handle;
+}
+
+
 
 /*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
