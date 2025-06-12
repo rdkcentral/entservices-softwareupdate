@@ -910,9 +910,17 @@ TEST_F(MaintenanceManagerTest, setpartnerid)
 TEST_F(MaintenanceManagerTest, setpartnerid1)
 {
     
+    struct MockAuthService : public WPEFramework::Exchange::IAuthService {
+        MOCK_METHOD(void, AddRef, (), (override));
+        MOCK_METHOD(uint32_t, Release, (), (override));
+    };
+
+    // Create and use the mock object
+    auto* mockAuth = new NiceMock<MockAuthService>();
+
     plugin_->m_service = &service_;
-    //plugin->m_authservicePlugin = m_service->QueryInterfaceByCallsign<Exchange::IAuthService>("org.rdk.AuthService");
-    plugin_->m_authservicePlugin = reinterpret_cast<WPEFramework::Exchange::IAuthService*>(0x1);
+    plugin->m_authservicePlugin = mockAuth;
+
     plugin_->setPartnerId("partner1");
 }
 
