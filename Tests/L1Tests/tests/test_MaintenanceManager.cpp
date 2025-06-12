@@ -56,6 +56,7 @@ protected:
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
     NiceMock<ServiceMock>             service_;
+    NiceMock<MockAuthService>         iauthservice_;
 
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
