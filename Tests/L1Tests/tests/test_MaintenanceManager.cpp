@@ -1020,7 +1020,15 @@ TEST_F(MaintenanceManagerTest, subscribeForInternetStatus) {
     bool result = plugin_->subscribeForInternetStatusEvent("internetStatus");
     EXPECT_TRUE(result);
 }
+TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
+    plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
 
+    bool result = plugin_->checkNetwork();
+    EXPECT_TRUE(result);
+}
 
 /*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
