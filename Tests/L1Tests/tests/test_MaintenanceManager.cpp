@@ -972,7 +972,7 @@ TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
     EXPECT_EQ(result, "invalid");
 }
 
-TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
+TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
     //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
     // Mock getServiceState to simulate UNAVAILABLE state
