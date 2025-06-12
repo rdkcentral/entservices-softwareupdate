@@ -939,11 +939,11 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent)
     plugin_->m_service = &service_;
    // plugin->m_auth = &iauthenticate_;
     // Expectation: SecurityAgent is found
-    EXPECT_CALL(iauthenticate_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
         .WillOnce(Return(&service_));
 
     // Expectation: CreateToken succeeds and sets token
-    EXPECT_CALL(auth_, CreateToken(_, _, _))
+    EXPECT_CALL(iauthenticate_, CreateToken(_, _, _))
         .WillOnce([](uint16_t, const uint8_t*, string& token) {
             token = "mock_token";
             return Core::ERROR_NONE;
