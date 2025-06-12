@@ -1023,7 +1023,10 @@ TEST_F(MaintenanceManagerTest, subscribeForInternetStatus) {
 TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
+/*   
+ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
+        .WillOnce(Return(&service_)); */
+   EXPECT_CALL(service_, QueryInterfaceByCallsign("org.rdk.Network"))
         .WillOnce(Return(&service_));
 
     bool result = plugin_->checkNetwork();
