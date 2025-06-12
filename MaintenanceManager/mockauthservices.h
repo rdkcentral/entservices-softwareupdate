@@ -58,3 +58,16 @@ MOCK_METHOD(uint32_t, GetAdvtOptOut, (AdvtOptOutResult&), (override));
 MOCK_METHOD(uint32_t, SetAdvtOptOut, (const bool&, SuccessMsgResult&), (override));
 };
 #endif
+
+class MockIAuthenticate : public PluginHost::IAuthenticate {
+public:
+    //MOCK_METHOD3(CreateToken, uint32_t(uint16_t, const uint8_t*, string&));
+    //MOCK_METHOD0(Release, void());
+    MOCK_METHOD(uint32_t, CreateToken, (uint16_t, const uint8_t*, std::string&));
+    //MOCK_METHOD(void, Release, ());
+    //MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(uint32_t, Release, (), (const, override));
+    MOCK_METHOD(void*, QueryInterface, (uint32_t), (override));
+    MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(WPEFramework::PluginHost::ISecurity*, Officer, (const std::string& token), (override));
+};
