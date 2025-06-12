@@ -1028,6 +1028,7 @@ TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
         .WillOnce(Return(&service_)); */
    EXPECT_CALL(service_, QueryInterfaceByCallsign("org.rdk.Network"))
         .WillOnce(Return(&service_));
+	
 
     bool result = plugin_->checkNetwork();
     EXPECT_TRUE(result);
