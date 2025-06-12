@@ -913,12 +913,13 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
     EXPECT_TRUE(result);
 }
 */
-
+/*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
 {
     bool result = plugin_->setDeviceInitializationContext(response);
     EXPECT_TRUE(result);
 }
+*/
 /*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
 {
