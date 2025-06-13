@@ -1110,7 +1110,8 @@ TEST_F(MaintenanceManagerTest, GetServiceState_Available) {
     EXPECT_EQ(result, Core::ERROR_NONE);
     EXPECT_EQ(state, PluginHost::IShell::state::ACTIVATED); */
     
-    uint32_t result = getServiceState(&service_, "test", state);
+/*    uint32_t result = getServiceState(&service_, "test", state); */
+    uint32_t result = WPEFramework::Plugin::getServiceState(&service_, "test", state);
 
     EXPECT_EQ(result, Core::ERROR_NONE);
     EXPECT_EQ(state, PluginHost::IShell::state::ACTIVATED);
