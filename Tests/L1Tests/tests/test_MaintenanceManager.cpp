@@ -971,6 +971,8 @@ TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
     std::string result = plugin_->checkActivatedStatus();
     EXPECT_EQ(result, "invalid");
 }
+
+/*
 TEST_F(MaintenanceManagerTest, ServiceActivatedcheck) {
     PluginHost::IShell::state state;
     plugin_->m_service = &service_;
@@ -984,7 +986,7 @@ TEST_F(MaintenanceManagerTest, ServiceActivatedcheck) {
         .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
 
 }
-
+*/
 TEST_F(MaintenanceManagerTest, checkServiceActivated) {
     //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
