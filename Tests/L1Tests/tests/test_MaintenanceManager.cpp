@@ -1102,8 +1102,8 @@ TEST_F(MaintenanceManagerTest, DeinitializeIARM_RemovesHandlerAndNullifiesInstan
 TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     plugin_->m_service = &service_;    
 // Arrange: simulate IARM init success
-   /* EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
-        .WillOnce(Return(&service_)); */
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&iauthenticate_)); 
     plugin_->InitializeIARM();
     
 }
