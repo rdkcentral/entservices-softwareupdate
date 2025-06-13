@@ -1090,8 +1090,17 @@ TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest) {
         .WillOnce(Return(&service_));
     plugin_->task_execution_thread();
 
- 
 }
+
+TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
+    plugin_->m_service = &service_;    
+// Arrange: simulate IARM init success
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+    plugin_->InitializeIARM();
+    
+}
+
 TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
      plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
