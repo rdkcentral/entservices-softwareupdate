@@ -1106,9 +1106,15 @@ TEST_F(MaintenanceManagerTest, GetServiceState_Available) {
         .WillOnce(::testing::Return(&service_));
     EXPECT_CALL(service_, State())
         .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
-    uint32_t result = plugin_->getServiceState(&service_, "test", state);
+/*    uint32_t result = plugin_->getServiceState(&service_, "test", state);
+    EXPECT_EQ(result, Core::ERROR_NONE);
+    EXPECT_EQ(state, PluginHost::IShell::state::ACTIVATED); */
+    
+    uint32_t result = getServiceState(&service_, "test", state);
+
     EXPECT_EQ(result, Core::ERROR_NONE);
     EXPECT_EQ(state, PluginHost::IShell::state::ACTIVATED);
+
 }
 
 
