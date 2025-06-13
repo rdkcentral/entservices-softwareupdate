@@ -1067,6 +1067,26 @@ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
     EXPECT_TRUE(result);
 }
 
+
+
+
+TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
+    plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+ 
+ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+    
+   	
+    bool result = plugin_->isDeviceOnline();
+    EXPECT_TRUE(result);
+}
+
+
+
+
+
+
 /*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
 {
