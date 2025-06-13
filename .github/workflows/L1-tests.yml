@@ -9,7 +9,7 @@ on:
 env:
   BUILD_TYPE: Debug
   THUNDER_REF: "R4.4.1"
-  INTERFACES_REF: "main"
+  INTERFACES_REF: "develop"
   AUTOMATICS_UNAME: ${{ secrets.AUTOMATICS_UNAME}}
   AUTOMATICS_PASSCODE: ${{ secrets. AUTOMATICS_PASSCODE}}
 
@@ -121,10 +121,18 @@ jobs:
         with:
           path: entservices-softwareupdate
 
+      - name: Checkout googletest
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v3
+        with:
+          repository: google/googletest
+          path: googletest
+          ref: v1.15.0
+
       - name: Apply patches ThunderTools
         run: |  
           cd $GITHUB_WORKSPACE/ThunderTools
-          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L1Tests/patches/00010-R4.4-Add-support-for-project-dir.patch
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/00010-R4.4-Add-support-for-project-dir.patch
           cd -
 
       - name: Build ThunderTools
@@ -145,10 +153,10 @@ jobs:
       - name: Apply patches Thunder
         run: |
           cd $GITHUB_WORKSPACE/Thunder
-          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L2Tests/patches/Use_Legact_Alt_Based_On_ThunderTools_R4.4.3.patch
-          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L2Tests/patches/error_code_R4_4.patch
-          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L1Tests/patches/1004-Add-support-for-project-dir.patch
-          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L1Tests/patches/RDKEMW-733-Add-ENTOS-IDS.patch
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Use_Legact_Alt_Based_On_ThunderTools_R4.4.3.patch
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/error_code_R4_4.patch
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/1004-Add-support-for-project-dir.patch
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/RDKEMW-733-Add-ENTOS-IDS.patch
           cd -
 
       - name: Build Thunder
@@ -183,7 +191,7 @@ jobs:
       - name: Apply patches entservices-apis
         run: |
           cd $GITHUB_WORKSPACE/entservices-apis
-          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/Tests/L1Tests/patches/RDKEMW-1007.patch
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/RDKEMW-1007.patch
           cd -
 
       - name: Build entservices-apis
@@ -341,6 +349,22 @@ jobs:
           &&
           cmake --install build/mocks
 
+      - name: Build googletest
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: >
+          cmake -G Ninja
+          -S "$GITHUB_WORKSPACE/googletest"
+          -B build/googletest
+          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DGENERIC_CMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DBUILD_TYPE=Debug
+          -DBUILD_GMOCK=ON
+          &&
+          cmake --build build/googletest -j8
+          &&
+          cmake --install build/googletest
+
       - name: Build entservices-softwareupdate
         run: >
           cmake -G Ninja
@@ -367,6 +391,8 @@ jobs:
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests
           -I $GITHUB_WORKSPACE/Thunder/Source
           -I $GITHUB_WORKSPACE/Thunder/Source/core
+          -I $GITHUB_WORKSPACE/install/usr/include
+          -I $GITHUB_WORKSPACE/install/usr/include/WPEFramework
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/devicesettings.h
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Rfc.h
@@ -442,6 +468,8 @@ jobs:
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests
           -I $GITHUB_WORKSPACE/Thunder/Source
           -I $GITHUB_WORKSPACE/Thunder/Source/core
+          -I $GITHUB_WORKSPACE/install/usr/include
+          -I $GITHUB_WORKSPACE/install/usr/include/WPEFramework
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/devicesettings.h
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Rfc.h
@@ -457,7 +485,7 @@ jobs:
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/thunder/Communicator.h
           --coverage
           -Wall -Wno-unused-result -Wno-deprecated-declarations -Wno-error=format=
-          -Wl,-wrap,system -Wl,-wrap,popen -Wl,-wrap,syslog
+          -Wl,-wrap,system -Wl,-wrap,popen -Wl,-wrap,syslog -Wl,--no-as-needed
           -DENABLE_TELEMETRY_LOGGING
           -DUSE_IARMBUS
           -DENABLE_SYSTEM_GET_STORE_DEMO_LINK
@@ -571,6 +599,15 @@ jobs:
           ls -l /dev/disk/by-id/usb-Generic_Flash_Disk_B32FD507-0
           &&
           ls -l /dev/disk/by-id/usb-JetFlash_Transcend_16GB_UEUIRCXT-0
+
+      - name: Run unit tests without valgrind
+        run: >
+          PATH=$GITHUB_WORKSPACE/install/usr/bin:${PATH}
+          LD_LIBRARY_PATH=$GITHUB_WORKSPACE/install/usr/lib:$GITHUB_WORKSPACE/install/usr/lib/wpeframework/plugins:${LD_LIBRARY_PATH}
+          GTEST_OUTPUT="json:$(pwd)/rdkL1TestResults.json"
+          RdkServicesL1Test &&
+          cp -rf $(pwd)/rdkL1TestResults.json $GITHUB_WORKSPACE/rdkL1TestResultsWithoutValgrind.json &&
+          rm -rf $(pwd)/rdkL1TestResults.json
 
       - name: Run unit tests with valgrind
         if: ${{ !env.ACT }}
