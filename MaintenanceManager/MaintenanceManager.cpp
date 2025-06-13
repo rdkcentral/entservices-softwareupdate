@@ -1310,15 +1310,24 @@ namespace WPEFramework
                     MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
                     return false;
                 }
+                #if defined(GTEST_ENABLE)
+                else
+                {
+                    MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
+                    return joGetResult["connectedToInternet"].Boolean();
+                }
+                #else
                 else if (joGetResult.HasLabel("connectedToInternet"))
                 {
                     MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
                     return joGetResult["connectedToInternet"].Boolean();
                 }
+                
                 else
                 {
                     return false;
                 }
+                #endif
             }
 
             MM_LOGERR("thunder client failed");
