@@ -61,7 +61,7 @@ FirmwareUpdateTest:: FirmwareUpdateTest():L2TestMocks()
 {
         Core::JSONRPC::Message message;
         string response;
-        uint32_t status = Core::ERROR_GENERAL;
+        Core::hresult status = Core::ERROR_GENERAL;
 
          /* Activate plugin in constructor */
          status = ActivateService("org.rdk.FirmwareUpdate");
@@ -73,7 +73,7 @@ FirmwareUpdateTest:: FirmwareUpdateTest():L2TestMocks()
  */
 FirmwareUpdateTest::~FirmwareUpdateTest()
 {
-    uint32_t status = Core::ERROR_GENERAL;
+    Core::hresult status = Core::ERROR_GENERAL;
 
     status = DeactivateService("org.rdk.FirmwareUpdate");
     EXPECT_EQ(Core::ERROR_NONE, status);
@@ -81,7 +81,7 @@ FirmwareUpdateTest::~FirmwareUpdateTest()
 
 TEST_F(FirmwareUpdateTest,EmptyFirmwareFilepath)
 {
-    uint32_t status = Core::ERROR_GENERAL;
+    Core::hresult status = Core::ERROR_GENERAL;
     JsonObject params;
     JsonObject result;
 
@@ -95,7 +95,7 @@ TEST_F(FirmwareUpdateTest,EmptyFirmwareFilepath)
 
 TEST_F(FirmwareUpdateTest,EmptyFirmwareType)
 {
-    uint32_t status = Core::ERROR_GENERAL;
+    Core::hresult status = Core::ERROR_GENERAL;
     
     const char* filePath = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
     std::ofstream file(filePath, std::ios::binary); 
@@ -112,7 +112,7 @@ TEST_F(FirmwareUpdateTest,EmptyFirmwareType)
 
 TEST_F(FirmwareUpdateTest,InvalidFirmwareType)
 {
-    uint32_t status = Core::ERROR_GENERAL;
+    Core::hresult status = Core::ERROR_GENERAL;
     const char* filePath = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
     std::ofstream file(filePath, std::ios::binary); 
 
@@ -133,7 +133,7 @@ TEST_F(FirmwareUpdateTest,InvalidFirmwareType)
 
 TEST_F(FirmwareUpdateTest,FirmwareFilepath_not_exist)
 {
-    uint32_t status = Core::ERROR_GENERAL;
+    Core::hresult status = Core::ERROR_GENERAL;
     JsonObject params;
     JsonObject result;
 
@@ -153,7 +153,7 @@ TEST_F(FirmwareUpdateTest,FirmwareUptoDateValidatation)
 {
     const char* filePath = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
     std::ofstream versionFile("/version.txt");
-    uint32_t status = Core::ERROR_GENERAL;
+    Core::hresult status = Core::ERROR_GENERAL;
     JsonObject params;
     JsonObject result;
 
@@ -176,7 +176,7 @@ TEST_F(FirmwareUpdateTest,FirmwareUpdate_without_imageFlasher)
     std::ofstream file("/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin");
     std::ofstream versionFile("/version.txt");
     std::ofstream devicePropertiesFile("/etc/device.properties");
-    uint32_t status = Core::ERROR_GENERAL;
+    Core::hresult status = Core::ERROR_GENERAL;
     JsonObject params;
     JsonObject result;
 
@@ -215,7 +215,7 @@ TEST_F(FirmwareUpdateTest,FirmwareUpdate_with_imageFlasher)
     std::ofstream devicePropertiesFile("/etc/device.properties");
     std::ofstream imageFlasher("/lib/rdk/imageFlasher.sh");
 
-    uint32_t status = Core::ERROR_GENERAL;
+    Core::hresult status = Core::ERROR_GENERAL;
     JsonObject params;
     JsonObject result;
 
