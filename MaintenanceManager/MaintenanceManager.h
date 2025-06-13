@@ -113,6 +113,9 @@ typedef enum
 
 #define BASE_CLOCK CLOCK_BOOTTIME
 
+#define WHOAMI_SUPPORT "WHOAMI_SUPPORT"
+#define DEVICE_PROPS_FILE "/etc/device.properties"
+
 #define FOREGROUND_MODE "FOREGROUND"
 #define BACKGROUND_MODE "BACKGROUND"
 
@@ -192,6 +195,7 @@ namespace WPEFramework
             bool g_subscribed_for_nwevents = false;
             bool g_listen_to_deviceContextUpdate = false;
             bool g_subscribed_for_deviceContextUpdate = false;
+            bool g_whoami_support_enabled = false;
 
             std::mutex m_callMutex;
             std::mutex m_waiMutex;
@@ -210,6 +214,7 @@ namespace WPEFramework
             void task_execution_thread();
             void requestSystemReboot();
             void maintenanceManagerOnBootup();
+            void initWhoAmISupport();
             bool checkAutoRebootFlag();
             bool readRFC(const char *);
             bool setRFC(const char *, const char *, DATA_TYPE);
