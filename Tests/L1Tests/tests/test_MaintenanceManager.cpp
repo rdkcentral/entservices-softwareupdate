@@ -1101,11 +1101,12 @@ TEST_F(MaintenanceManagerTest, DeinitializeIARM_RemovesHandlerAndNullifiesInstan
 
 TEST_F(MaintenanceManagerTest, GetServiceState_Available) {
     PluginHost::IShell::state state;
-    EXPECT_CALL(service, QueryInterfaceByCallsign(::testing::_,"test"))
-        .WillOnce(Return(&service));
-    EXPECT_CALL(service, State())
+    plugin_->m_service = &service_;
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"test"))
+        .WillOnce(Return(&service_));
+    EXPECT_CALL(service_, State())
         .WillOnce(Return(PluginHost::IShell::state::ACTIVATED));
-    uint32_t result = plugin_->getServiceState(&service, "test", state);
+    uint32_t result = plugin_->getServiceState(&service_, "test", state);
     EXPECT_EQ(result, Core::ERROR_NONE);
     EXPECT_EQ(state, PluginHost::IShell::state::ACTIVATED);
 }
