@@ -1070,7 +1070,7 @@ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
 
 
 
-TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
+TEST_F(MaintenanceManagerTest, isDeviceOnlinesuccess ) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
  
