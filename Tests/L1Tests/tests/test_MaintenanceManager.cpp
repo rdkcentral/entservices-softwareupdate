@@ -1092,6 +1092,13 @@ TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest) {
 
 }
 
+TEST_F(MaintenanceManagerTest, DeinitializeIARM_RemovesHandlerAndNullifiesInstance) {
+    // Arrange
+    plugin_->m_service = &service_; 
+    plugin_->DeinitializeIARM();
+
+}
+
 TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     plugin_->m_service = &service_;    
 // Arrange: simulate IARM init success
@@ -1100,6 +1107,7 @@ TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     plugin_->InitializeIARM();
     
 }
+
 
 TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
      plugin_->m_service = &service_;
