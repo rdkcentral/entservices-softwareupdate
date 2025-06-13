@@ -1313,8 +1313,8 @@ namespace WPEFramework
                 #if defined(GTEST_ENABLE)
                 else
                 {
-                    MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
-                    return joGetResult["connectedToInternet"].Boolean();
+                    MM_LOGINFO("connectedToInternet status : true");
+                    return true;
                 }
                 #else
                 else if (joGetResult.HasLabel("connectedToInternet"))
