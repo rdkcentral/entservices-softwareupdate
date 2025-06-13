@@ -391,18 +391,18 @@ namespace WPEFramework
              * "activated" */
             if (activationStatus)
             {
-#if !defined(GTEST_ENABLE)
+//#if !defined(GTEST_ENABLE)
                 internetConnectStatus = isDeviceOnline(); /* Network check */
-#else
-                internetConnectStatus = true;
-#endif
+//#else
+//                internetConnectStatus = true;
+//#endif
             }
 #else
-            #if !defined(GTEST_ENABLE)
+//            #if !defined(GTEST_ENABLE)
             internetConnectStatus = isDeviceOnline(); /* Network check */
-            #else
-            internetConnectStatus = true;
-            #endif
+//            #else
+//            internetConnectStatus = true;
+//           #endif
 #endif
 
 #if defined(ENABLE_WHOAMI)
