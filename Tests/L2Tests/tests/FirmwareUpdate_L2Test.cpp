@@ -90,7 +90,7 @@ TEST_F(FirmwareUpdateTest,EmptyFirmwareFilepath)
     params["firmwareType"]     = "PCI";
     status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
 
-    EXPECT_EQ(Core::ERROR_NONE, Core::ERROR_INVALID_PARAMETER);
+    EXPECT_EQ(status, Core::ERROR_INVALID_PARAMETER);
 }
 
 TEST_F(FirmwareUpdateTest,EmptyFirmwareType)
@@ -106,7 +106,7 @@ TEST_F(FirmwareUpdateTest,EmptyFirmwareType)
         params["firmwareFilepath"] = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
         params["firmwareType"]     = "";
         status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
-        EXPECT_EQ(Core::ERROR_NONE, Core::ERROR_INVALID_PARAMETER);
+        EXPECT_EQ(status, Core::ERROR_INVALID_PARAMETER);
     }
 }
 
@@ -122,7 +122,7 @@ TEST_F(FirmwareUpdateTest,InvalidFirmwareType)
         params["firmwareFilepath"] = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
         params["firmwareType"]     = "ABC";
         status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
-        EXPECT_EQ(Core::ERROR_NONE, Core::ERROR_INVALID_PARAMETER);
+        EXPECT_EQ(status, Core::ERROR_INVALID_PARAMETER);
 
         JsonObject params1;
         JsonObject result1;
@@ -145,7 +145,7 @@ TEST_F(FirmwareUpdateTest,FirmwareFilepath_not_exist)
     if (std::remove(filePath) == 0) {
         std::cout << "File removed successfully.\n";
         status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
-        EXPECT_EQ(Core::ERROR_NONE, Core::ERROR_INVALID_PARAMETER); 
+        EXPECT_EQ(status, Core::ERROR_INVALID_PARAMETER); 
     }    
 }
 
@@ -167,7 +167,7 @@ TEST_F(FirmwareUpdateTest,FirmwareUptoDateValidatation)
         params["firmwareFilepath"] = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
         params["firmwareType"]     = "PCI";
         status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
-        EXPECT_EQ(Core::ERROR_NONE,Core::ERROR_FIRMWAREUPDATE_UPTODATE );
+        EXPECT_EQ(status,Core::ERROR_FIRMWAREUPDATE_UPTODATE );
     }
 }
 
