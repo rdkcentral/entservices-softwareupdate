@@ -1166,7 +1166,7 @@ namespace WPEFramework
              * activated - run normal */
             bool ret_result = false;
             string activationStatus;
-            Auth_activation_status_t result;
+            Auth_activation_status_t result = INVALID_ACTIVATION;
             const std::unordered_map<std::string, std::function<void()>> act{
                 {"activation-connect", [&]()
                  { result = ACTIVATION_CONNECT; }},
@@ -2062,6 +2062,7 @@ namespace WPEFramework
                     pclose(fp);
                     return -1;
                 }
+                pclose(fp);
                 tz_offset_pos = offset[0];
                 int offset_value = atoi(&offset[1]);
 
