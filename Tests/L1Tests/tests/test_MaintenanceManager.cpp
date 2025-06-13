@@ -1082,7 +1082,16 @@ TEST_F(MaintenanceManagerTest, isDeviceOnlinesuccess ) {
     EXPECT_TRUE(result);
 }
 
+TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest) {
+     plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+ 
+ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+    plugin_->task_execution_thread();
 
+ 
+}
 
 
 
