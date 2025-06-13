@@ -1431,6 +1431,7 @@ namespace WPEFramework
             const char *secMgr_callsign_ver = "org.rdk.SecManager.1";
             WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
 
+            MM_LOGINFO("Attempting to subscribe for %s events", event.c_str());
             // subscribe to onDeviceInitializationContextUpdate event
 
             thunder_client = getThunderPluginHandle(secMgr_callsign_ver);
