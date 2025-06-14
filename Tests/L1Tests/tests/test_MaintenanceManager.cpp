@@ -1134,6 +1134,35 @@ TEST_F(MaintenanceManagerTest, GetServiceState_Available) {
 }
 
 
+TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ValidData_ReturnsTrue) {
+    JsonObject contextData;
+    contextData["partnerId"] = "Sky";
+    contextData["regionalConfigService"] = "region.sky.com";
+
+    JsonObject fullResponse;
+    fullResponse["deviceInitializationContext"] = contextData;
+
+    // Fill in the maps
+    plugin_->m_param_map["partnerId"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.PartnerId";
+    plugin_->m_paramType_map["partnerId"] = DataType::STRING;
+
+    plugin_->m_param_map["regionalConfigService"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.RegionalConfigService";
+    plugin_->m_paramType_map["regionalConfigService"] = DataType::STRING;
+
+    // Expect setRFC to be called for each key
+    EXPECT_CALL(*wrapsImplMock_, setRFC(_, StrEq("Sky"), _)).Times(1);
+    EXPECT_CALL(*wrapsImplMock_, setRFC(_, StrEq("https://region.sky.com"), _)).Times(1);
+
+    // Expect setPartnerId to be called
+    EXPECT_CALL(*wrapsImplMock_, setPartnerId(StrEq("Sky"))).Times(1);
+
+    // Call the method
+    bool result = plugin_->setDeviceInitializationContext(fullResponse);
+
+    EXPECT_TRUE(result);
+}
+
+
 TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     plugin_->m_service = &service_;    
 // Arrange: simulate IARM init success
