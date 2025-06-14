@@ -1143,18 +1143,18 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ValidData_ReturnsT
     fullResponse["deviceInitializationContext"] = contextData;
 
     // Fill in the maps
-    plugin_->m_param_map["partnerId"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.PartnerId";
-    plugin_->m_paramType_map["partnerId"] = DATA_TYPE::STRING;
+  //  plugin_->m_param_map["partnerId"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.PartnerId";
+  //  plugin_->m_paramType_map["partnerId"] = DATA_TYPE::STRING;
 
-    plugin_->m_param_map["regionalConfigService"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.RegionalConfigService";
-    plugin_->m_paramType_map["regionalConfigService"] = DATA_TYPE::STRING;
+  //  plugin_->m_param_map["regionalConfigService"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.RegionalConfigService";
+  //  plugin_->m_paramType_map["regionalConfigService"] = DATA_TYPE::STRING;
 
     // Expect setRFC to be called for each key
-    EXPECT_CALL(*wrapsImplMock, setRFC(_, StrEq("Sky"), _)).Times(1);
-    EXPECT_CALL(*wrapsImplMock, setRFC(_, StrEq("https://region.sky.com"), _)).Times(1);
+    EXPECT_CALL(*WrapsImplMock, setRFC(_, StrEq("Sky"), _)).Times(1);
+    EXPECT_CALL(*WrapsImplMock, setRFC(_, StrEq("https://region.sky.com"), _)).Times(1);
 
     // Expect setPartnerId to be called
-    EXPECT_CALL(*wrapsImplMock, setPartnerId(StrEq("Sky"))).Times(1);
+    EXPECT_CALL(*WrapsImplMock, setPartnerId(StrEq("Sky"))).Times(1);
 
     // Call the method
     bool result = plugin_->setDeviceInitializationContext(fullResponse);
