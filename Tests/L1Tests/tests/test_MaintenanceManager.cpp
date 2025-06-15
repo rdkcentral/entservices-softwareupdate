@@ -1212,7 +1212,7 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_Completes
     eventData.data.maintenance_module_status.status = MAINT_RFC_COMPLETE;
 
     plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_RFC]] = true;
-    uint16_t g_task_status; = 0;
+    uint16_t g_task_status = 0;
 
     plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME, IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, &eventData, sizeof(eventData));
 
