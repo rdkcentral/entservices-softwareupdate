@@ -1226,10 +1226,13 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue)
    
     //PluginHost::IShell::state state;
     plugin_->m_service = &service_;
-
+/*
    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
 	.Times(::testing::AtLeast(1))
-        .WillOnce(::testing::Return(&service_));
+        .WillOnce(::testing::Return(&service_)); */
+   EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+   .Times(::testing::AtLeast(1))
+   .WillRepeatedly(Return(&service_));
 
    EXPECT_CALL(service_, State())
         .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
