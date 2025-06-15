@@ -1221,7 +1221,7 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_Completes
     EXPECT_FALSE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_RFC]]);
 }
 */
-TEST_F(KnowWhoAmITest, SecManagerActive_AllGood_ReturnsTrue)
+TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue)
 {
    
     PluginHost::IShell::state state;
