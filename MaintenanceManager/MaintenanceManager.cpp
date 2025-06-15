@@ -1,2655 +1,631 @@
-/**
- * If not stated otherwise in this file or this component's LICENSE
- * file the following copyright and licenses apply:
- *
- * Copyright 2021 RDK Management
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **/
-
-/**
- * @file  MaintenanceManager.cpp
- * @author Livin Sunny
- * @brief Thunder Plugin based Implementation for RDK MaintenanceManager service API's.
- * @reference RDK-29959.
- */
-
-#include <stdlib.h>
-#include <errno.h>
-#include <cstdio>
-#include <regex>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <map>
-#include <sstream>
-#include <ctime>
-#include <iomanip>
-#include <bits/stdc++.h>
-#include <algorithm>
-#include <array>
-#include <unistd.h>
-#include <secure_wrapper.h>
-
-#include "MaintenanceManager.h"
-#include "UtilsIarm.h"
-#include "UtilsJsonRpc.h"
-#include "UtilsfileExists.h"
-
-#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
-#include "libIARM.h"
-#endif
-
-#ifdef ENABLE_DEVICE_MANUFACTURER_INFO
-#include "mfrMgr.h"
-#endif
-
-#ifdef ENABLE_DEEP_SLEEP
-#include "rdk/halif/deepsleep-manager/deepSleepMgr.h"
-#endif
-#include "maintenanceMGR.h"
-
-using namespace std;
-
-#define API_VERSION_NUMBER_MAJOR 1
-#define API_VERSION_NUMBER_MINOR 0
-#define API_VERSION_NUMBER_PATCH 24
-#define SERVER_DETAILS "127.0.0.1:9998"
-
-#define PROC_DIR "/proc"
-#define RDK_PATH "/lib/rdk/"
-#define MAINTENANCE_MANAGER_RFC_CALLER_ID "MaintenanceManager"
-
-#if defined(ENABLE_WHOAMI)
-#define TR181_PARTNER_ID "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.PartnerName"
-#define TR181_TARGET_OS_CLASS "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.OsClass"
-#define TR181_XCONFURL "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Bootstrap.XconfUrl"
-#endif
-
-#define TASK_SCRIPT RDK_PATH "Start_MaintenanceTasks.sh"
-#define IMAGE_CHECK_SCRIPT RDK_PATH "xconfImageCheck.sh"
-#define RFC_TASK "RFC"
-
-enum TaskIndices {
-    TASK_RFC = 0,
-    TASK_SWUPDATE,
-    TASK_LOGUPLOAD
-};
-
-/**
- * @brief Converts a maintenance status enum to its corresponding string representation.
- *
- * This function maps each `Maint_notify_status_t` enumeration value to a specific
- * string for easy readability and logging purposes.
- *
- * @param status The maintenance status to convert, one of the values from the `Maint_notify_status_t` enum.
- * @return A string that represents the given maintenance status.
- *         - "MAINTENANCE_IDLE" for MAINTENANCE_IDLE
- *         - "MAINTENANCE_STARTED" for MAINTENANCE_STARTED
- *         - "MAINTENANCE_ERROR" for MAINTENANCE_ERROR
- *         - "MAINTENANCE_COMPLETE" for MAINTENANCE_COMPLETE
- *         - "MAINTENANCE_INCOMPLETE" for MAINTENANCE_INCOMPLETE
- *         - "MAINTENANCE_ERROR" for any unknown status
- */
-string notifyStatusToString(Maint_notify_status_t &status)
-{
-    string ret_status = "";
-    switch (status)
-    {
-        case MAINTENANCE_IDLE:
-            ret_status = "MAINTENANCE_IDLE";
-            break;
-        case MAINTENANCE_STARTED:
-            ret_status = "MAINTENANCE_STARTED";
-            break;
-        case MAINTENANCE_ERROR:
-            ret_status = "MAINTENANCE_ERROR";
-            break;
-        case MAINTENANCE_COMPLETE:
-            ret_status = "MAINTENANCE_COMPLETE";
-            break;
-        case MAINTENANCE_INCOMPLETE:
-            ret_status = "MAINTENANCE_INCOMPLETE";
-            break;
-        default:
-            ret_status = "MAINTENANCE_ERROR";
-    }
-    return ret_status;
-}
-
-/**
- * @brief Checks if a given Opt-out mode is valid.
- *
- * This function verifies if the provided Opt-out mode exists within the predefined list
- * of valid modes.
- *
- * @param OptoutModes The Opt-out mode to check.
- * @return true if the Opt-out mode is valid, false otherwise.
- */
-bool checkValidOptOutModes(string OptoutModes)
-{
-    vector<string> modes{
-        "ENFORCE_OPTOUT",
-        "BYPASS_OPTOUT",
-        "IGNORE_UPDATE",
-        "NONE"};
-    return (find(modes.begin(), modes.end(), OptoutModes) != modes.end()) ? true : false;
-}
-
-/**
- * @brief Converts a module status enum to its corresponding string representation.
- *
- * This function maps each `IARM_Maint_module_status_t` enumeration value to a specific
- * string for easy readability and logging purposes.
- *
- * @param status The module status to convert, one of the values from the `IARM_Maint_module_status_t` enum.
- * @return A string that represents the given module status:
- *         - "MAINTENANCE_RFC_COMPLETE" for MAINT_RFC_COMPLETE
- *         - "MAINTENANCE_RFC_ERROR" for MAINT_RFC_ERROR
- *         - "MAINTENANCE_LOGUPLOAD_COMPLETE" for MAINT_LOGUPLOAD_COMPLETE
- *         - "MAINTENANCE_LOGUPLOAD_ERROR" for MAINT_LOGUPLOAD_ERROR
- *         - "MAINTENANCE_FWDOWNLOAD_COMPLETE" for MAINT_FWDOWNLOAD_COMPLETE
- *         - "MAINTENANCE_FWDOWNLOAD_ERROR" for MAINT_FWDOWNLOAD_ERROR
- *         - "MAINTENANCE_REBOOT_REQUIRED" for MAINT_REBOOT_REQUIRED
- *         - "MAINTENANCE_FWDOWNLOAD_ABORTED" for MAINT_FWDOWNLOAD_ABORTED
- *         - "MAINTENANCE_CRITICAL_UPDATE" for MAINT_CRITICAL_UPDATE
- *         - "MAINTENANCE_EMPTY" for any unknown status
- */
-string moduleStatusToString(IARM_Maint_module_status_t &status)
-{
-    string ret_status = "";
-    switch (status)
-    {
-        case MAINT_RFC_COMPLETE:
-            ret_status = "MAINTENANCE_RFC_COMPLETE";
-            break;
-        case MAINT_RFC_ERROR:
-            ret_status = "MAINTENANCE_RFC_ERROR";
-            break;
-        case MAINT_LOGUPLOAD_COMPLETE:
-            ret_status = "MAINTENANCE_LOGUPLOAD_COMPLETE";
-            break;
-        case MAINT_LOGUPLOAD_ERROR:
-            ret_status = "MAINTENANCE_LOGUPLOAD_ERROR";
-            break;
-
-        case MAINT_FWDOWNLOAD_COMPLETE:
-            ret_status = "MAINTENANCE_FWDOWNLOAD_COMPLETE";
-            break;
-        case MAINT_FWDOWNLOAD_ERROR:
-            ret_status = "MAINTENANCE_FWDOWNLOAD_ERROR";
-            break;
-        case MAINT_REBOOT_REQUIRED:
-            ret_status = "MAINTENANCE_REBOOT_REQUIRED";
-            break;
-        case MAINT_FWDOWNLOAD_ABORTED:
-            ret_status = "MAINTENANCE_FWDOWNLOAD_ABORTED";
-            break;
-        case MAINT_CRITICAL_UPDATE:
-            ret_status = "MAINTENANCE_CRITICAL_UPDATE";
-            break;
-        default:
-            ret_status = "MAINTENANCE_EMPTY";
-    }
-    return ret_status;
-}
-
-/**
- * @brief WPEFramework class for Maintenance Manager
- */
-namespace WPEFramework
-{
-    namespace
-    {
-        static Plugin::Metadata<Plugin::MaintenanceManager> metadata(
-            /* Version (Major, Minor, Patch) */
-            API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH,
-            /* Preconditions */
-            {},
-            /* Terminations */
-            {},
-            /* Controls */
-            {});
-    } /* end of namespace */
-
-    namespace Plugin
-    {
-        namespace
-        {
-            /**
-             * @brief Retrieves the state of a specified service.
-             *
-             * This function queries the state of a service identified by its callsign
-             * through the provided PluginHost::IShell interface.
-             *
-             * @param shell The PluginHost::IShell instance used to query the service.
-             * @param callsign The identifier for the service to query.
-             * @param state The output parameter to store the state of the service.
-             * @return uint32_t indicating the result of the query operation:
-             *         - Core::ERROR_NONE if the service was found and its state retrieved.
-             *         - Core::ERROR_UNAVAILABLE if the service was not found.
-             */
-            uint32_t getServiceState(PluginHost::IShell *shell, const string &callsign, PluginHost::IShell::state &state) /* MaintenanceManager uses interfaces */
-            {
-                uint32_t result;
-                auto interface = shell->QueryInterfaceByCallsign<PluginHost::IShell>(callsign);
-                if (interface == nullptr)
-                {
-                    result = Core::ERROR_UNAVAILABLE;
-                    std::cout << "no IShell for " << callsign << std::endl;
-                }
-                else
-                {
-                    result = Core::ERROR_NONE;
-                    state = interface->State();
-                    std::cout << "IShell state " << state << " for " << callsign << std::endl;
-                    interface->Release();
-                }
-                return result;
-            } /* end of getServiceState */
-        } /* end of namespace*/
-
-        /* Prototypes */
-        SERVICE_REGISTRATION(MaintenanceManager, API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH);
-        /* Global time variable */
-        MaintenanceManager *MaintenanceManager::_instance = nullptr;
-
-        cSettings MaintenanceManager::m_setting(MAINTENANCE_MGR_RECORD_FILE);
-
-        /* Static Member Definitions */
-        timer_t MaintenanceManager::timerid;
-        string MaintenanceManager::currentTask;
-        bool MaintenanceManager::g_task_timerCreated = false;
-
-        string task_param[] = {
-            "RFC",
-            "SWUPDATE",
-            "LOGUPLOAD"
-        };
-
-        string task_names_foreground[] = {
-            string(TASK_SCRIPT) + " " + task_param[TASK_RFC],
-            string(TASK_SCRIPT) + " " + task_param[TASK_SWUPDATE],
-            string(TASK_SCRIPT) + " " + task_param[TASK_LOGUPLOAD]
-        };
-
-        vector<string> tasks;
-
-        const int task_complete_status[] = {
-            RFC_COMPLETE,
-            SWUPDATE_COMPLETE,
-            LOGUPLOAD_COMPLETE
-        };
-
-        std::map<string, int> task_status_map = {
-            {string(TASK_SCRIPT) + " " + task_param[TASK_RFC], RFC_COMPLETE},
-            {string(TASK_SCRIPT) + " " + task_param[TASK_SWUPDATE], SWUPDATE_COMPLETE},
-            {string(TASK_SCRIPT) + " " + task_param[TASK_LOGUPLOAD], LOGUPLOAD_COMPLETE}
-        };
-
-        string task_names[] = {
-#ifdef ENABLE_RFC_MANAGER
-            "rfcMgr",
-#else
-            "RFCbase.sh",
-#endif
-            "rdkvfwupgrader",
-            "uploadSTBLogs.sh"
-        };
-
-        static const array<string, 3> kDeviceInitContextKeyVals = {
-            "partnerId",
-            "osClass",
-            "regionalConfigService"
-        };
-
-        /**
-         * Register MaintenanceManager module as wpeframework plugin
-         */
-        MaintenanceManager::MaintenanceManager()
-            : PluginHost::JSONRPC(), m_authservicePlugin(nullptr)
-        {
-            MaintenanceManager::_instance = this;
-
-            /**
-             * @brief Invoking Plugin API register to WPEFRAMEWORK.
-             */
-#ifdef DEBUG
-            Register("sampleMaintenanceManagerAPI", &MaintenanceManager::sampleAPI, this);
-#endif
-            Register("getMaintenanceActivityStatus", &MaintenanceManager::getMaintenanceActivityStatus, this);
-            Register("getMaintenanceStartTime", &MaintenanceManager::getMaintenanceStartTime, this);
-            Register("setMaintenanceMode", &MaintenanceManager::setMaintenanceMode, this);
-            Register("startMaintenance", &MaintenanceManager::startMaintenance, this);
-            Register("stopMaintenance", &MaintenanceManager::stopMaintenance, this);
-            Register("getMaintenanceMode", &MaintenanceManager::getMaintenanceMode, this);
-
-            MaintenanceManager::m_task_map[task_names_foreground[TASK_RFC].c_str()] = false;
-            MaintenanceManager::m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
-            MaintenanceManager::m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = false;
-
-#if defined(ENABLE_WHOAMI)
-            MaintenanceManager::m_param_map[kDeviceInitContextKeyVals[0].c_str()] = TR181_PARTNER_ID;
-            MaintenanceManager::m_param_map[kDeviceInitContextKeyVals[1].c_str()] = TR181_TARGET_OS_CLASS;
-            MaintenanceManager::m_param_map[kDeviceInitContextKeyVals[2].c_str()] = TR181_XCONFURL;
-
-            MaintenanceManager::m_paramType_map[kDeviceInitContextKeyVals[0].c_str()] = DATA_TYPE::WDMP_STRING;
-            MaintenanceManager::m_paramType_map[kDeviceInitContextKeyVals[1].c_str()] = DATA_TYPE::WDMP_STRING;
-            MaintenanceManager::m_paramType_map[kDeviceInitContextKeyVals[2].c_str()] = DATA_TYPE::WDMP_STRING;
-#endif
-        }
-
-        void MaintenanceManager::task_execution_thread()
-        {
-            int i = 0;
-            string task = "";
-            bool internetConnectStatus = false;
-            bool delayMaintenanceStarted = false;
-            bool exitOnNoNetwork = false;
-            int retry_count = TASK_RETRY_COUNT;
-            bool isTaskTimerStarted = false;
-
-            std::unique_lock<std::mutex> wailck(m_waiMutex);
-            MM_LOGINFO("Executing Maintenance tasks");
-
-#if defined(ENABLE_WHOAMI)
-            /* Purposefully delaying MAINTENANCE_STARTED status to honor POWER compliance */
-            if (UNSOLICITED_MAINTENANCE == g_maintenance_type)
-            {
-                delayMaintenanceStarted = true;
-            }
-#endif
-            if (!delayMaintenanceStarted)
-            {
-                m_statusMutex.lock();
-                MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_STARTED);
-                m_statusMutex.unlock();
-            }
-
-            /* cleanup if not empty */
-            if (!tasks.empty())
-            {
-                tasks.erase(tasks.begin(), tasks.end());
-            }
-
-#if defined(SUPPRESS_MAINTENANCE) && !defined(ENABLE_WHOAMI)
-            bool skipFirmwareCheck = false;
-            bool activationStatus = getActivatedStatus(skipFirmwareCheck); /* Activation check */
-            /* we proceed with network check only if
-             * "activation-connect",
-             * "activation-ready"
-             * "not-activated",
-             * "activated" */
-            if (activationStatus)
-            {
-                internetConnectStatus = isDeviceOnline(); /* Network check */
-            }
-#else
-            internetConnectStatus = isDeviceOnline(); /* Network check */
-#endif
-
-#if defined(ENABLE_WHOAMI)
-            if (UNSOLICITED_MAINTENANCE == g_maintenance_type)
-            {
-                string activation_status = checkActivatedStatus(); /* Device Activation Status Check */
-                bool whoAmIStatus = knowWhoAmI(activation_status); /* WhoAmI Response & Set Status Check */
-                MM_LOGINFO("knowWhoAmI() returned %s", (whoAmIStatus) ? "successfully" : "false");
-
-                if (!whoAmIStatus && activation_status != "activated")
-                {
-                    MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
-                    g_listen_to_deviceContextUpdate = true;
-                    MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
-                    task_thread.wait(wailck);
-                }
-                else if (!internetConnectStatus && activation_status == "activated")
-                {
-                    MM_LOGINFO("Device is not connected to the Internet and Device is already Activated");
-                    exitOnNoNetwork = true;
-                }
-            }
-            else /* Solicited Maintenance in WHOAMI */
-            {
-                if (!internetConnectStatus)
-                {
-                    exitOnNoNetwork = true;
-                }
-            }
-#else
-            if (!internetConnectStatus)
-            {
-                exitOnNoNetwork = true;
-            }
-#endif
-            if (exitOnNoNetwork) /* Exit Maintenance Cycle if no Internet */
-            {
-                m_statusMutex.lock();
-                MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
-                m_statusMutex.unlock();
-                MM_LOGINFO("Maintenance is exiting as device is not connected to internet.");
-                if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
-                {
-                    g_unsolicited_complete = true;
-                    g_listen_to_nwevents = true;
-                }
-                return;
-            }
-
-            if (delayMaintenanceStarted)
-            {
-                m_statusMutex.lock();
-                MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_STARTED);
-                m_statusMutex.unlock();
-            }
-
-            MM_LOGINFO("Reboot_Pending :%s", g_is_reboot_pending.c_str());
-            MM_LOGINFO("%s", UNSOLICITED_MAINTENANCE == g_maintenance_type ? "---------------UNSOLICITED_MAINTENANCE--------------" : "=============SOLICITED_MAINTENANCE===============");
-
-#if defined(SUPPRESS_MAINTENANCE) && !defined(ENABLE_WHOAMI)
-            if (skipFirmwareCheck)
-            {
-                /* set the task status of Firmware Download */
-                SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
-                SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
-                /* Skip Firmware Download Task and add other tasks */
-                tasks.push_back(task_names_foreground[TASK_RFC].c_str());
-                tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
-            }
-            else
-            {
-                tasks.push_back(task_names_foreground[TASK_RFC].c_str());
-                tasks.push_back(task_names_foreground[TASK_SWUPDATE].c_str());
-                tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
-            }
-#else
-            tasks.push_back(task_names_foreground[TASK_RFC].c_str());
-            tasks.push_back(task_names_foreground[TASK_SWUPDATE].c_str());
-            tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
-#endif
-            std::unique_lock<std::mutex> lck(m_callMutex);
-            for (i = 0; i < static_cast<int>(tasks.size()) && !m_abort_flag; i++)
-            {
-                int task_status = -1;
-                task = tasks[i];
-                currentTask = task;
-                task += " &";
-                task += "\0";
-                if (!m_abort_flag)
-                {
-                    if (retry_count == TASK_RETRY_COUNT)
-                    {
-                        MM_LOGINFO("Starting Timer for %s", currentTask.c_str());
-                        isTaskTimerStarted = task_startTimer();
-                    }
-                    if (isTaskTimerStarted)
-                    {
-                        m_task_map[tasks[i]] = true;
-                        MM_LOGINFO("Starting Task %s", task.c_str());
-                        task_status = system(task.c_str());
-                    }
-                    /* Set task_status purposefully to non-zero value to verify failure logic*/
-                    // task_status = -1;
-                    if (task_status != 0) /* system() call fails */
-                    {
-                        m_task_map[tasks[i]] = false;
-                        MM_LOGINFO("%s invocation failed with return status %d", tasks[i].c_str(), WEXITSTATUS(task_status));
-                        if (retry_count > 0 && isTaskTimerStarted)
-                        {
-                            MM_LOGINFO("Retry %s after %d seconds (%d retry left)\n", tasks[i].c_str(), TASK_RETRY_DELAY, retry_count);
-                            sleep(TASK_RETRY_DELAY);
-                            i--; /* Decrement iterator to retry the same task again */
-                            retry_count--;
-                            continue;
-                        }
-                        else
-                        {
-                            MM_LOGINFO("Task Failed");
-                            auto it = task_status_map.find(tasks[i]);
-                            if (it != task_status_map.end())
-                            {
-                                MM_LOGINFO("Setting task as Error");
-                                int complete_status = it->second;
-                                SET_STATUS(g_task_status, complete_status);
-                            }
-                            if (task_stopTimer())
-                            {
-                                MM_LOGINFO("Stopped Timer Successfully");
-                            }
-                            else
-                            {
-                                MM_LOGERR("task_stopTimer() did not stop the Timer");
-                            }
-                        }
-                    }
-                    else /* system() executes successfully */
-                    {
-                        MM_LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
-                        task_thread.wait(lck);
-                        if (task_stopTimer())
-                        {
-                            MM_LOGINFO("Stopped Timer Successfully");
-                        }
-                        else
-                        {
-                            MM_LOGERR("task_stopTimer() did not stop the Timer");
-                        }
-                    }
-                }
-                retry_count = TASK_RETRY_COUNT; /* Reset Retry Count for next Task*/
-            }
-            if (m_abort_flag)
-            {
-                m_abort_flag = false;
-                if (task_stopTimer())
-                {
-                    MM_LOGINFO("Stopped Timer Successfully");
-                }
-                else
-                {
-                    MM_LOGERR("task_stopTimer() did not stop the Timer");
-                }
-            }
-            MM_LOGINFO("Worker Thread Completed");
-        } /* end of task_execution_thread() */
-
-#if defined(ENABLE_WHOAMI)
-        /**
-         * @brief Determines the device identity by querying the Security Manager.
-         *
-         * This function repeatedly attempts to query the Security Manager (`org.rdk.SecManager`)
-         * for the device initialization context until the Security Manager is activated or the device
-         * is already activated. If the Security Manager provides a valid device initialization context,
-         * it sets this context using the `setDeviceInitializationContext` method.
-         *
-         * @param activation_status A reference to a string containing the current activation status of the device.
-         *                          This status is used to determine if retries are needed.
-         * @return true if the device initialization context was successfully obtained and set, false otherwise.
-         */
-        bool MaintenanceManager::knowWhoAmI(string &activation_status)
-        {
-            bool success = false;
-            const char *secMgr_callsign = "org.rdk.SecManager";
-            const char *secMgr_callsign_ver = "org.rdk.SecManager.1";
-            PluginHost::IShell::state state;
-            WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
-
-            do
-            {
-                if ((getServiceState(m_service, secMgr_callsign, state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
-                {
-                    MM_LOGINFO("%s is active", secMgr_callsign);
-                    thunder_client = getThunderPluginHandle(secMgr_callsign_ver);
-                    if (thunder_client != nullptr)
-                    {
-                        JsonObject params;
-                        JsonObject joGetResult;
-
-                        thunder_client->Invoke<JsonObject, JsonObject>(5000, "getDeviceInitializationContext", params, joGetResult);
-                        if (joGetResult.HasLabel("success") && joGetResult["success"].Boolean())
-                        {
-                            static const char *kDeviceInitializationContext = "deviceInitializationContext";
-                            if (joGetResult.HasLabel(kDeviceInitializationContext))
-                            {
-                                MM_LOGINFO("%s found in the response", kDeviceInitializationContext);
-                                success = setDeviceInitializationContext(joGetResult);
-                            }
-                            else
-                            {
-                                MM_LOGERR("%s is not available in the response", kDeviceInitializationContext);
-                            }
-                        }
-                        else
-                        {
-                            MM_LOGERR("getDeviceInitializationContext failed");
-                        }
-                    }
-                    else
-                    {
-                        MM_LOGERR("Failed to get plugin handle");
-                    }
-                    if (!g_subscribed_for_deviceContextUpdate)
-                    {
-                        MM_LOGINFO("onDeviceInitializationContextUpdate event not subscribed...");
-                        g_subscribed_for_deviceContextUpdate = subscribeToDeviceInitializationEvent();
-                    }
-                    return success;
-                }
-                else
-                {
-                    g_subscribed_for_deviceContextUpdate = false;
-                    if (activation_status != "activated")
-                    {
-                        MM_LOGINFO("%s is not active. Retry after %d seconds", secMgr_callsign, SECMGR_RETRY_INTERVAL);
-                        sleep(SECMGR_RETRY_INTERVAL);
-                    }
-                    else
-                    {
-                        MM_LOGINFO("%s is not active. Device is already Activated. Hence exiting from knoWhoAmI()", secMgr_callsign);
-                        return success;
-                    }
-                }
-            } while (true);
-        }
-#endif /* end of ENABLE_WHOAMI */
-
-        /**
-         * @brief Retrieves a handle to the specified Thunder plugin with authentication.
-         *
-         * This function generates a security token using the SecurityAgent and sets up the
-         * Thunder plugin handle for the specified plugin callsign.
-         *
-         * @param callsign The callsign of the Thunder plugin to retrieve.
-         * @return A pointer to a JSONRPC link for the specified plugin.
-         */
-        WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *MaintenanceManager::getThunderPluginHandle(const char *callsign)
-        {
-            string token;
-            WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
-
-            auto security = m_service->QueryInterfaceByCallsign<PluginHost::IAuthenticate>("SecurityAgent");
-            if (security != nullptr)
-            {
-                string payload = "http://localhost";
-                if (security->CreateToken(
-                        static_cast<uint16_t>(payload.length()),
-                        reinterpret_cast<const uint8_t *>(payload.c_str()),
-                        token) == Core::ERROR_NONE)
-                {
-                    MM_LOGINFO("MaintenanceManager got security token");
-                }
-                else
-                {
-                    MM_LOGERR("MaintenanceManager failed to get security token");
-                }
-                security->Release();
-            }
-            else
-            {
-                MM_LOGERR("No security agent");
-            }
-
-            string query = "token=" + token;
-            Core::SystemInfo::SetEnvironment(_T("THUNDER_ACCESS"), _T(SERVER_DETAILS));
-            thunder_client = new WPEFramework::JSONRPC::LinkType<Core::JSON::IElement>(callsign, "", false, query);
-            return thunder_client;
-        }
-
-        /**
-         * @brief Creates a new task timer.
-         *
-         * This function initializes and creates a new task timer if it does not already exist or is not running.
-         *
-         * @return true if the timer was successfully created, false otherwise.
-         */
-        bool MaintenanceManager::maintenance_initTimer()
-        {
-            if (g_task_timerCreated)
-            {
-                MM_LOGINFO("Timer has already been created, no need to create a Timer.");
-                return g_task_timerCreated;
-            }
-
-            struct sigevent sev = {0};
-            sev.sigev_notify = SIGEV_SIGNAL;
-            sev.sigev_signo = SIGALRM;
-            sev.sigev_value.sival_ptr = &timerid;
-
-            if (timer_create(BASE_CLOCK, &sev, &timerid) == -1)
-            {
-                MM_LOGERR("timer_create() failed to create the Timer");
-            }
-            else
-            {
-                g_task_timerCreated = true; // Timer Created
-                MM_LOGINFO("Timer created successfully.");
-            }
-            return g_task_timerCreated;
-        }
-
-        /**
-         * @brief Starts or restarts the task timer.
-         *
-         * This function starts or restarts the task timer with a predefined timeout.
-         *
-         * @return true if the timer was successfully started, false otherwise.
-         */
-        bool MaintenanceManager::task_startTimer()
-        {
-            bool status = false;
-            if (g_task_timerCreated)
-            {
-                MM_LOGINFO("Timer has already been created, start the Timer");
-            }
-            else
-            {
-                MM_LOGINFO("Timer has not been created already, create a new Timer.");
-                if (!maintenance_initTimer())
-                {
-                    return status;
-                }
-            }
-
-            struct itimerspec its;
-            its.it_value.tv_sec = TASK_TIMEOUT;
-            its.it_value.tv_nsec = 0;
-            its.it_interval.tv_sec = 0;
-            its.it_interval.tv_nsec = 0;
-
-            if (timer_settime(timerid, 0, &its, NULL) == -1)
-            {
-                MM_LOGERR("timer_settime() failed to start the Timer");
-            }
-            else
-            {
-                MM_LOGINFO("Timer started for %d seconds for %s", TASK_TIMEOUT, currentTask.c_str());
-                status = true;
-            }
-            return status;
-        }
-
-        /**
-         * @brief Stops the task timer.
-         *
-         * This function stops the task timer if it is currently running.
-         *
-         * @return true if the timer was successfully stopped, false otherwise.
-         */
-        bool MaintenanceManager::task_stopTimer()
-        {
-            bool status = false;
-            if (!g_task_timerCreated)
-            {
-                MM_LOGINFO("Timer has not been created already, cannot stop the Timer");
-                return status;
-            }
-
-            struct itimerspec its = {0};
-            its.it_value.tv_sec = 0;
-            its.it_value.tv_nsec = 0;
-
-            if (timer_settime(timerid, 0, &its, NULL) == -1)
-            {
-                MM_LOGERR("timer_settime() failed to stop the Timer");
-            }
-            else
-            {
-                MM_LOGINFO("Timer stopped for %s", currentTask.c_str());
-                status = true;
-            }
-            return status;
-        }
-
-        /**
-         * @brief Deletes the task timer.
-         *
-         * This function deletes the task timer, stopping it first if necessary.
-         *
-         * @return true if the timer was successfully deleted, false otherwise.
-         */
-        bool MaintenanceManager::maintenance_deleteTimer()
-        {
-            bool status = false;
-            if (!g_task_timerCreated)
-            {
-                MM_LOGINFO("Timer has not been created already, cannot delete the Timer.");
-                return status;
-            }
-
-            MM_LOGINFO("Timer has already been created, delete the Timer.");
-
-            if (timer_delete(timerid) == -1)
-            {
-                MM_LOGERR("timer_delete() failed to delete the Timer.");
-            }
-            else
-            {
-                g_task_timerCreated = false;
-                MM_LOGINFO("Timer successfully deleted.");
-                status = true;
-            }
-            return status;
-        }
-
-        /**
-         * @brief Handles the timer signal.
-         *
-         * This function is invoked when the task timer expires and processes the timeout accordingly.
-         *
-         * @param signo The signal number received.
-         */
-        void MaintenanceManager::timer_handler(int signo)
-        {
-            if (signo == SIGALRM)
-            {
-                MM_LOGERR("Timeout reached for %s. Set task to Error...", currentTask.c_str());
-
-                const char *failedTask = nullptr;
-                int complete_status = 0;
-                for (size_t j = 0; j < (sizeof(task_names_foreground) / sizeof(task_names_foreground[0])); j++)
-                {
-                    if (currentTask.find(task_names_foreground[j]) != string::npos)
-                    {
-                        failedTask = task_names_foreground[j].c_str();
-                        complete_status = task_complete_status[j];
-                        break;
-                    }
-                }
-                if (failedTask && !MaintenanceManager::_instance->m_task_map[failedTask])
-                {
-                    MM_LOGINFO("Ignoring Error Event for Task: %s", failedTask);
-                }
-                else if (failedTask)
-                {
-                    MaintenanceManager::_instance->m_task_map[failedTask] = false;
-                    SET_STATUS(MaintenanceManager::_instance->g_task_status, complete_status);
-                    MaintenanceManager::_instance->task_thread.notify_one();
-                    MM_LOGINFO("Set %s Task to ERROR", failedTask);
-                }
-            }
-            else
-            {
-                MM_LOGERR("Received %d Signal instead of SIGALRM", signo);
-            }
-        }
-
-        /**
-         * @brief Sets an RFC parameter.
-         *
-         * This function sets an RFC parameter with a specified value and data type.
-         *
-         * @param rfc The RFC parameter name.
-         * @param value The value to set.
-         * @param dataType The type of the value.
-         * @return true if the parameter was successfully set, false otherwise.
-         */
-        bool MaintenanceManager::setRFC(const char *rfc, const char *value, DATA_TYPE dataType)
-        {
-            MM_LOGINFO("Invoke SetRFC");
-            bool result = false;
-            WDMP_STATUS status;
-            status = setRFCParameter((char *)MAINTENANCE_MANAGER_RFC_CALLER_ID, rfc, value, dataType);
-
-            if (WDMP_SUCCESS == status)
-            {
-                MM_LOGINFO("Successfuly set the tr181 parameter %s with value %s", rfc, value);
-                result = true;
-            }
-            else
-            {
-                MM_LOGINFO("Failed setting %s parameter", rfc);
-            }
-            return result;
-        }
-
-        /**
-         * @brief Sets the partner ID using the AuthService.
-         *
-         * This function sets the partner ID by invoking the `setPartnerId` method of the AuthService.
-         *
-         * @param partnerid The partner ID to set.
-         */
-        void MaintenanceManager::setPartnerId(string partnerid)
-        {
-            if (!queryIAuthService())
-            {
-                MM_LOGERR("No interface for Authservice");
-                return;
-            }
-
-            MM_LOGINFO("Invoke setPartnerId");
-
-            WPEFramework::Exchange::IAuthService::SetPartnerIdResult spRes;
-            uint32_t rc = m_authservicePlugin->SetPartnerId(partnerid, spRes);
-            if (rc == Core::ERROR_NONE)
-            {
-                MM_LOGINFO("Successfully set the partnerId via Authservice");
-            }
-            else
-            {
-                MM_LOGWARN("Failed to set the partnerId through Authservice, error code %d:%s", rc, spRes.error.c_str());
-            }
-        }
-
-        /**
-         * @brief Subscribes to an internet status event.
-         *
-         * This function subscribes to an event from the network plugin to listen for internet status changes.
-         *
-         * @param event The name of the event to subscribe to.
-         * @return true if the subscription was successful, false otherwise.
-         */
-        bool MaintenanceManager::subscribeForInternetStatusEvent(string event)
-        {
-            int32_t status = Core::ERROR_NONE;
-            bool result = false;
-            MM_LOGINFO("Attempting to subscribe for %s events", event.c_str());
-            const char *network_callsign = "org.rdk.Network.1";
-            WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
-
-            thunder_client = getThunderPluginHandle(network_callsign);
-            if (thunder_client == nullptr)
-            {
-                MM_LOGERR("Failed to get plugin handle");
-            }
-            else
-            {
-                status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::internetStatusChangeEventHandler, this);
-                if (status == Core::ERROR_NONE)
-                {
-                    result = true;
-                }
-            }
-            return result;
-        }
-
-        /**
-         * @brief Handles the internet status change event.
-         *
-         * This function is called when the internet status changes and starts critical tasks if connected.
-         *
-         * @param parameters The event parameters.
-         */
-        void MaintenanceManager::internetStatusChangeEventHandler(const JsonObject &parameters)
-        {
-            string value;
-            int state;
-
-            if (parameters.HasLabel("status") && parameters.HasLabel("state"))
-            {
-                value = parameters["status"].String();
-                state = parameters["state"].Number();
-
-                MM_LOGINFO("Received onInternetStatusChange event: [%s:%d]", value.c_str(), state);
-                if (g_listen_to_nwevents)
-                {
-
-                    if (state == INTERNET_CONNECTED_STATE)
-                    {
-                        startCriticalTasks();
-                        g_listen_to_nwevents = false;
-                    }
-                }
-            }
-        }
-
-        /**
-         * @brief Handles the device initialization context update event.
-         *
-         * This function is called when the device initialization context is updated and sets the context.
-         *
-         * @param parameters The event parameters.
-         */
-        void MaintenanceManager::deviceInitializationContextEventHandler(const JsonObject &parameters)
-        {
-            bool contextSet = false;
-            if (g_listen_to_deviceContextUpdate && UNSOLICITED_MAINTENANCE == g_maintenance_type)
-            {
-                MM_LOGINFO("onDeviceInitializationContextUpdate event is already subscribed and Maintenance Type is Unsolicited Maintenance");
-                if (parameters.HasLabel("deviceInitializationContext"))
-                {
-                    MM_LOGINFO("deviceInitializationContext found");
-
-                    contextSet = setDeviceInitializationContext(parameters);
-                    if (contextSet)
-                    {
-                        MM_LOGINFO("setDeviceInitializationContext() success");
-                        g_listen_to_deviceContextUpdate = false;
-                        MM_LOGINFO("Notify maintenance execution thread");
-                        task_thread.notify_one();
-                    }
-                    else
-                    {
-                        MM_LOGINFO("setDeviceInitializationContext() failed");
-                    }
-                }
-                else
-                {
-                    MM_LOGINFO("deviceInitializationContext not found");
-                }
-            }
-            else
-            {
-                MM_LOGINFO("onDeviceInitializationContextUpdate event is not being listened already or Maintenance Type is not Unsolicited Maintenance");
-            }
-        }
-
-        /**
-         * @brief Starts critical maintenance tasks.
-         *
-         * This function invokes Tasks to start critical maintenance tasks.
-         */
-        void MaintenanceManager::startCriticalTasks()
-        {
-            MM_LOGINFO("Starting Critical Tasks...");
-            char command[256];
-            int rfc_task_status = -1;
-            int xconf_imagecheck_status = -1;
-
-            // Critical Task RFC
-            snprintf(command, sizeof(command), "%s %s &", TASK_SCRIPT, RFC_TASK);
-            MM_LOGINFO("Starting %s", command);
-            rfc_task_status = system(command);
-            if (rfc_task_status != 0)
-            {
-                MM_LOGINFO("Failed to run %s with %d", RFC_TASK, WEXITSTATUS(rfc_task_status));
-            }
-
-            // Critical Task XConf Image Check
-            snprintf(command, sizeof(command), "%s &", IMAGE_CHECK_SCRIPT);
-            MM_LOGINFO("Starting %s", command);
-            xconf_imagecheck_status = system(command);
-            if (xconf_imagecheck_status != 0)
-            {
-                MM_LOGINFO("Failed to run %s with %d", IMAGE_CHECK_SCRIPT, WEXITSTATUS(xconf_imagecheck_status));
-            }
-        }
-
-        /**
-         * @brief Queries the AuthService interface.
-         *
-         * This function checks if the AuthService interface has already been obtained.
-         * If not, it attempts to query and obtain the AuthService interface through the PluginHost's
-         * service, using the "org.rdk.AuthService" callsign. If successful, it logs a warning
-         * indicating the interface has been obtained, otherwise it logs an error.
-         *
-         * @return true if the AuthService interface is successfully obtained or already exists.
-         *         false if the interface could not be obtained.
-         */
-        bool MaintenanceManager::queryIAuthService()
-        {
-            if (m_authservicePlugin != nullptr)
-                return true;
-
-            m_authservicePlugin = m_service->QueryInterfaceByCallsign<Exchange::IAuthService>("org.rdk.AuthService");
-            if (m_authservicePlugin)
-            {
-                MM_LOGWARN("Got IAuthService");
-                return true;
-            }
-
-            MM_LOGERR("Failed to create IAuthService");
-            return false;
-        }
-
-        /**
-         * @brief Checks the activation status of the device.
-         *
-         * This function queries the AuthService to check if the device is activated.
-         *
-         * @return A string representing the activation status.
-         */
-        const string MaintenanceManager::checkActivatedStatus()
-        {
-            JsonObject joGetParams;
-            JsonObject joGetResult;
-            std::string callsign = "org.rdk.AuthService.1";
-            uint8_t i = 0;
-            std::string ret_status("invalid");
-
-            /* check if plugin active */
-            PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
-            if ((getServiceState(m_service, "org.rdk.AuthService", state) != Core::ERROR_NONE) || (state != PluginHost::IShell::state::ACTIVATED))
-            {
-                MM_LOGERR("AuthService plugin is not activated.Retrying");
-                // if plugin is not activated we need to retry
-                do
-                {
-                    if ((getServiceState(m_service, "org.rdk.AuthService", state) != Core::ERROR_NONE) || (state != PluginHost::IShell::state::ACTIVATED))
-                    {
-                        sleep(10);
-                        i++;
-                        MM_LOGINFO("AuthService retries [%d/4]", i);
-                    }
-                    else
-                    {
-                        break;
-                    }
-                } while (i < MAX_ACTIVATION_RETRIES);
-
-                if (state != PluginHost::IShell::state::ACTIVATED)
-                {
-                    MM_LOGERR("AuthService plugin is Still not active");
-                    return ret_status;
-                }
-                else
-                {
-                    MM_LOGINFO("AuthService plugin is Now active");
-                }
-            }
-            if (state == PluginHost::IShell::state::ACTIVATED)
-            {
-                MM_LOGINFO("AuthService is active");
-            }
-
-            if (!queryIAuthService())
-            {
-                MM_LOGERR("No interface for Authservice");
-                return ret_status;
-            }
-
-            WPEFramework::Exchange::IAuthService::ActivationStatusResult asRes;
-            uint32_t rc = m_authservicePlugin->GetActivationStatus(asRes);
-            if (rc == Core::ERROR_NONE)
-            {
-                ret_status = asRes.status;
-                MM_LOGINFO("Activation Value [%s]", ret_status.c_str());
-            }
-            else
-            {
-                MM_LOGERR("GetActivationStatus call failed %d", rc);
-            }
-
-            return ret_status;
-        }
-
-        /**
-         * @brief Gets the activation status of the device.
-         *
-         * This function checks the activation status and determines whether to skip firmware checks.
-         *
-         * @param skipFirmwareCheck A reference to a boolean indicating if firmware checks should be skipped.
-         * @return true if the device is activated or in a state to proceed, false otherwise.
-         */
-        bool MaintenanceManager::getActivatedStatus(bool &skipFirmwareCheck)
-        {
-            /* activation-connect, activation ready, not-activated - execute all except SWUpdate
-             * activation disconnect - dont run maintenance
-             * activated - run normal */
-            bool ret_result = false;
-            string activationStatus;
-            Auth_activation_status_t result = INVALID_ACTIVATION;
-            const std::unordered_map<std::string, std::function<void()>> act{
-                {"activation-connect", [&]()
-                 { result = ACTIVATION_CONNECT; }},
-                {"activation-ready", [&]()
-                 { result = ACTIVATION_READY; }},
-                {"not-activated", [&]()
-                 { result = NOT_ACTIVATED; }},
-                {"activation-disconnect", [&]()
-                 { result = ACTIVATION_DISCONNECT; }},
-                {"activated", [&]()
-                 { result = ACTIVATED; }},
-            };
-
-            activationStatus = checkActivatedStatus();
-            MM_LOGINFO("activation status : [ %s ]", activationStatus.c_str());
-            const auto end = act.end();
-            auto search = act.find(activationStatus);
-            if (search != end)
-            {
-                search->second();
-            }
-            else
-            {
-                result = INVALID_ACTIVATION;
-                MM_LOGINFO("result: invalid Activation");
-            }
-
-            switch (result)
-            {
-            case ACTIVATED:
-                ret_result = true;
-                break;
-            case ACTIVATION_DISCONNECT:
-                ret_result = false;
-                break;
-            case NOT_ACTIVATED:
-            case ACTIVATION_READY:
-            case ACTIVATION_CONNECT:
-                ret_result = true;
-                skipFirmwareCheck = true;
-            default:
-                ret_result = true;
-            }
-
-            MM_LOGINFO("ret_result: [%s] skipFirmwareCheck:[%s]", (ret_result) ? "true" : "false", (skipFirmwareCheck) ? "true" : "false");
-            return ret_result;
-        }
-
-        /**
-         * @brief Checks the network connection status.
-         *
-         * This function queries the network plugin to determine if the device is connected to the internet.
-         *
-         * @return true if the device is connected to the internet, false otherwise.
-         */
-        bool MaintenanceManager::checkNetwork()
-        {
-            JsonObject joGetParams;
-            JsonObject joGetResult;
-            std::string callsign = "org.rdk.Network.1";
-            PluginHost::IShell::state state;
-
-            string token;
-
-            if ((getServiceState(m_service, "org.rdk.Network", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
-            {
-                MM_LOGINFO("Network plugin is active");
-
-                if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_subscribed_for_nwevents)
-                {
-                    // Subscribe for internetConnectionStatusChange event
-                    bool subscribe_status = subscribeForInternetStatusEvent("onInternetStatusChange");
-                    if (subscribe_status)
-                    {
-                        MM_LOGINFO("MaintenanceManager subscribed for onInternetStatusChange event");
-                        g_subscribed_for_nwevents = true;
-                    }
-                    else
-                    {
-                        MM_LOGERR("Failed to subscribe for onInternetStatusChange event");
-                    }
-                }
-            }
-            else
-            {
-                MM_LOGERR("Network plugin is not active");
-                return false;
-            }
-
-            // TODO: use interfaces and remove token
-            auto security = m_service->QueryInterfaceByCallsign<PluginHost::IAuthenticate>("SecurityAgent");
-            if (security != nullptr)
-            {
-                string payload = "http://localhost";
-                if (security->CreateToken(
-                        static_cast<uint16_t>(payload.length()),
-                        reinterpret_cast<const uint8_t *>(payload.c_str()),
-                        token) == Core::ERROR_NONE)
-                {
-                    MM_LOGINFO("MaintenanceManager got security token");
-                }
-                else
-                {
-                    MM_LOGERR("MaintenanceManager failed to get security token");
-                }
-                security->Release();
-            }
-            else
-            {
-                MM_LOGERR("No security agent");
-            }
-
-            string query = "token=" + token;
-            Core::SystemInfo::SetEnvironment(_T("THUNDER_ACCESS"), _T(SERVER_DETAILS));
-            auto thunder_client = make_shared<WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>>(callsign.c_str(), "", false, query);
-            if (thunder_client != nullptr)
-            {
-                uint32_t status = thunder_client->Invoke<JsonObject, JsonObject>(5000, "isConnectedToInternet", joGetParams, joGetResult);
-                if (status > 0)
-                {
-                    MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
-                    return false;
-                }
-                else if (joGetResult.HasLabel("connectedToInternet"))
-                {
-                    MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
-                    return joGetResult["connectedToInternet"].Boolean();
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            MM_LOGERR("thunder client failed");
-            return false;
-        }
-
-        /**
-         * @brief Checks if the device is online.
-         *
-         * This function checks the network connection status with retries.
-         *
-         * @return true if the device is online, false otherwise.
-         */
-        bool MaintenanceManager::isDeviceOnline()
-        {
-            bool network_available = false;
-            MM_LOGINFO("Checking device has network connectivity");
-            /* add 4 checks every 30 seconds */
-            network_available = checkNetwork();
-            if (!network_available)
-            {
-                int retry_count = 0;
-                while (retry_count < MAX_NETWORK_RETRIES)
-                {
-                    MM_LOGINFO("Network not available. Sleeping for %d seconds", NETWORK_RETRY_INTERVAL);
-                    sleep(NETWORK_RETRY_INTERVAL);
-                    MM_LOGINFO("Network retries [%d/%d]", ++retry_count, MAX_NETWORK_RETRIES);
-                    network_available = checkNetwork();
-                    if (network_available)
-                    {
-                        break;
-                    }
-                }
-            }
-            return network_available;
-        }
-
-        /**
-         * @brief Sets the device initialization context.
-         *
-         * This function sets the device initialization context parameters via RFC.
-         *
-         * @param response_data The JSON object containing the initialization context.
-         * @return true if the context was successfully set, false otherwise.
-         */
-        bool MaintenanceManager::setDeviceInitializationContext(JsonObject response_data)
-        {
-            bool setDone = false;
-            bool paramEmpty = false;
-            JsonObject getInitializationContext = response_data["deviceInitializationContext"].Object();
-            for (const string &key : kDeviceInitContextKeyVals)
-            {
-                // Retrieve deviceInitializationContext Value
-                string paramValue = getInitializationContext[key.c_str()].String();
-                if (!paramValue.empty())
-                {
-                    if (strcmp(key.c_str(), "regionalConfigService") == 0)
-                    {
-                        paramValue = "https://" + paramValue;
-                    }
-                    MM_LOGINFO("[deviceInitializationContext] %s : %s", key.c_str(), paramValue.c_str());
-
-                    // Retrieve tr181 parameter from m_param_map
-                    string rfc_parameter = m_param_map[key];
-
-                    //  Retrieve parameter data type from m_paramType_map
-                    DATA_TYPE rfc_dataType = m_paramType_map[key];
-
-                    // Set the RFC values for deviceInitializationContext parameters
-                    setRFC(rfc_parameter.c_str(), paramValue.c_str(), rfc_dataType);
-                    MM_LOGINFO("deviceInitializationContext parameters set successfully via RFC");
-
-                    if (strcmp(key.c_str(), "partnerId") == 0)
-                    {
-                        setPartnerId(paramValue);
-                    }
-                }
-                else
-                {
-                    MM_LOGINFO("Not able to fetch %s value from deviceInitializationContext", key.c_str());
-                    paramEmpty = true;
-                }
-            }
-            setDone = !paramEmpty;
-            return setDone;
-        }
-
-        /**
-         * @brief Subscribes to the device initialization context update event.
-         *
-         * This function subscribes to the `onDeviceInitializationContextUpdate` event from the Security Manager.
-         *
-         * @return true if the subscription was successful, false otherwise.
-         */
-        bool MaintenanceManager::subscribeToDeviceInitializationEvent()
-        {
-            int32_t status = Core::ERROR_NONE;
-            bool result = false;
-            string event = "onDeviceInitializationContextUpdate";
-            const char *secMgr_callsign_ver = "org.rdk.SecManager.1";
-            WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
-
-            // subscribe to onDeviceInitializationContextUpdate event
-            MM_LOGINFO("Attempting to subscribe for %s events", event.c_str());
-
-            thunder_client = getThunderPluginHandle(secMgr_callsign_ver);
-            if (thunder_client == nullptr)
-            {
-                MM_LOGINFO("Failed to get plugin handle");
-            }
-            else
-            {
-                status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
-                if (status == Core::ERROR_NONE)
-                {
-                    result = true;
-                }
-            }
-            g_subscribed_for_deviceContextUpdate = result;
-            if (g_subscribed_for_deviceContextUpdate)
-            {
-                MM_LOGINFO("MaintenanceManager subscribed for %s event", event.c_str());
-                return true;
-            }
-            else
-            {
-                MM_LOGINFO("Failed to subscribe for %s event", event.c_str());
-                return false;
-            }
-        }
-
-        MaintenanceManager::~MaintenanceManager()
-        {
-            MaintenanceManager::_instance = nullptr;
-        }
-
-        const string MaintenanceManager::Initialize(PluginHost::IShell *service)
-        {
-            ASSERT(service != nullptr);
-            ASSERT(m_service == nullptr);
-            ASSERT(timerid != nullptr);
-
-            m_service = service;
-            m_service->AddRef();
-#if defined(ENABLE_WHOAMI)
-            subscribeToDeviceInitializationEvent();
-#endif
-
-#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
-            InitializeIARM();
-#endif
-            // Register Signal Handler
-            if (signal(SIGALRM, timer_handler) == SIG_ERR)
-            {
-                MM_LOGERR("Failed to register signal handler");
-                return string("Failed to register signal handler");
-            }
-            MM_LOGINFO("Signal Handler registered for Timer");
-
-            /* On Success; return empty to indicate no error text. */
-            return (string());
-        }
-
-        void MaintenanceManager::Deinitialize(PluginHost::IShell *service)
-        {
-            if (!maintenance_deleteTimer())
-            {
-                MM_LOGINFO("Failed to delete timer");
-            }
-            MM_LOGINFO("Timer Deleted on Deinitialization.");
-#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
-            stopMaintenanceTasks();
-            DeinitializeIARM();
-#endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
-
-            ASSERT(service == m_service);
-
-            m_service->Release();
-            m_service = nullptr;
-
-            if (m_authservicePlugin != nullptr)
-            {
-                m_authservicePlugin->Release();
-                m_authservicePlugin = nullptr;
-            }
-        }
-
-#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
-        void MaintenanceManager::InitializeIARM()
-        {
-            if (Utils::IARM::init())
-            {
-                IARM_Result_t res;
-                // Register for the Maintenance Notification Events
-                IARM_CHECK(IARM_Bus_RegisterEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME, IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, _MaintenanceMgrEventHandler));
-                maintenanceManagerOnBootup();
-            }
-        }
-
-        void MaintenanceManager::maintenanceManagerOnBootup()
-        {
-            /* on boot up we set these things */
-            MaintenanceManager::g_currentMode = FOREGROUND_MODE;
-
-            MaintenanceManager::m_notify_status = MAINTENANCE_IDLE;
-            MaintenanceManager::g_epoch_time = "";
-
-            /* to know the maintenance is solicited or unsolicited */
-            g_maintenance_type = UNSOLICITED_MAINTENANCE;
-            MM_LOGINFO("Triggering Maintenance on bootup");
-
-            /* On bootup we check for opt-out value
-             * if empty set the value to none */
-            string OptOutmode = "NONE";
-            OptOutmode = m_setting.getValue("softwareoptout").String();
-            if (!checkValidOptOutModes(OptOutmode))
-            {
-                MM_LOGINFO("OptOut Value is not Set. Setting to NONE");
-                m_setting.remove("softwareoptout");
-                OptOutmode = "NONE";
-                m_setting.setValue("softwareoptout", OptOutmode);
-            }
-            else
-            {
-                MM_LOGINFO("OptOut Value Found as: %s", OptOutmode.c_str());
-            }
-
-            MaintenanceManager::g_is_critical_maintenance = "false";
-            MaintenanceManager::g_is_reboot_pending = "false";
-            MaintenanceManager::g_lastSuccessful_maint_time = "";
-            MaintenanceManager::g_task_status = 0;
-            MaintenanceManager::m_abort_flag = false;
-            MaintenanceManager::g_unsolicited_complete = false;
-
-            /* we post just to tell that we are in idle at this moment */
-            m_statusMutex.lock();
-            MaintenanceManager::_instance->onMaintenanceStatusChange(m_notify_status);
-            m_statusMutex.unlock();
-
-            m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
-        }
-
-        void MaintenanceManager::_MaintenanceMgrEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
-        {
-            if (MaintenanceManager::_instance)
-            {
-                MM_LOGWARN("IARM event Received with %d !", eventId);
-                MaintenanceManager::_instance->iarmEventHandler(owner, eventId, data, len);
-            }
-            else
-            {
-                MM_LOGWARN("WARNING - cannot handle IARM events without MaintenanceManager plugin instance!");
-            }
-        }
-
-        void MaintenanceManager::iarmEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
-        {
-            m_statusMutex.lock();
-            if (!m_abort_flag)
-            {
-                Maint_notify_status_t notify_status = MAINTENANCE_STARTED;
-                IARM_Bus_MaintMGR_EventData_t *module_event_data = (IARM_Bus_MaintMGR_EventData_t *)data;
-                IARM_Maint_module_status_t module_status;
-                time_t successfulTime;
-                string str_successfulTime = "";
-
-                auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
-                auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
-                auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
-
-                IARM_Bus_MaintMGR_EventId_t event = (IARM_Bus_MaintMGR_EventId_t)eventId;
-                MM_LOGINFO("Maintenance Event-ID = %d", event);
-
-                if (!strcmp(owner, IARM_BUS_MAINTENANCE_MGR_NAME))
-                {
-                    if ((IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE == eventId) && (MAINTENANCE_STARTED == m_notify_status))
-                    {
-                        module_status = module_event_data->data.maintenance_module_status.status;
-                        MM_LOGINFO("MaintMGR Status %d", module_status);
-                        string status_string = moduleStatusToString(module_status);
-                        MM_LOGINFO("MaintMGR Status %s", status_string.c_str());
-                        switch (module_status)
-                        {
-                            case MAINT_RFC_COMPLETE:
-                                if (task_status_RFC->second != true)
-                                {
-                                    MM_LOGINFO("Ignoring Event RFC_COMPLETE");
-                                    break;
-                                }
-                                else
-                                {
-                                    SET_STATUS(g_task_status, RFC_SUCCESS);
-                                    SET_STATUS(g_task_status, RFC_COMPLETE);
-                                    task_thread.notify_one();
-                                    m_task_map[task_names_foreground[TASK_RFC].c_str()] = false;
-                                }
-                                break;
-                            case MAINT_FWDOWNLOAD_COMPLETE:
-                                if (task_status_SWUPDATE->second != true)
-                                {
-                                    MM_LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_COMPLETE");
-                                    break;
-                                }
-                                else
-                                {
-                                    SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
-                                    SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
-                                    task_thread.notify_one();
-                                    m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
-                                }
-                                break;
-                            case MAINT_LOGUPLOAD_COMPLETE:
-                                if (task_status_LOGUPLOAD->second != true)
-                                {
-                                    MM_LOGINFO("Ignoring Event MAINT_LOGUPLOAD_COMPLETE");
-                                    break;
-                                }
-                                else
-                                {
-                                    SET_STATUS(g_task_status, LOGUPLOAD_SUCCESS);
-                                    SET_STATUS(g_task_status, LOGUPLOAD_COMPLETE);
-                                    task_thread.notify_one();
-                                    m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = false;
-                                }
-
-                                break;
-                            case MAINT_REBOOT_REQUIRED:
-                                SET_STATUS(g_task_status, REBOOT_REQUIRED);
-                                g_is_reboot_pending = "true";
-                                break;
-                            case MAINT_CRITICAL_UPDATE:
-                                g_is_critical_maintenance = "true";
-                                break;
-                            case MAINT_FWDOWNLOAD_ABORTED:
-                                SET_STATUS(g_task_status, TASK_SKIPPED);
-                                /* we say FW update task complete */
-                                SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
-                                task_thread.notify_one();
-                                m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
-                                MM_LOGINFO("FW Download task aborted");
-                                break;
-                            case MAINT_RFC_ERROR:
-                                if (task_status_RFC->second != true)
-                                {
-                                    MM_LOGINFO("Ignoring Event RFC_ERROR");
-                                    break;
-                                }
-                                else
-                                {
-                                    SET_STATUS(g_task_status, RFC_COMPLETE);
-                                    task_thread.notify_one();
-                                    MM_LOGINFO("Error encountered in RFC Task");
-                                    m_task_map[task_names_foreground[TASK_RFC].c_str()] = true;
-                                }
-                                break;
-                            case MAINT_LOGUPLOAD_ERROR:
-                                if (task_status_LOGUPLOAD->second != true)
-                                {
-                                    MM_LOGINFO("Ignoring Event MAINT_LOGUPLOAD_ERROR");
-                                    break;
-                                }
-                                else
-                                {
-                                    SET_STATUS(g_task_status, LOGUPLOAD_COMPLETE);
-                                    task_thread.notify_one();
-                                    MM_LOGINFO("Error encountered in LOGUPLOAD Task");
-                                    m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = true;
-                                }
-                                break;
-                            case MAINT_FWDOWNLOAD_ERROR:
-                                if (task_status_SWUPDATE->second != true)
-                                {
-                                    MM_LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_ERROR");
-                                    break;
-                                }
-                                else
-                                {
-                                    SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
-                                    task_thread.notify_one();
-                                    MM_LOGINFO("Error encountered in SWUPDATE Task");
-                                    m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = true;
-                                }
-                                break;
-                            case MAINT_RFC_INPROGRESS:
-                                m_task_map[task_names_foreground[TASK_RFC].c_str()] = true;
-                                /*will be set to false once COMEPLETE/ERROR received for RFC*/
-                                MM_LOGINFO(" RFC already IN PROGRESS -> setting m_task_map of RFC to true");
-                                break;
-                            case MAINT_FWDOWNLOAD_INPROGRESS:
-                                m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = true;
-                                /*will be set to false once COMEPLETE/ERROR received for FWDOWNLOAD*/
-                                MM_LOGINFO(" FWDOWNLOAD already IN PROGRESS -> setting m_task_map of FWDOWNLOAD to true");
-                                break;
-                            case MAINT_LOGUPLOAD_INPROGRESS:
-                                m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = true;
-                                /*will be set to false once COMEPLETE/ERROR received for LOGUPLOAD*/
-                                MM_LOGINFO(" LOGUPLOAD already IN PROGRESS -> setting m_task_map of LOGUPLOAD to true");
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        MM_LOGINFO("Ignoring/Unknown Maintenance Status!!");
-                        m_statusMutex.unlock();
-                        return;
-                    }
-
-                    MM_LOGINFO(" BITFIELD Status : %x", g_task_status);
-                    /* Send the updated status only if all task completes execution
-                     * until that we say maintenance started */
-                    if ((g_task_status & TASKS_COMPLETED) == TASKS_COMPLETED)
-                    {
-                        if ((g_task_status & ALL_TASKS_SUCCESS) == ALL_TASKS_SUCCESS)
-                        { // all tasks success
-                            MM_LOGINFO("Maintenance Successfully Completed!!");
-                            notify_status = MAINTENANCE_COMPLETE;
-                            /*  we store the time in persistant location */
-                            successfulTime = time(nullptr);
-                            tm ltime = *localtime(&successfulTime);
-                            time_t epoch_time = mktime(&ltime);
-                            str_successfulTime = to_string(epoch_time);
-                            MM_LOGINFO("last succesful time is :%s", str_successfulTime.c_str());
-                            /* Remove any old completion time */
-                            m_setting.remove("LastSuccessfulCompletionTime");
-                            m_setting.setValue("LastSuccessfulCompletionTime", str_successfulTime);
-                        }
-                        /* Check other than all success case which means we have errors */
-                        else if ((g_task_status & ALL_TASKS_SUCCESS) != ALL_TASKS_SUCCESS)
-                        {
-                            if ((g_task_status & MAINTENANCE_TASK_SKIPPED) == MAINTENANCE_TASK_SKIPPED)
-                            {
-                                MM_LOGINFO("There are Skipped Task. Maintenance Incomplete");
-                                notify_status = MAINTENANCE_INCOMPLETE;
-                            }
-                            else
-                            {
-                                MM_LOGINFO("Maintenance Ended with Errors");
-                                notify_status = MAINTENANCE_ERROR;
-                            }
-                        }
-
-                        MM_LOGINFO("ENDING MAINTENANCE CYCLE");
-                        if (m_thread.joinable())
-                        {
-                            m_thread.join();
-                            MM_LOGINFO("Thread joined successfully");
-                        }
-
-                        if (g_maintenance_type == UNSOLICITED_MAINTENANCE && !g_unsolicited_complete)
-                        {
-                            g_unsolicited_complete = true;
-                        }
-                        MaintenanceManager::_instance->onMaintenanceStatusChange(notify_status);
-                    }
-                    else
-                    {
-                        MM_LOGINFO("Tasks are not completed!!!!");
-                    }
-                }
-                else
-                {
-                    MM_LOGWARN("Ignoring unexpected event - owner: %s, eventId: %d!!", owner, eventId);
-                }
-            }
-            else
-            {
-                MM_LOGINFO("Maintenance has been aborted. Hence ignoring the event");
-            }
-            m_statusMutex.unlock();
-        }
-        void MaintenanceManager::DeinitializeIARM()
-        {
-            if (Utils::IARM::isConnected())
-            {
-                IARM_Result_t res;
-                IARM_CHECK(IARM_Bus_RemoveEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME, IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, _MaintenanceMgrEventHandler));
-                MaintenanceManager::_instance = nullptr;
-            }
-        }
-#endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
-
-#ifdef DEBUG
-        /**
-         * @brief : sampleAPI
-         */
-        uint32_t MaintenanceManager::sampleAPI(const JsonObject &parameters,
-                                               JsonObject &response)
-        {
-            response["sampleAPI"] = "Success";
-            /* Kept for debug purpose/future reference. */
-            sendNotify(EVT_ONMAINTMGRSAMPLEEVENT, parameters);
-#if defined(ENABLE_JOURNAL_LOGGING)
-            MM_SEND_NOTIFY(EVT_ONMAINTENANCSTATUSCHANGE, params);
-            MM_RETURN_RESPONSE(true);
-#endif
-            returnResponse(true);
-        }
-#endif /* DEBUG */
-
-        /*
-         * @brief This function returns the status of the current
-         * or previous maintenance activity.
-         * @param1[in]: {"jsonrpc":"2.0","id":"3","method":"org.rdk.MaintenanceManager.1.getMaintenanceActivityStatus",
-         *                  "params":{}}''
-         * @param2[out]: {"jsonrpc":"2.0","id":3,"result":{"status":MAINTENANCE_IDLE,"LastSuccessfulCompletionTime":
-                              -1,"isCriticalMaintenance":true,"isRebootPending":true}}
-         * @return: Core::<StatusCode>
-         */
-
-        uint32_t MaintenanceManager::getMaintenanceActivityStatus(const JsonObject &parameters,
-                                                                  JsonObject &response)
-        {
-            bool result = false;
-            string isCriticalMaintenance = "false";
-            string isRebootPending = "false";
-            string LastSuccessfulCompletionTime = "NA"; /* TODO : check max size to hold this */
-            string getMaintenanceStatusString = "\0";
-            bool b_criticalMaintenace = false;
-            bool b_rebootPending = false;
-
-            std::lock_guard<std::mutex> guard(m_callMutex);
-
-            /* Check if we have a critical maintenance */
-            if (!g_is_critical_maintenance.empty())
-            {
-                isCriticalMaintenance = g_is_critical_maintenance;
-            }
-
-            if (!g_is_reboot_pending.empty())
-            {
-                isRebootPending = g_is_reboot_pending;
-            }
-
-            /* Get the last SuccessfulCompletion time from Persistant location */
-            if (m_setting.contains("LastSuccessfulCompletionTime"))
-            {
-                LastSuccessfulCompletionTime = m_setting.getValue("LastSuccessfulCompletionTime").String();
-            }
-
-            if (!isCriticalMaintenance.compare("true"))
-            {
-                b_criticalMaintenace = true;
-            }
-
-            if (!isRebootPending.compare("true"))
-            {
-                b_rebootPending = true;
-            }
-
-            response["maintenanceStatus"] = notifyStatusToString(m_notify_status);
-            if (strcmp("NA", LastSuccessfulCompletionTime.c_str()) == 0)
-            {
-                response["LastSuccessfulCompletionTime"] = 0; // stoi is not able handle "NA"
-            }
-            else
-            {
-                try
-                {
-                    response["LastSuccessfulCompletionTime"] = stoi(LastSuccessfulCompletionTime.c_str());
-                }
-                catch (exception &err)
-                {
-                    // exception caught with stoi -- So making "LastSuccessfulCompletionTime" as 0
-                    response["LastSuccessfulCompletionTime"] = 0;
-                }
-            }
-            response["isCriticalMaintenance"] = b_criticalMaintenace;
-            response["isRebootPending"] = b_rebootPending;
-            result = true;
-#if defined(ENABLE_JOURNAL_LOGGING)
-            MM_RETURN_RESPONSE(result);
-#endif
-            returnResponse(result);
-        }
-
-        /**
-         * @brief Retrieves the time zone and offset information for the device.
-         *
-         * This function reads the device properties to determine the device type and
-         * fetches the time zone information accordingly. It handles specific cases for
-         * device types, like "PLATCO", and sets default values if necessary.
-         *
-         * @param deviceName A character pointer to a buffer where the device name will be stored.
-         * @param zoneValue A character pointer to a buffer where the zone value will be stored.
-         * @param timeZone A character pointer to a buffer where the time zone will be stored.
-         * @param timeZoneOffset A character pointer to a buffer where the time zone offset will be stored.
-         * @param buffer_size The size of the buffers provided.
-         */
-        void getTimeZone(char *deviceName, char *zoneValue, char *timeZone, char *timeZoneOffset, int buffer_size)
-        {
-            char line[128];
-            char deviceNameKey[12] = "DEVICE_NAME";
-            char propertiesFile[23] = "/etc/device.properties";
-            char timeZoneDSTFile[28] = "/opt/persistent/timeZoneDST";
-            char tzOffsetMapFile[25] = "/etc/timeZone_offset_map";
-            char NYtime[17] = "America/New_York";
-            char usEast[11] = "US/Eastern";
-
-            FILE *prop = fopen(propertiesFile, "r");
-            if (prop != NULL)
-            {
-                while (fgets(line, sizeof(line), prop))
-                {
-                    if (strncmp(line, deviceNameKey, strlen(deviceNameKey)) == 0)
-                    {
-                        char *token = strtok(line, "=");
-                        if (token != NULL)
-                        {
-                            deviceName = strtok(NULL, "\n");
-                            break;
-                        }
-                    }
-                }
-                fclose(prop);
-            }
-            else
-            {
-                MM_LOGERR("Error! %s cannot be opened", propertiesFile);
-                return;
-            }
-            if (strcmp(deviceName, "PLATCO") == 0)
-            {
-                FILE *dst = fopen(timeZoneDSTFile, "r");
-                if (dst != NULL)
-                {
-                    if (fgets(timeZone, buffer_size, dst) != NULL)
-                    {
-                        size_t len = strlen(timeZone);
-                        if (len > 0 && timeZone[len - 1] == '\n')
-                        {
-                            timeZone[len - 1] = '\0';
-                        }
-                    }
-                    fclose(dst);
-                    if (timeZone[0] == '\0')
-                    {
-                        strncpy(timeZone, NYtime, buffer_size - 1);
-                        timeZone[buffer_size - 1] = '\0';
-                    }
-                }
-                else
-                {
-                    strncpy(timeZone, NYtime, buffer_size - 1);
-                    timeZone[buffer_size - 1] = '\0';
-                }
-                FILE *map = fopen(tzOffsetMapFile, "r");
-                if (map != NULL)
-                {
-                    char line[128];
-                    while (fgets(line, sizeof(line), map) != NULL)
-                    {
-                        size_t len = strlen(line);
-                        if (len > 0 && line[len - 1] == '\n')
-                        {
-                            line[len - 1] = '\0';
-                        }
-                        if (strncmp(line, timeZone, strlen(timeZone)) == 0 && line[strlen(timeZone)] == ':')
-                        {
-                            char *token = strtok(line, ":");
-                            token = strtok(NULL, ":"); // Get zoneValue
-                            if (token != NULL)
-                            {
-                                strncpy(zoneValue, token, buffer_size - 1);
-                                zoneValue[buffer_size - 1] = '\0';
-
-                                token = strtok(NULL, ":"); // Get timeZoneOffset
-                                if (token != NULL)
-                                {
-                                    strncpy(timeZoneOffset, token, buffer_size - 1);
-                                    timeZoneOffset[buffer_size - 1] = '\0';
-                                }
-                            }
-                            break;
-                        }
-                    }
-                    fclose(map);
-                }
-                if (zoneValue[0] == '\0' || timeZoneOffset[0] == '\0')
-                {
-                    strncpy(zoneValue, usEast, buffer_size - 1);
-                    zoneValue[buffer_size - 1] = '\0';
-                    strncpy(timeZoneOffset, "0", buffer_size - 1);
-                    timeZoneOffset[buffer_size - 1] = '\0';
-                }
-            }
-            else
-            {
-                FILE *dst = fopen(timeZoneDSTFile, "r");
-                if (dst != NULL)
-                {
-                    if (fgets(zoneValue, buffer_size, dst) != NULL)
-                    {
-                        size_t len = strlen(zoneValue);
-                        if (len > 0 && zoneValue[len - 1] == '\n')
-                        {
-                            zoneValue[len - 1] = '\0';
-                        }
-                    }
-                    fclose(dst);
-                }
-                else
-                {
-                    MM_LOGERR("Error! %s cannot be opened", timeZoneDSTFile);
-                }
-            }
-        }
-
-        /**
-         * @brief Calculates the start time for the maintenance activity based on configuration and time zone.
-         *
-         * This function reads the maintenance configuration file to get the start hour, start minute,
-         * and time zone mode. It then calculates the start time in seconds and considers the device's
-         * local time zone and offset if necessary. The function returns the epoch time for the maintenance start.
-         *
-         * @return An integer representing the calculated start time in epoch format.
-         *         Returns -1 if there is an error in reading the configuration or time zone files.
-         */
-        int CalculateStartTime()
-        {
-            char zoneValue[BUFFER_SIZE] = {0}, timeZoneOffset[BUFFER_SIZE] = {0}, timeZone[BUFFER_SIZE] = {0}, deviceName[BUFFER_SIZE] = {0}, tz_offset_pos;
-            int start_hr = 0, start_min = 0;
-            char tz_mode[20] = {0};
-            char maintConf[26] = "/opt/rdk_maintenance.conf";
-
-            int maintenance_start_time = -1;
-            int start_time_in_sec = 0;
-
-            FILE *conf = fopen(maintConf, "r");
-            if (conf == NULL)
-            {
-                MM_LOGERR("Error! %s cannot be opened", maintConf);
-                return -1;
-            }
-
-            if (fscanf(conf, "start_hr=\"%d\"\nstart_min=\"%d\"\ntz_mode=\"%[^\"]s\"\n", &start_hr, &start_min, tz_mode) != 3)
-            {
-                MM_LOGERR("Error! Failed to read %s", maintConf);
-                fclose(conf);
-                return -1;
-            }
-            fclose(conf);
-
-            int cron_time_in_sec = (start_hr * 3600) + (start_min * 60);
-            getTimeZone(deviceName, zoneValue, timeZone, timeZoneOffset, BUFFER_SIZE);
-
-            time_t rawtime = time(NULL);
-            struct tm *ptm = localtime(&rawtime);
-
-            if (strcmp(tz_mode, "Local time") == 0)
-            {
-                MM_LOGINFO("TimeZone is in Local time");
-                char cmd[128];
-                snprintf(cmd, sizeof(cmd), "TZ=%s date +%%z", zoneValue);
-                FILE *fp = popen(cmd, "r");
-                char offset[10];
-                if (fgets(offset, sizeof(offset), fp) == NULL)
-                {
-                    MM_LOGERR("Failed to read timezone offset");
-                    pclose(fp);
-                    return -1;
-                }
-                pclose(fp);
-                tz_offset_pos = offset[0];
-                int offset_value = atoi(&offset[1]);
-
-                int tz_offset_hr = offset_value / 100;
-                int tz_offset_min = offset_value % 100;
-                int tz_offset_in_sec = tz_offset_hr * 3600 + tz_offset_min * 60;
-                start_time_in_sec = (tz_offset_pos == '-') ? (cron_time_in_sec + tz_offset_in_sec) : (cron_time_in_sec - tz_offset_in_sec);
-            }
-            else
-            {
-                MM_LOGINFO("TimeZone is in UTC");
-                start_time_in_sec = cron_time_in_sec;
-            }
-
-            start_time_in_sec = (start_time_in_sec + 86400) % 86400;
-            ptm->tm_hour = start_time_in_sec / 3600;
-            ptm->tm_min = (start_time_in_sec % 3600) / 60;
-            ptm->tm_sec = start_time_in_sec % 60;
-
-            int start_epoch = timegm(ptm);
-            if (start_epoch - rawtime < 10)
-            {
-                start_epoch += 86399;
-            }
-            maintenance_start_time = start_epoch;
-
-            return maintenance_start_time;
-        }
-
-        /*
-         * @brief This function returns the start time of the maintenance activity.
-         * @param1[in]: {"jsonrpc":"2.0","id":"3","method":"org.rdk.MaintenanceManager.1.getMaintenanceStartTime","params":{}}''
-         * @param2[out]: {"jsonrpc":"2.0","id":3,"result":{"maintenanceStartTime":12345678,"success":true}}
-         * @return: Core::<StatusCode>
-         */
-        uint32_t MaintenanceManager::getMaintenanceStartTime(const JsonObject &parameters, JsonObject &response)
-        {
-            int maintenance_start_time = CalculateStartTime();
-            response["maintenanceStartTime"] = maintenance_start_time;
-#if defined(ENABLE_JOURNAL_LOGGING)
-            MM_RETURN_RESPONSE(true);
-#endif
-            returnResponse(true);
-        }
-
-        /***
-         * @brief	: Used to read file contents into a vector
-         * @param1[in]	: Complete file name with path
-         * @param2[in]	: Destination vector buffer to be filled with file contents
-         * @return	: <bool>; TRUE if operation success; else FALSE.
-         */
-        bool getFileContent(std::string fileName, std::vector<std::string> &vecOfStrs)
-        {
-            bool retStatus = false;
-            std::ifstream inFile(fileName.c_str(), ios::in);
-
-            if (!inFile.is_open())
-                return retStatus;
-
-            std::string line;
-            retStatus = true;
-            while (std::getline(inFile, line))
-            {
-                if (line.size() > 0)
-                {
-                    vecOfStrs.push_back(line);
-                }
-            }
-            inFile.close();
-            return retStatus;
-        }
-
-        /* Utility API for parsing the  Device properties file */
-        bool parseConfigFile(const char *filename, string findkey, string &value)
-        {
-            vector<std::string> lines;
-            bool found = false;
-            getFileContent(filename, lines);
-            for (vector<std::string>::const_iterator i = lines.begin();
-                 i != lines.end(); ++i)
-            {
-                string line = *i;
-                size_t eq = line.find_first_of("=");
-                if (std::string::npos != eq)
-                {
-                    std::string key = line.substr(0, eq);
-                    if (key == findkey)
-                    {
-                        value = line.substr(eq + 1);
-                        found = true;
-                        break;
-                    }
-                }
-            }
-
-            if (found)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        /*
-         * @brief This function returns Mode of the maintenance.
-         * @param1[in]: {"jsonrpc":"2.0","id":"3","method":"org.rdk.MaintenanceManager.1.getMaintenanceMode","params":{}}''
-         * @param2[out]: {"jsonrpc":"2.0","id":3,"result":{"maintenanceMode":"FOREGROUND","optOut":"IGNORE_UPDATE","success":true}}
-         * @return: Core::<StatusCode>
-         */
-        uint32_t MaintenanceManager::getMaintenanceMode(const JsonObject &parameters,
-                                                        JsonObject &response)
-        {
-            bool result = false;
-            string softwareOptOutmode = "NONE";
-            if (BACKGROUND_MODE != g_currentMode && FOREGROUND_MODE != g_currentMode)
-            {
-                MM_LOGERR("Didnt get a valid Mode. Failed");
-#if defined(ENABLE_JOURNAL_LOGGING)
-                MM_RETURN_RESPONSE(false);
-#endif
-                returnResponse(false);
-            }
-            else
-            {
-                response["maintenanceMode"] = g_currentMode;
-
-                if (Utils::fileExists(MAINTENANCE_MGR_RECORD_FILE))
-                {
-                    if (parseConfigFile(MAINTENANCE_MGR_RECORD_FILE, "softwareoptout", softwareOptOutmode))
-                    {
-                        /* check if the value is valid */
-                        if (!checkValidOptOutModes(softwareOptOutmode))
-                        {
-                            MM_LOGERR("OptOut Value Corrupted. Failed");
-#if defined(ENABLE_JOURNAL_LOGGING)
-                            MM_RETURN_RESPONSE(false);
-#endif
-                            returnResponse(false);
-                        }
-                        else
-                        {
-                            MM_LOGINFO("OptOut Value = %s", softwareOptOutmode.c_str());
-                        }
-                    }
-                    else
-                    {
-                        MM_LOGERR("OptOut Value Not Found. Failed");
-#if defined(ENABLE_JOURNAL_LOGGING)
-                        MM_RETURN_RESPONSE(false);
-#endif
-                        returnResponse(false);
-                    }
-                }
-                else
-                {
-                    MM_LOGERR("OptOut Config File Not Found. Failed");
-#if defined(ENABLE_JOURNAL_LOGGING)
-                    MM_RETURN_RESPONSE(false);
-#endif
-                    returnResponse(false);
-                }
-                response["optOut"] = softwareOptOutmode.c_str();
-                result = true;
-            }
-#if defined(ENABLE_JOURNAL_LOGGING)
-            MM_RETURN_RESPONSE(result);
-#endif
-            returnResponse(result);
-        }
-
-        /*
-         * @brief This function returns the current status of the current
-         * or previous maintenance activity.
-         * @param1[in]: {"jsonrpc":"2.0","id":"3","method":"org.rdk.MaintenanceManager.1.setMaintenanceMode",
-         *                  "params":{"maintenanceMode":FOREGROUND}}''
-         * @param2[out]: {"jsonrpc":"2.0","id":3,"result":{"success":<bool>}}
-         * @return: Core::<StatusCode>
-         */
-
-        uint32_t MaintenanceManager::setMaintenanceMode(const JsonObject &parameters,
-                                                        JsonObject &response)
-        {
-            bool result = false;
-            string new_mode = "";
-            string old_mode = g_currentMode;
-            string bg_flag = "false";
-            string new_optout_state = "";
-            bool rdkvfwrfc = true;
-            // 1 = Foreground and 0 = background
-            int mode = 1;
-            MM_LOGINFO("RDKE Device.Mode change allow anytime");
-
-            /* Label should have maintenance mode and softwareOptout field */
-            if (parameters.HasLabel("maintenanceMode") && parameters.HasLabel("optOut"))
-            {
-
-                new_mode = parameters["maintenanceMode"].String();
-
-                if (BACKGROUND_MODE != new_mode && FOREGROUND_MODE != new_mode)
-                {
-                    MM_LOGERR("value of new mode is incorrect, therefore current mode '%s' not changed", old_mode.c_str());
-#if defined(ENABLE_JOURNAL_LOGGING)
-                    MM_RETURN_RESPONSE(false);
-#endif
-                    returnResponse(false);
-                }
-
-                std::lock_guard<std::mutex> guard(m_callMutex);
-
-                /* check if maintenance is on progress or not */
-                /* if in progress restrict the same */
-                if (MAINTENANCE_STARTED != m_notify_status)
-                {
-
-                    MM_LOGINFO("SetMaintenanceMode new_mode = %s", new_mode.c_str());
-
-                    /* remove any older one */
-                    m_setting.remove("background_flag");
-                    if (BACKGROUND_MODE == new_mode)
-                    {
-                        bg_flag = "true";
-                    }
-                    else
-                    {
-                        /* foreground */
-                        bg_flag = "false";
-                    }
-                    g_currentMode = new_mode;
-                    m_setting.setValue("background_flag", bg_flag);
-                }
-                else
-                {
-                    /*If firmware rfc is true and IARM bus component present allow to change maintenance mode*/
-                    if (rdkvfwrfc == true)
-                    {
-#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
-                        MM_LOGINFO("SetMaintenanceMode new_mode = %s", new_mode.c_str());
-                        /* Sending IARM Event to application for mode change */
-                        (new_mode != BACKGROUND_MODE) ? mode = 1 : mode = 0;
-                        MM_LOGINFO("setMaintenanceMode rfc is true and mode:%d", mode);
-                        IARM_Result_t ret_code = IARM_RESULT_SUCCESS;
-                        ret_code = IARM_Bus_BroadcastEvent("RdkvFWupgrader", (IARM_EventId_t)0, (void *)&mode, sizeof(mode));
-                        if (ret_code == IARM_RESULT_SUCCESS)
-                        {
-                            MM_LOGINFO("IARM_Bus_BroadcastEvent is success and value=%d", mode);
-                            g_currentMode = new_mode;
-                            /* remove any older one */
-                            m_setting.remove("background_flag");
-                            if (BACKGROUND_MODE == new_mode)
-                            {
-                                bg_flag = "true";
-                            }
-                            else
-                            {
-                                /* foreground */
-                                bg_flag = "false";
-                            }
-                            m_setting.setValue("background_flag", bg_flag);
-                        }
-                        else
-                        {
-                            MM_LOGINFO("IARM_Bus_BroadcastEvent is fail Mode change not allowed and value=%d", mode);
-                        }
-#endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
-                    }
-                    else
-                    {
-                        MM_LOGERR("Maintenance is in Progress, Mode change not allowed");
-                    }
-                    result = true;
-                }
-
-                /* OptOut changes here */
-                new_optout_state = parameters["optOut"].String();
-
-                MM_LOGINFO("SetMaintenanceMode optOut = %s", new_optout_state.c_str());
-
-                /* check if we have a valid state from user */
-                if (checkValidOptOutModes(new_optout_state))
-                {
-                    /* we got a valid state; Now store it in persistant location */
-                    m_setting.setValue("softwareoptout", new_optout_state);
-                }
-                else
-                {
-                    MM_LOGINFO("Invalid optOut = %s", new_optout_state.c_str());
-#if defined(ENABLE_JOURNAL_LOGGING)
-                    MM_RETURN_RESPONSE(false);
-#endif
-                    returnResponse(false);
-                }
-
-                /* Set the result as true */
-                result = true;
-            }
-            else
-            {
-                /* havent got the correct label */
-                MM_LOGERR("SetMaintenanceMode Missing Key Values");
-            }
-#if defined(ENABLE_JOURNAL_LOGGING)
-            MM_RETURN_RESPONSE(result);
-#endif
-            returnResponse(result);
-        }
-
-        /*
-         * @brief This function starts the maintenance activity.
-         * @param1[in]: {"jsonrpc":"2.0","id":"3","method":"org.rdk.MaintenanceManager.1.startMaintenance",
-         *                  "params":{}}''
-         * @param2[out]:{"jsonrpc":"2.0","id":3,"result":{"success":<bool>}}
-         * @return: Core::<StatusCode>
-         */
-
-        uint32_t MaintenanceManager::startMaintenance(const JsonObject &parameters,
-                                                      JsonObject &response)
-        {
-            bool result = false;
-            /* check what mode we currently have */
-            string current_mode = "";
-
-            MM_LOGINFO("Triggering scheduled maintenance ");
-            /* only one maintenance at a time */
-            /* Lock so that m_notify_status will not be updated  further */
-            m_statusMutex.lock();
-            if (MAINTENANCE_STARTED != m_notify_status && g_unsolicited_complete)
-            {
-
-                /*reset the status to 0*/
-                g_task_status = 0;
-                g_maintenance_type = SOLICITED_MAINTENANCE;
-
-                m_abort_flag = false;
-
-                /* isRebootPending will be set to true
-                 * irrespective of XConf configuration */
-                g_is_reboot_pending = "true";
-
-                /* we set this to false */
-                g_is_critical_maintenance = "false";
-
-                /* if there is any active thread, join it before executing the tasks from startMaintenance
-                 * especially when device is in offline mode*/
-                if (m_thread.joinable())
-                {
-                    m_thread.join();
-                    MM_LOGINFO("Thread joined successfully");
-                }
-
-                m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
-
-                result = true;
-            }
-            else
-            {
-                MM_LOGINFO("Already a maintenance is in Progress. Please wait for it to complete !!");
-            }
-            m_statusMutex.unlock();
-#if defined(ENABLE_JOURNAL_LOGGING)
-            MM_RETURN_RESPONSE(result);
-#endif
-            returnResponse(result);
-        }
-
-        /*
-         * @brief This function stops the maintenance activity.
-         * @param1[in]: {"jsonrpc":"2.0","id":"3","method":"org.rdk.MaintenanceManager.1.stopMaintenance",
-         *                  "params":{}}''
-         * @param2[out]:{"jsonrpc":"2.0","id":3,"result":{"success":<bool>}}
-         * @return: Core::<StatusCode>
-         */
-
-        uint32_t MaintenanceManager::stopMaintenance(const JsonObject &parameters,
-                                                     JsonObject &response)
-        {
-            bool result = false;
-            result = stopMaintenanceTasks();
-#if defined(ENABLE_JOURNAL_LOGGING)
-            MM_RETURN_RESPONSE(result);
-#endif
-            returnResponse(result);
-        }
-
-        bool MaintenanceManager::stopMaintenanceTasks()
-        {
-            MM_LOGINFO("Request for stopMaintenance()");
-            string codeDLtask;
-            int k_ret = EINVAL;
-            int i = 0;
-            bool task_status[3] = {false};
-            bool result = false;
-            
-            /* run only when the maintenance status is MAINTENANCE_STARTED */
-            m_statusMutex.lock();
-            if (MAINTENANCE_STARTED == m_notify_status)
-            {
-                MM_LOGINFO("Stopping maintenance activities");
-                // Set the condition flag m_abort_flag to true
-                m_abort_flag = true;
-                auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
-                auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
-                auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
-
-                task_status[0] = task_status_RFC->second;
-                task_status[1] = task_status_SWUPDATE->second;
-                task_status[2] = task_status_LOGUPLOAD->second;
-
-                for (i = 0; i < 3; i++)
-                {
-                    MM_LOGINFO("task status [%d]  = %s Task Name %s", i, (task_status[i]) ? "true" : "false", task_names[i].c_str());
-                }
-                for (i = 0; i < 3; i++)
-                {
-                    if (task_status[i])
-                    {
-
-                        k_ret = abortTask(task_names[i].c_str()); // default signal is SIGABRT
-
-                        if (k_ret == 0)
-                        {                                                         // if task(s) was(were) killed successfully ...
-                            m_task_map[task_names_foreground[i].c_str()] = false; // set it to false
-                        }
-                        /* No need to loop again */
-                        break;
-                    }
-                    else
-                    {
-                        MM_LOGINFO("Task[%d] is false", i);
-                    }
-                }
-                result = true;
-                if (task_stopTimer())
-                {
-                    MM_LOGINFO("Stopped Timer Successfully");
-                }
-                else{
-                    MM_LOGERR("task_stopTimer() did not stop the Timer");
-                }
-                task_thread.notify_one();
-                if (m_thread.joinable())
-                {
-                    m_thread.join();
-                    MM_LOGINFO("Thread joined successfully");
-                }
-                if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
-                {
-                    g_unsolicited_complete = true;
-                }
-                MM_LOGINFO("Maintenance has been stopped. Hence setting maintenance status to MAINTENANCE_ERROR");
-                MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
-            }
-            else
-            {
-                MM_LOGINFO("Maintenance Status is not MAINTENANCE_STARTED, Hence can not stop the Maintenance execution");
-            }
-            m_statusMutex.unlock();
-            return result;
-        }
-
-        bool MaintenanceManager::readRFC(const char *rfc)
-        {
-            bool ret = false;
-            RFC_ParamData_t param;
-            if (rfc == NULL)
-            {
-                return ret;
-            }
-            WDMP_STATUS wdmpStatus = getRFCParameter(const_cast<char *>("MaintenanceManager"), rfc, &param);
-            if (wdmpStatus == WDMP_SUCCESS || wdmpStatus == WDMP_ERR_DEFAULT_VALUE)
-            {
-                MM_LOGINFO("rfc read success");
-                if (param.type == WDMP_BOOLEAN)
-                {
-                    MM_LOGINFO("rfc type is boolean");
-                    if (strncasecmp(param.value, "true", 4) == 0)
-                    {
-                        MM_LOGINFO("rfc value=%s", param.value);
-                        ret = true;
-                    }
-                }
-            }
-            MM_LOGINFO(" %s = %s , call value %d ", rfc, (ret == true) ? "true" : "false", wdmpStatus);
-            return ret;
-        }
-
-        int MaintenanceManager::abortTask(const char *taskname, int sig_to_send)
-        {
-            int k_ret = EINVAL;
-            pid_t pid_num;
-
-            pid_num = getTaskPID(taskname);
-            MM_LOGINFO("PID of %s is %d", taskname, (int)pid_num);
-            if (pid_num != -1)
-            {
-                /* send the signal to task to terminate */
-#if defined(ENABLE_RFC_MANAGER)
-                if (strstr(taskname, "rfcMgr"))
-                {
-                    MM_LOGINFO("Sending SIGUSR1 signal to %s", taskname);
-                    k_ret = kill(pid_num, SIGUSR1);
-                }
-#endif
-                if (strstr(taskname, "rdkvfwupgrader"))
-                {
-                    MM_LOGINFO("Sending SIGUSR1 signal to %s", taskname);
-                    k_ret = kill(pid_num, SIGUSR1);
-                }
-                else
-                {
-                    k_ret = kill(pid_num, sig_to_send);
-                }
-                MM_LOGINFO(" %s sent signal %d", taskname, sig_to_send);
-                if (k_ret == 0)
-                {
-                    MM_LOGINFO(" %s Terminated", taskname);
-                }
-                else
-                {
-                    MM_LOGINFO("Failed to terminate with error %s - %d", taskname, k_ret);
-                }
-            }
-            else
-            {
-                MM_LOGINFO("Didnt find PID for %s", taskname);
-            }
-            return k_ret;
-        }
-
-        /* Helper function to find the Task PID*/
-        pid_t MaintenanceManager::getTaskPID(const char *taskname)
-        {
-
-            DIR *dir = opendir(PROC_DIR);
-            struct dirent *ent;
-            char *endptr;
-            char buf[512];
-
-            while ((ent = readdir(dir)) != NULL)
-            {
-                long lpid = strtol(ent->d_name, &endptr, 10);
-                if (*endptr != '\0')
-                {
-                    continue;
-                }
-                /* Get the PID */
-                snprintf(buf, sizeof(buf), "/proc/%ld/cmdline", lpid);
-
-                /* Open the cmdline and read */
-                FILE *fp = fopen(buf, "r");
-                if (fp)
-                {
-                    char *arg = 0;
-                    size_t size = 0;
-                    while (getdelim(&arg, &size, 0, fp) != -1)
-                    {
-                        printf("%s", arg);
-                        char *first = strstr(arg, taskname);
-                        if (first != NULL)
-                        {
-                            free(arg);
-                            fclose(fp);
-                            closedir(dir);
-                            return (pid_t)lpid;
-                        }
-                    }
-                    free(arg);
-                    fclose(fp);
-                }
-            }
-            closedir(dir);
-            return (pid_t)-1;
-        }
-
-        void MaintenanceManager::onMaintenanceStatusChange(Maint_notify_status_t status)
-        {
-            JsonObject params;
-            /* we store the updated value as well */
-            m_notify_status = status;
-            params["maintenanceStatus"] = notifyStatusToString(status);
-            sendNotify(EVT_ONMAINTENANCSTATUSCHANGE, params);
-#if defined(ENABLE_JOURNAL_LOGGING)
-            MM_SEND_NOTIFY(EVT_ONMAINTENANCSTATUSCHANGE, params);
-#endif
-        }
-
-    } /* namespace Plugin */
-} /* namespace WPEFramework */
+name: L1-tests
+
+on:
+  push:
+    branches: [ main, develop, 'sprint/**', 'release/**' ]
+  pull_request:
+    branches: [ main, develop, 'sprint/**', 'release/**' ]
+
+env:
+  BUILD_TYPE: Debug
+  THUNDER_REF: "R4.4.1"
+  INTERFACES_REF: "develop"
+  AUTOMATICS_UNAME: ${{ secrets.AUTOMATICS_UNAME}}
+  AUTOMATICS_PASSCODE: ${{ secrets. AUTOMATICS_PASSCODE}}
+
+jobs:
+  L1-tests:
+    name: Build and run unit tests
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        compiler: [ gcc, clang ]
+        coverage: [ with-coverage, without-coverage ]
+        exclude:
+          - compiler: clang
+            coverage: with-coverage
+          - compiler: clang
+            coverage: without-coverage
+          - compiler: gcc
+            coverage: without-coverage
+
+    steps:
+      - name: Set up cache
+        # Cache Thunder/ThunderInterfaces.
+        # https://github.com/actions/cache
+        # https://docs.github.com/en/rest/actions/cache
+        # Modify the key if changing the list.
+        if: ${{ !env.ACT }}
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            thunder/build/Thunder
+            thunder/build/entservices-apis
+            thunder/build/ThunderTools
+            thunder/install
+            !thunder/install/etc/WPEFramework/plugins
+            !thunder/install/usr/bin/RdkServicesTest
+            !thunder/install/usr/include/gmock
+            !thunder/install/usr/include/gtest
+            !thunder/install/usr/lib/libgmockd.a
+            !thunder/install/usr/lib/libgmock_maind.a
+            !thunder/install/usr/lib/libgtestd.a
+            !thunder/install/usr/lib/libgtest_maind.a
+            !thunder/install/usr/lib/cmake/GTest
+            !thunder/install/usr/lib/pkgconfig/gmock.pc
+            !thunder/install/usr/lib/pkgconfig/gmock_main.pc
+            !thunder/install/usr/lib/pkgconfig/gtest.pc
+            !thunder/install/usr/lib/pkgconfig/gtest_main.pc
+            !thunder/install/usr/lib/wpeframework/plugins
+          key: ${{ runner.os }}-${{ env.THUNDER_REF }}-${{ env.INTERFACES_REF }}-4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - run: pip install jsonref
+
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v1.13
+        with:
+          cmake-version: '3.16.x'
+
+      - name: Install packages
+        run: >
+          sudo apt update
+          &&
+          sudo apt install -y libsqlite3-dev libcurl4-openssl-dev valgrind lcov clang libsystemd-dev libboost-all-dev libwebsocketpp-dev meson libcunit1 libcunit1-dev curl protobuf-compiler-grpc libgrpc-dev libgrpc++-dev
+
+      - name: Install GStreamer
+        run: |
+           sudo apt update
+           sudo apt install -y libunwind-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+
+      - name: Build trower-base64
+        run: |
+            if [ ! -d "trower-base64" ]; then
+            git clone https://github.com/xmidt-org/trower-base64.git
+            fi
+            cd trower-base64
+            meson setup --warnlevel 3 --werror build
+            ninja -C build
+            sudo ninja -C build install
+
+      - name: Checkout Thunder
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v3
+        with:
+          repository: rdkcentral/Thunder
+          path: Thunder
+          ref: ${{env.THUNDER_REF}}
+
+      - name: Checkout ThunderTools
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v3
+        with:
+          repository: rdkcentral/ThunderTools
+          path: ThunderTools
+          ref: R4.4.3
+
+      - name: Checkout entservices-testframework
+        uses: actions/checkout@v3
+        with:
+          repository: rdkcentral/entservices-testframework
+          path: entservices-testframework
+          ref: develop
+          token: ${{ secrets.RDKCM_RDKE }}
+
+      - name: Checkout entservices-softwareupdate
+        uses: actions/checkout@v3
+        with:
+          path: entservices-softwareupdate
+
+      - name: Apply patches ThunderTools
+        run: |  
+          cd $GITHUB_WORKSPACE/ThunderTools
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/00010-R4.4-Add-support-for-project-dir.patch
+          cd -
+
+      - name: Build ThunderTools
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: >
+          cmake -G Ninja
+          -S "$GITHUB_WORKSPACE/ThunderTools"
+          -B build/ThunderTools
+          -DEXCEPTIONS_ENABLE=ON
+          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DGENERIC_CMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          &&
+          cmake --build build/ThunderTools -j8
+          &&
+          cmake --install build/ThunderTools
+
+      - name: Apply patches Thunder
+        run: |
+          cd $GITHUB_WORKSPACE/Thunder
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Use_Legact_Alt_Based_On_ThunderTools_R4.4.3.patch
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/error_code_R4_4.patch
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/1004-Add-support-for-project-dir.patch
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/RDKEMW-733-Add-ENTOS-IDS.patch
+          cd -
+
+      - name: Build Thunder
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: >
+          cmake -G Ninja
+          -S "$GITHUB_WORKSPACE/Thunder"
+          -B build/Thunder
+          -DMESSAGING=ON
+          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DGENERIC_CMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DBUILD_TYPE=Debug
+          -DBINDING=127.0.0.1
+          -DPORT=55555
+          -DEXCEPTIONS_ENABLE=ON
+          &&
+          cmake --build build/Thunder -j8
+          &&
+          cmake --install build/Thunder
+
+      - name: Checkout entservices-apis
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v3
+        with:
+          repository: rdkcentral/entservices-apis
+          path: entservices-apis
+          ref: ${{env.INTERFACES_REF}}
+          #token : ${{ secrets.RDKCM_RDKE }}
+          run: rm -rf $GITHUB_WORKSPACE/entservices-apis/jsonrpc/DTV.json
+
+      - name: Apply patches entservices-apis
+        run: |
+          cd $GITHUB_WORKSPACE/entservices-apis
+          patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/RDKEMW-1007.patch
+          cd -
+
+      - name: Build entservices-apis
+        run: >
+          cmake -G Ninja
+          -S "$GITHUB_WORKSPACE/entservices-apis"
+          -B build/entservices-apis
+          -DEXCEPTIONS_ENABLE=ON
+          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          &&
+          cmake --build build/entservices-apis -j8
+          &&
+          cmake --install build/entservices-apis
+
+      - name: Generate external headers
+        # Empty headers to mute errors
+        run: >
+          cd "$GITHUB_WORKSPACE/entservices-testframework/Tests/"
+          &&
+          mkdir -p
+          headers
+          headers/audiocapturemgr
+          headers/rdk/ds
+          headers/rdk/iarmbus
+          headers/rdk/iarmmgrs-hal
+          headers/rdk/halif/
+          headers/rdk/halif/deepsleep-manager
+          headers/ccec/drivers
+          headers/network
+          headers/proc
+          headers/opkg
+          &&
+          cd headers
+          &&
+          touch
+          audiocapturemgr/audiocapturemgr_iarm.h
+          ccec/drivers/CecIARMBusMgr.h
+          rdk/ds/audioOutputPort.hpp
+          rdk/ds/compositeIn.hpp
+          rdk/ds/dsDisplay.h
+          rdk/ds/dsError.h
+          rdk/ds/dsMgr.h
+          rdk/ds/dsTypes.h
+          rdk/ds/dsUtl.h
+          rdk/ds/exception.hpp
+          rdk/ds/hdmiIn.hpp
+          rdk/ds/host.hpp
+          rdk/ds/list.hpp
+          rdk/ds/manager.hpp
+          rdk/ds/sleepMode.hpp
+          rdk/ds/videoDevice.hpp
+          rdk/ds/videoOutputPort.hpp
+          rdk/ds/videoOutputPortConfig.hpp
+          rdk/ds/videoOutputPortType.hpp
+          rdk/ds/videoResolution.hpp
+          rdk/ds/frontPanelIndicator.hpp
+          rdk/ds/frontPanelConfig.hpp
+          rdk/ds/frontPanelTextDisplay.hpp
+          rdk/iarmbus/libIARM.h
+          rdk/iarmbus/libIBus.h
+          rdk/iarmbus/libIBusDaemon.h
+          rdk/halif/deepsleep-manager/deepSleepMgr.h
+          rdk/iarmmgrs-hal/mfrMgr.h
+          rdk/iarmmgrs-hal/sysMgr.h
+          network/wifiSrvMgrIarmIf.h
+          network/netsrvmgrIarm.h
+          libudev.h
+          rfcapi.h
+          rbus.h
+          motionDetector.h
+          telemetry_busmessage_sender.h
+          maintenanceMGR.h
+          pkg.h
+          opkg.h
+          opkg_message.h
+          opkg_cmd.h
+          opkg_download.h
+          secure_wrapper.h
+          wpa_ctrl.h
+          proc/readproc.h
+          systemaudioplatform.h
+          gdialservice.h
+          gdialservicecommon.h
+          &&
+          cp -r /usr/include/gstreamer-1.0/gst /usr/include/glib-2.0/* /usr/lib/x86_64-linux-gnu/glib-2.0/include/* /usr/local/include/trower-base64/base64.h .
+
+      - name: Set clang toolchain
+        if: ${{ matrix.compiler == 'clang' }}
+        run: echo "TOOLCHAIN_FILE=$GITHUB_WORKSPACE/entservices-testframework/Tests/clang.cmake" >> $GITHUB_ENV
+
+      - name: Set gcc/with-coverage toolchain
+        if: ${{ matrix.compiler == 'gcc' && matrix.coverage == 'with-coverage' && !env.ACT }}
+        run: echo "TOOLCHAIN_FILE=$GITHUB_WORKSPACE/entservices-testframework/Tests/gcc-with-coverage.cmake" >> $GITHUB_ENV
+
+      - name: Build mocks
+        run: >
+          cmake
+          -S "$GITHUB_WORKSPACE/entservices-testframework/Tests/mocks"
+          -B build/mocks
+          -DBUILD_SHARED_LIBS=ON
+          -DRDK_SERVICES_L1_TEST=ON
+          -DUSE_THUNDER_R4=ON
+          -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}"
+          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          -DCMAKE_CXX_FLAGS="
+          -fprofile-arcs
+          -ftest-coverage
+          -DEXCEPTIONS_ENABLE=ON
+          -DUSE_THUNDER_R4=ON
+          -DTHUNDER_VERSION=4
+          -DTHUNDER_VERSION_MAJOR=4
+          -DTHUNDER_VERSION_MINOR=4
+          -DRDK_SERVICES_L1_TEST
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/audiocapturemgr
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/ds
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmbus
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmmgrs-hal
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/ccec/drivers
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/network
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests
+          -I $GITHUB_WORKSPACE/Thunder/Source
+          -I $GITHUB_WORKSPACE/Thunder/Source/core
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/devicesettings.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Rfc.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/RBus.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Telemetry.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Udev.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/maintenanceMGR.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/pkg.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/secure_wrappermock.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/wpa_ctrl_mock.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/readprocMockInterface.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/gdialservice.h
+          --coverage
+          -Wall -Wno-unused-result -Wno-deprecated-declarations -Wno-error=format=
+          -Wl,-wrap,system -Wl,-wrap,popen -Wl,-wrap,syslog -Wl,-wrap,v_secure_system -Wl,-wrap,v_secure_popen -Wl,-wrap,v_secure_pclose -Wl,-wrap,unlink -Wl,-wrap,v_secure_system -Wl,-wrap,pclose -Wl,-wrap,setmntent -Wl,-wrap,getmntent
+          -DENABLE_TELEMETRY_LOGGING
+          -DUSE_IARMBUS
+          -DENABLE_SYSTEM_GET_STORE_DEMO_LINK
+          -DENABLE_DEEP_SLEEP
+          -DENABLE_SET_WAKEUP_SRC_CONFIG
+          -DENABLE_THERMAL_PROTECTION
+          -DUSE_DRM_SCREENCAPTURE
+          -DHAS_API_SYSTEM
+          -DHAS_API_POWERSTATE
+          -DHAS_RBUS
+          -DENABLE_DEVICE_MANUFACTURER_INFO"
+          &&
+          cmake --build build/mocks -j8
+          &&
+          cmake --install build/mocks
+
+      - name: Build entservices-softwareupdate
+        run: >
+          cmake -G Ninja
+          -S "$GITHUB_WORKSPACE/entservices-softwareupdate"
+          -B build/entservices-softwareupdate
+          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DCMAKE_CXX_FLAGS="
+          -fprofile-arcs
+          -ftest-coverage
+          -DEXCEPTIONS_ENABLE=ON
+          -DUSE_THUNDER_R4=ON
+          -DTHUNDER_VERSION=4
+          -DTHUNDER_VERSION_MAJOR=4
+          -DTHUNDER_VERSION_MINOR=4
+          -DRDK_SERVICES_L1_TEST
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/audiocapturemgr
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/ds
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmbus
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmmgrs-hal
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/ccec/drivers
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/network
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests
+          -I $GITHUB_WORKSPACE/Thunder/Source
+          -I $GITHUB_WORKSPACE/Thunder/Source/core
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/devicesettings.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Rfc.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/RBus.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Telemetry.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Udev.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/maintenanceMGR.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/pkg.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/secure_wrappermock.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/wpa_ctrl_mock.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/readprocMockInterface.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/gdialservice.h
+          --coverage
+          -Wall -Wno-unused-result -Wno-deprecated-declarations -Wno-error=format=
+          -Wl,-wrap,system -Wl,-wrap,popen -Wl,-wrap,syslog -Wl,-wrap,v_secure_system -Wl,-wrap,v_secure_popen -Wl,-wrap,v_secure_pclose -Wl,-wrap,unlink
+          -DENABLE_TELEMETRY_LOGGING
+          -DUSE_IARMBUS
+          -DENABLE_SYSTEM_GET_STORE_DEMO_LINK
+          -DENABLE_DEEP_SLEEP
+          -DENABLE_SET_WAKEUP_SRC_CONFIG
+          -DENABLE_THERMAL_PROTECTION
+          -DUSE_DRM_SCREENCAPTURE
+          -DHAS_API_SYSTEM
+          -DHAS_API_POWERSTATE
+          -DHAS_RBUS
+          -DENABLE_DEVICE_MANUFACTURER_INFO"
+          -DCOMCAST_CONFIG=OFF
+          -DCMAKE_DISABLE_FIND_PACKAGE_DS=ON
+          -DCMAKE_DISABLE_FIND_PACKAGE_IARMBus=ON
+          -DCMAKE_DISABLE_FIND_PACKAGE_Udev=ON
+          -DCMAKE_DISABLE_FIND_PACKAGE_RFC=ON
+          -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
+          -DLIBOPKG_LIBRARIES=""
+          -DLIBOPKG_INCLUDE_DIRS=""
+          -DCMAKE_BUILD_TYPE=Debug
+          -DDS_FOUND=ON
+          -DHAS_FRONT_PANEL=ON
+          -DRDK_SERVICES_L1_TEST=ON
+          -DUSE_THUNDER_R4=ON
+          -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
+          -DPLUGIN_FIRMWAREUPDATE=OFF
+          -DPLUGIN_MAINTENANCEMANAGER=ON
+          -DPLUGIN_PACKAGER=ON
+          &&
+          cmake --build build/entservices-softwareupdate -j8
+          &&
+          cmake --install build/entservices-softwareupdate
+
+      - name: Build entservices-testframework
+        run: >
+          cmake -G Ninja
+          -S "$GITHUB_WORKSPACE/entservices-testframework"
+          -B build/entservices-testframework
+          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DCMAKE_CXX_FLAGS="
+          -fprofile-arcs
+          -ftest-coverage
+          -DEXCEPTIONS_ENABLE=ON
+          -DUSE_THUNDER_R4=ON
+          -DTHUNDER_VERSION=4
+          -DTHUNDER_VERSION_MAJOR=4
+          -DTHUNDER_VERSION_MINOR=4
+          -DRDK_SERVICES_L1_TEST
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/audiocapturemgr
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/ds
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmbus
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmmgrs-hal
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/ccec/drivers
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/network
+          -I $GITHUB_WORKSPACE/entservices-softwareupdate/helpers
+          -I $GITHUB_WORKSPACE/entservices-testframework/Tests
+          -I $GITHUB_WORKSPACE/Thunder/Source
+          -I $GITHUB_WORKSPACE/Thunder/Source/core
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/devicesettings.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Rfc.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/RBus.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Telemetry.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Udev.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/maintenanceMGR.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/pkg.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/secure_wrappermock.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/wpa_ctrl_mock.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/readprocMockInterface.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/gdialservice.h
+          -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/thunder/Communicator.h
+          --coverage
+          -Wall -Wno-unused-result -Wno-deprecated-declarations -Wno-error=format=
+          -Wl,-wrap,system -Wl,-wrap,popen -Wl,-wrap,syslog
+          -DENABLE_TELEMETRY_LOGGING
+          -DUSE_IARMBUS
+          -DENABLE_SYSTEM_GET_STORE_DEMO_LINK
+          -DENABLE_DEEP_SLEEP
+          -DENABLE_SET_WAKEUP_SRC_CONFIG
+          -DENABLE_THERMAL_PROTECTION
+          -DUSE_DRM_SCREENCAPTURE
+          -DHAS_API_SYSTEM
+          -DHAS_API_POWERSTATE
+          -DHAS_RBUS
+          -DENABLE_DEVICE_MANUFACTURER_INFO"
+          -DCOMCAST_CONFIG=OFF
+          -DCMAKE_DISABLE_FIND_PACKAGE_DS=ON
+          -DCMAKE_DISABLE_FIND_PACKAGE_IARMBus=ON
+          -DCMAKE_DISABLE_FIND_PACKAGE_Udev=ON
+          -DCMAKE_DISABLE_FIND_PACKAGE_RFC=ON
+          -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
+          -DCMAKE_BUILD_TYPE=Debug
+          -DPLUGIN_PACKAGER=ON
+          -DDS_FOUND=ON
+          -DRDK_SERVICES_L1_TEST=ON
+          -DUSE_THUNDER_R4=ON
+          -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
+          &&
+          cmake --build build/entservices-testframework -j8
+          &&
+          cmake --install build/entservices-testframework
+
+      - name: Set up files
+        run: >
+          sudo mkdir -p -m 777
+          /tmp/test/testApp/etc/apps
+          /opt/persistent
+          /opt/secure
+          /opt/secure/reboot
+          /opt/secure/persistent
+          /opt/secure/persistent/System
+          /opt/logs
+          /lib/rdk
+          /run/media/sda1/logs/PreviousLogs
+          /run/sda1/UsbTestFWUpdate
+          /run/sda1/UsbProdFWUpdate
+          /run/sda2
+          /var/run/wpa_supplicant
+          /tmp/bus/usb/devices/100-123
+          /tmp/bus/usb/devices/101-124
+          /tmp/block/sda/device
+          /tmp/block/sdb/device
+          /dev/disk/by-id
+          /dev
+          &&
+          if [ ! -f mknod /dev/sda c 240 0 ]; then mknod /dev/sda c 240 0; fi &&
+          if [ ! -f mknod /dev/sda1 c 240 0 ]; then mknod /dev/sda1 c 240 0; fi &&
+          if [ ! -f mknod /dev/sda2 c 240 0 ]; then mknod /dev/sda2 c 240 0; fi &&
+          if [ ! -f mknod /dev/sdb c 240 0 ]; then mknod /dev/sdb c 240 0; fi &&
+          if [ ! -f mknod /dev/sdb1 c 240 0 ]; then mknod /dev/sdb1 c 240 0; fi &&
+          if [ ! -f mknod /dev/sdb2 c 240 0 ]; then mknod /dev/sdb2 c 240 0; fi
+          &&
+          sudo touch
+          /tmp/test/testApp/etc/apps/testApp_package.json
+          /opt/rdk_maintenance.conf
+          /opt/persistent/timeZoneDST
+          /opt/standbyReason.txt
+          /opt/tmtryoptout
+          /opt/fwdnldstatus.txt
+          /opt/dcm.properties
+          /etc/device.properties
+          /etc/dcm.properties
+          /etc/authService.conf
+          /version.txt
+          /run/media/sda1/logs/PreviousLogs/logFile.txt
+          /run/sda1/HSTP11MWR_5.11p5s1_VBN_sdy.bin
+          /run/sda1/UsbTestFWUpdate/HSTP11MWR_3.11p5s1_VBN_sdy.bin
+          /run/sda1/UsbProdFWUpdate/HSTP11MWR_4.11p5s1_VBN_sdy.bin
+          /lib/rdk/getMaintenanceStartTime.sh
+          /tmp/opkg.conf
+          /tmp/bus/usb/devices/100-123/serial
+          /tmp/bus/usb/devices/101-124/serial
+          /tmp/block/sda/device/vendor
+          /tmp/block/sda/device/model
+          /tmp/block/sdb/device/vendor
+          /tmp/block/sdb/device/model
+          &&
+          sudo chmod -R 777
+          /tmp/test/testApp/etc/apps/testApp_package.json
+          /opt/rdk_maintenance.conf
+          /opt/persistent/timeZoneDST
+          /opt/standbyReason.txt
+          /opt/tmtryoptout
+          /opt/fwdnldstatus.txt
+          /opt/dcm.properties
+          /etc/device.properties
+          /etc/dcm.properties
+          /etc/authService.conf
+          /version.txt
+          /lib/rdk/getMaintenanceStartTime.sh
+          /tmp/opkg.conf
+          /tmp/bus/usb/devices/100-123/serial
+          /tmp/block/sda/device/vendor
+          /tmp/block/sda/device/model
+          /tmp/bus/usb/devices/101-124/serial
+          /tmp/block/sdb/device/vendor
+          /tmp/block/sdb/device/model
+          &&
+          cd /dev/disk/by-id/
+          &&
+          sudo ln -s ../../sda /dev/disk/by-id/usb-Generic_Flash_Disk_B32FD507-0
+          &&
+          sudo ln -s ../../sdb /dev/disk/by-id/usb-JetFlash_Transcend_16GB_UEUIRCXT-0
+          &&
+          ls -l /dev/disk/by-id/usb-Generic_Flash_Disk_B32FD507-0
+          &&
+          ls -l /dev/disk/by-id/usb-JetFlash_Transcend_16GB_UEUIRCXT-0
+
+      - name: Run unit tests with valgrind
+        if: ${{ !env.ACT }}
+        run: >
+          PATH=$GITHUB_WORKSPACE/install/usr/bin:${PATH}
+          LD_LIBRARY_PATH=$GITHUB_WORKSPACE/install/usr/lib:$GITHUB_WORKSPACE/install/usr/lib/wpeframework/plugins:${LD_LIBRARY_PATH}
+          GTEST_OUTPUT="json:$(pwd)/rdkL1TestResults.json"
+          valgrind
+          --tool=memcheck
+          --log-file=valgrind_log
+          --leak-check=yes
+          --show-reachable=yes
+          --track-fds=yes
+          --fair-sched=try
+          RdkServicesL1Test &&
+          cp -rf $(pwd)/rdkL1TestResults.json $GITHUB_WORKSPACE/rdkL1TestResultsWithValgrind.json &&
+          rm -rf $(pwd)/rdkL1TestResults.json
+
+      - name: Generate coverage
+        if: ${{ matrix.coverage == 'with-coverage' && !env.ACT }}
+        run: >
+          cp $GITHUB_WORKSPACE/entservices-testframework/Tests/L1Tests/.lcovrc_l1 ~/.lcovrc
+          &&
+          lcov -c
+          -o coverage.info
+          -d build/entservices-softwareupdate
+          &&
+          lcov
+          -r coverage.info
+          '/usr/include/*'
+          '*/build/entservices-softwareupdate/_deps/*'
+          '*/install/usr/include/*'
+          '*/Tests/headers/*'
+          '*/Tests/mocks/*'
+          '*/Tests/L1Tests/tests/*'
+          '*/Thunder/*'
+          -o filtered_coverage.info
+          &&
+          genhtml
+          -o coverage
+          -t "entservices-softwareupdate coverage"
+          filtered_coverage.info
+          &&
+          lcov --extract filtered_coverage.info "*/MaintenanceManager/MaintenanceManager.cpp" -o maintenancemanager_coverage.info
+          &&
+          genhtml -o coverage -t "MaintenanceManager coverage" maintenancemanager_coverage.info
+
+      - name: Upload artifacts
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts
+          path: |
+            coverage/
+            valgrind_log
+            rdkL1TestResultsWithoutValgrind.json
+            rdkL1TestResultsWithValgrind.json
+          if-no-files-found: warn
