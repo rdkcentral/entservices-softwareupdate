@@ -1253,6 +1253,9 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue)
 TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
     plugin_->m_service = &service_;
     Plugin::MaintenanceManager::_instance = &(*plugin_);
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+         .Times(::testing::AtLeast(1))
+         .WillRepeatedly(Return(&service_));
     plugin_->maintenanceManagerOnBootup();
 }
 
