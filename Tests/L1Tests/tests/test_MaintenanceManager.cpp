@@ -1166,7 +1166,7 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ValidData_ReturnsT
 TEST(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
    // auto mockManager = new ::testing::NiceMock<MockMaintenanceManager>();
    // Plugin::MaintenanceManager::_instance = mockManager;
-    plugin_->m_service = &service_;
+  //  plugin_->m_service = &service_;
     const char* owner = "TestOwner";
     IARM_EventId_t eventId = 123;
     char dummyData[4] = {0};
