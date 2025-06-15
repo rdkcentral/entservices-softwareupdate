@@ -1264,6 +1264,13 @@ TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) 
     plugin_->maintenanceManagerOnBootup();
 }
 
+TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
+    plugin_->m_service = &service_;    
+// Arrange: simulate IARM init success
+    plugin_->InitializeIARM();
+    
+}
+
 
 /*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_EmptyPartnerId_ReturnsFalse) {
