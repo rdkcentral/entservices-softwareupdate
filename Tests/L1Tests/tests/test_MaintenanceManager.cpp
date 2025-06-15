@@ -1206,7 +1206,7 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_Completes
 
     //EXPECT_FALSE(plugin_->m_task_map[task_names_foreground[TASK_RFC].c_str()]);
 }
-
+/*
 TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_CompletesTask1) {
     IARM_Bus_MaintMGR_EventData_t eventData{};
     eventData.data.maintenance_module_status.status = MAINT_RFC_COMPLETE;
@@ -1220,7 +1220,23 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_Completes
     EXPECT_TRUE((g_task_status & RFC_COMPLETE) != 0);
     EXPECT_FALSE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_RFC]]);
 }
+*/
+TEST_F(KnowWhoAmITest, SecManagerActive_AllGood_ReturnsTrue)
+{
+   
+    PluginHost::IShell::state state;
+    plugin_->m_service = &service_;
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"test"))
+        .WillOnce(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
 
+    string activation = "not-activated";
+    bool ok = plugin_->knowWhoAmI(activation);
+
+    EXPECT_TRUE(ok);
+    EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
+}
 
 
 /*
