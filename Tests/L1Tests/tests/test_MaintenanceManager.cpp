@@ -822,7 +822,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Fail)
 {
     WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = false;
     bool result = plugin_->maintenance_initTimer();
-    EXPECT_TRUE(result); 
+    EXPECT_FALSE(result); 
 }
 
 TEST_F(MaintenanceManagerTest, TaskStartTimer_Success)
