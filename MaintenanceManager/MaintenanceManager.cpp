@@ -2456,7 +2456,7 @@ namespace WPEFramework
             int i = 0;
             bool task_status[3] = {false};
             bool result = false;
-            
+
             /* run only when the maintenance status is MAINTENANCE_STARTED */
             m_statusMutex.lock();
             if (MAINTENANCE_STARTED == m_notify_status)
