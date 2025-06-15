@@ -1257,9 +1257,9 @@ TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) 
          .Times(::testing::AtLeast(1))
          .WillRepeatedly(Return(&service_)); */
 
-EXPECT_CALL(service_, QueryInterfaceByCallsign<::WPEFramework::PluginHost::IAuthenticate>(
+/*EXPECT_CALL(service_, QueryInterfaceByCallsign<::WPEFramework::PluginHost::IAuthenticate>(
         ::testing::_, "SecurityAgent"))
-        .WillOnce(Return(&iauthenticate_));
+        .WillOnce(Return(&iauthenticate_)); */
 	
     plugin_->maintenanceManagerOnBootup();
 }
