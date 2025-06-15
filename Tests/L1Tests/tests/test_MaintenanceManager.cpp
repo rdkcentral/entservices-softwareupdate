@@ -1183,6 +1183,16 @@ TEST_F(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
     //delete mockManager;
 }
 
+TEST_F(MaintenanceManagerTest, IarmEventHandler_AbortFlagTrue_IgnoresEvent) {
+    plugin_->m_abort_flag = true;
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME, IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, &eventData, sizeof(eventData));
+
+    // Expect no crash or log assertions, success means silence.
+}
+
+
 
 /*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_EmptyPartnerId_ReturnsFalse) {
