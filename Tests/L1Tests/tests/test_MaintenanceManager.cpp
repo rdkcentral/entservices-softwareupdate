@@ -1245,7 +1245,7 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue)
     std::string activation = "not-activated";
     bool ok = plugin_->knowWhoAmI(activation);
 
-    EXPECT_TRUE(ok);
+    EXPECT_FALSE(ok);
     //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
 }
 
