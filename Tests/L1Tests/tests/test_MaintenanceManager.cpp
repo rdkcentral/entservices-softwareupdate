@@ -1226,12 +1226,12 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue)
    
     //PluginHost::IShell::state state;
     plugin_->m_service = &service_;
-/*
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"test"))
+
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.SecManager"))
         .WillOnce(::testing::Return(&service_));
     EXPECT_CALL(service_, State())
         .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
-*/
+
     //string activation = "not-activated";
     std::string activation = "not-activated";
     bool ok = plugin_->knowWhoAmI(activation);
