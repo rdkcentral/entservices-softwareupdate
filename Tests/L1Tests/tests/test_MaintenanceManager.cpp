@@ -1163,6 +1163,23 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ValidData_ReturnsT
     EXPECT_TRUE(result);
 }
 
+TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_MissingPartnerId_ReturnsFalse) {
+    plugin_->m_service = &service_;
+
+    JsonObject contextData;
+    // contextData["partnerId"] is missing
+    contextData["regionalConfigService"] = "region.sky.com";
+
+    JsonObject fullResponse;
+    fullResponse["deviceInitializationContext"] = contextData;
+
+
+    bool result = plugin_->setDeviceInitializationContext(fullResponse);
+
+    EXPECT_FALSE(result);
+}
+
+
 
 TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     plugin_->m_service = &service_;    
