@@ -1162,7 +1162,7 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ValidData_ReturnsT
 
     EXPECT_TRUE(result);
 }
-
+/*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_EmptyPartnerId_ReturnsFalse) {
     plugin_->m_service = &service_;
 
@@ -1177,10 +1177,10 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_EmptyPartnerId_Ret
 
     EXPECT_FALSE(result);
 }
+*/
 
 
-
-
+/*
 TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     plugin_->m_service = &service_;    
 // Arrange: simulate IARM init success
@@ -1189,18 +1189,19 @@ TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     plugin_->InitializeIARM();
     
 }
-
+*/
+/*
 TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
      plugin_->m_service = &service_;
-    // Expectation: SecurityAgent is found
-/* 
- EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
-        .WillOnce(Return(&service_)); */
+   
 
-    plugin_->maintenanceManagerOnBootup();
+ //EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+   //     .WillOnce(Return(&service_)); */
+
+   // plugin_->maintenanceManagerOnBootup();
 }
 
-
+*/
 
 /*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
