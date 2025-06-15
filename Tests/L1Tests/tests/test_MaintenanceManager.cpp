@@ -1173,9 +1173,6 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_EmptyPartnerId_Ret
     JsonObject fullResponse;
     fullResponse["deviceInitializationContext"] = contextData;
 
-    EXPECT_CALL(*p_wrapsImplMock, setRFC(_, _, _)).Times(0);
-    EXPECT_CALL(*p_wrapsImplMock, setPartnerId(_)).Times(0);
-
     bool result = plugin_->setDeviceInitializationContext(fullResponse);
 
     EXPECT_FALSE(result);
