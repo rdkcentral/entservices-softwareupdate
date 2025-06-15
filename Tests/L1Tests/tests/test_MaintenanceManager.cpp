@@ -1207,7 +1207,7 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_Completes
     //EXPECT_FALSE(plugin_->m_task_map[task_names_foreground[TASK_RFC].c_str()]);
 }
 
-TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_CompletesTask) {
+TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_CompletesTask1) {
     IARM_Bus_MaintMGR_EventData_t eventData{};
     eventData.data.maintenance_module_status.status = MAINT_RFC_COMPLETE;
 
