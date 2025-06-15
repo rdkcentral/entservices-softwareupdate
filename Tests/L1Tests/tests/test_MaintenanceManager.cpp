@@ -1206,13 +1206,13 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_Completes
 
     //EXPECT_FALSE(plugin_->m_task_map[task_names_foreground[TASK_RFC].c_str()]);
 }
-extern uint16_t g_task_status;
+
 TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_CompletesTask1) {
     IARM_Bus_MaintMGR_EventData_t eventData{};
     eventData.data.maintenance_module_status.status = MAINT_RFC_COMPLETE;
 
     plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_RFC]] = true;
-    g_task_status = 0;
+    uint16_t g_task_status; = 0;
 
     plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME, IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, &eventData, sizeof(eventData));
 
