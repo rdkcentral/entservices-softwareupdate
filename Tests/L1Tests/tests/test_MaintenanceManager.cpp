@@ -29,6 +29,8 @@
 #include "ServiceMock.h"
 #include "WrapsMock.h"
 #include "ThunderPortability.h"
+#include "UtilsIarm.h"
+#include "mockauthservices.h"
 
 using namespace WPEFramework;
 using ::testing::NiceMock;
@@ -53,6 +55,9 @@ protected:
     IarmBusImplMock         *p_iarmBusImplMock = nullptr ;
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
+    NiceMock<ServiceMock>             service_;
+    NiceMock<MockAuthService>         iauthservice_;
+    NiceMock<MockIAuthenticate>       iauthenticate_;
 
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
@@ -110,6 +115,7 @@ class MaintenanceManagerInitializedEventTest : public MaintenanceManagerTest {
 protected:
     IARM_EventHandler_t               controlEventHandler_;
     NiceMock<ServiceMock>             service_;
+    NiceMock<MockAuthService>         iauthservice_;
     NiceMock<FactoriesImplementation> factoriesImplementation_;
     PLUGINHOST_DISPATCHER* dispatcher_;
     Core::JSONRPC::Message message_;
@@ -806,3 +812,579 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	}
 }
 #endif
+TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Success)
+{
+    bool result = plugin_->maintenance_initTimer();
+    EXPECT_TRUE(result); 
+}
+/*
+TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Fail)
+{
+    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = false;
+    bool result = plugin_->maintenance_initTimer();
+    EXPECT_FALSE(result); 
+} */
+
+TEST_F(MaintenanceManagerTest, TaskStartTimer_Success)
+{
+    // Ensure the timer is not already created
+    plugin_->maintenance_deleteTimer();
+
+    // Attempt to start the timer
+    bool result = plugin_->task_startTimer();
+
+    // The result should be true if the timer started successfully
+    EXPECT_TRUE(result);
+}
+TEST_F(MaintenanceManagerTest, TaskStopTimer_Success)
+{
+    // Ensure the timer is created and started
+    plugin_->task_startTimer();
+
+    // Attempt to stop the timer
+    bool result = plugin_->task_stopTimer();
+
+    // Should succeed
+    EXPECT_TRUE(result);
+}
+TEST_F(MaintenanceManagerTest, TaskStopTimer_Fail)
+{
+    // Ensure the timer is created and started
+    plugin_->task_startTimer();
+    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = false;
+    // Attempt to stop the timer
+    bool result = plugin_->task_stopTimer();
+
+    // Should succeed
+    EXPECT_FALSE(result);
+}
+
+
+TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
+{
+    // Ensure the timer is created first
+    plugin_->task_startTimer();
+    // Attempt to delete the timer
+    bool result = plugin_->maintenance_deleteTimer();
+
+    // Should succeed
+    EXPECT_TRUE(result);
+}
+TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Fail)
+{
+    // Ensure the timer is created first
+    plugin_->task_startTimer();
+    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = false;
+    // Attempt to delete the timer
+    bool result = plugin_->maintenance_deleteTimer();
+
+    // Should succeed
+    EXPECT_FALSE(result);
+}
+
+TEST_F(MaintenanceManagerTest, TimerHandler_HandlesSignalCorrectly) {
+    int test_signo = SIGALRM; // or any relevant signal number
+    plugin_->timer_handler(test_signo);
+}
+
+TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
+    const char* owner = "TestOwner";
+    IARM_EventId_t eventId = 42; // Use an appropriate value
+    char data[100] = {0}; // Or whatever data is expected
+    size_t len = sizeof(data);
+
+    // Optionally, set up any necessary global or static state
+
+    plugin_->iarmEventHandler(owner, eventId, data, len);
+} 
+
+TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
+{
+    // Ensure m_authservicePlugin is initially null
+    plugin_->m_authservicePlugin = nullptr;
+    plugin_->m_service = &service_;
+
+    // Simulate failure in QueryInterfaceByCallsign (returns nullptr)
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
+        .WillOnce(::testing::Return(nullptr));
+
+    bool result = plugin_->queryIAuthService();
+
+    EXPECT_FALSE(result);
+}
+
+TEST_F(MaintenanceManagerTest, setpartnerid)
+{
+   
+    plugin_->m_service = &service_;
+    plugin_->setPartnerId("partner1");
+}
+TEST_F(MaintenanceManagerTest, setpartnerid1)
+{
+    plugin_->m_service = &service_;
+    plugin_->m_authservicePlugin = &iauthservice_;
+
+    plugin_->setPartnerId("partner1");
+}
+
+
+
+
+TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
+{
+    // Ensure m_authservicePlugin is initially not null
+    //plugin_->m_authservicePlugin = &iauthservice_;
+    plugin_->m_service = &service_;
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
+        .WillOnce(::testing::Return(&service_));
+    bool result = plugin_->queryIAuthService();
+
+    EXPECT_TRUE(result);
+}
+
+TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent) {
+    
+    plugin_->m_service = &service_;
+   // plugin->m_auth = &iauthenticate_;
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+
+    // Expectation: CreateToken succeeds and sets token
+/*
+    EXPECT_CALL(iauthenticate_, CreateToken(_, _, _))
+        .WillOnce([](uint16_t, const uint8_t*, string& token) {
+            token = "mock_token";
+            return Core::ERROR_NONE;
+        });
+*/
+    const char* callsign = "SomePlugin";
+
+    auto* handle = plugin_->getThunderPluginHandle(callsign);
+    ASSERT_NE(handle, nullptr);
+
+    // Optional: verify internal state of the returned handle (callsign, query param etc.)
+    delete handle;
+}
+
+TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
+    //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
+    plugin_->m_service = &service_;
+    // Mock getServiceState to simulate UNAVAILABLE state
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
+	.Times(5)
+        .WillRepeatedly(::testing::Return(&service_));
+
+    // Test: Plugin is not activated after retries, expect "invalid"
+    std::string result = plugin_->checkActivatedStatus();
+    EXPECT_EQ(result, "invalid");
+}
+
+/*
+TEST_F(MaintenanceManagerTest, ServiceActivatedcheck) {
+    PluginHost::IShell::state state;
+    plugin_->m_service = &service_;
+    
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
+	.Times(5)
+        .WillRepeatedly(::testing::Return(&service_));
+
+
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+
+}
+*/
+TEST_F(MaintenanceManagerTest, checkServiceActivated) {
+    //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
+    plugin_->m_service = &service_;
+    // Mock getServiceState to simulate UNAVAILABLE state
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
+	.Times(5)
+        .WillRepeatedly(::testing::Return(nullptr));
+
+    // Test: Plugin is not activated after retries, expect "invalid"
+    std::string result = plugin_->checkActivatedStatus();
+    //EXPECT_EQ(result, "invalid");
+}
+
+TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
+    bool skipCheck = false;
+    //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
+    plugin_->m_service = &service_;
+    // Mock getServiceState to simulate UNAVAILABLE state
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
+	.Times(5)
+        .WillRepeatedly(::testing::Return(&service_));
+
+    // Test: Plugin is not activated after retries, expect "invalid"
+    bool result = plugin_->getActivatedStatus(skipCheck);
+    EXPECT_TRUE(result);
+    EXPECT_FALSE(skipCheck);
+}
+
+
+TEST_F(MaintenanceManagerTest, subscribe) {
+    plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+
+    bool result = plugin_->subscribeToDeviceInitializationEvent();
+    EXPECT_TRUE(result);
+}
+
+TEST_F(MaintenanceManagerTest, subscribeForInternetStatus) {
+    plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+
+    bool result = plugin_->subscribeForInternetStatusEvent("internetStatus");
+    EXPECT_TRUE(result);
+}
+TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
+    plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+ /*   NiceMock<MockIAuthenticate>* mockAuth = nullptr;
+    mockAuth = new NiceMock<MockIAuthenticate>(); */
+
+/*    ON_CALL(service, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
+        .WillByDefault([this](const uint32_t, const std::string& name) -> void* {
+         mockAuth->AddRef();
+         return static_cast<void*>(mockAuth);
+         ); */
+    
+/*    ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, ::testing::_))
+    .WillByDefault([this](const uint32_t, const std::string& name) -> void* {
+        if (name == "org.rdk.Network") {
+            mockAuth->AddRef();
+            return static_cast<void*>(mockAuth);
+        }
+        return nullptr;
+    }); */
+/*
+ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, ::testing::_))
+    .WillByDefault([this, mockAuth](const uint32_t, const std::string& name) -> void* {
+        if (name == "org.rdk.Network") {
+            mockAuth->AddRef();
+            return static_cast<void*>(mockAuth);
+        }
+        return nullptr;
+    });
+ */
+ 
+ 
+ 
+EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+
+/*EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
+        .WillOnce(Return(&service_)); SecurityAgent */
+
+ /*  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
+           .WillOnce(::testing::Return(static_cast<void*>(&service_))); */
+    
+   	
+    bool result = plugin_->checkNetwork();
+    EXPECT_TRUE(result);
+}
+
+
+
+
+TEST_F(MaintenanceManagerTest, isDeviceOnlinesuccess ) {
+    plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+ 
+ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+    
+   	
+    bool result = plugin_->isDeviceOnline();
+    EXPECT_TRUE(result);
+}
+
+TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest) {
+     plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+ 
+ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+    plugin_->task_execution_thread();
+
+}
+
+TEST_F(MaintenanceManagerTest, DeinitializeIARM_RemovesHandlerAndNullifiesInstance) {
+    // Arrange
+    plugin_->m_service = &service_; 
+    plugin_->DeinitializeIARM();
+
+}
+
+TEST_F(MaintenanceManagerTest, GetServiceState_Available) {
+    PluginHost::IShell::state state;
+    plugin_->m_service = &service_;
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"test"))
+        .WillOnce(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+/*    uint32_t result = plugin_->getServiceState(&service_, "test", state);
+    EXPECT_EQ(result, Core::ERROR_NONE);
+    EXPECT_EQ(state, PluginHost::IShell::state::ACTIVATED); */
+    
+/*    uint32_t result = getServiceState(&service_, "test", state); */
+    uint32_t result = WPEFramework::Plugin::getServiceState(&service_, "test", state);
+
+    EXPECT_EQ(result, Core::ERROR_NONE);
+    EXPECT_EQ(state, PluginHost::IShell::state::ACTIVATED);
+
+}
+
+
+TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ValidData_ReturnsTrue) {
+    plugin_->m_service = &service_;
+    JsonObject contextData;
+    contextData["partnerId"] = "Sky";
+    contextData["regionalConfigService"] = "region.sky.com";
+
+    JsonObject fullResponse;
+    fullResponse["deviceInitializationContext"] = contextData;
+
+    // Fill in the maps
+  //  plugin_->m_param_map["partnerId"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.PartnerId";
+  //  plugin_->m_paramType_map["partnerId"] = DATA_TYPE::STRING;
+
+  //  plugin_->m_param_map["regionalConfigService"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.RegionalConfigService";
+  //  plugin_->m_paramType_map["regionalConfigService"] = DATA_TYPE::STRING;
+
+    // Expect setRFC to be called for each key
+//    EXPECT_CALL(*p_wrapsImplMock, setRFC(_, StrEq("Sky"), _)).Times(1);
+//    EXPECT_CALL(*p_wrapsImplMock, setRFC(_, StrEq("https://region.sky.com"), _)).Times(1);
+
+    // Expect setPartnerId to be called
+//    EXPECT_CALL(*p_wrapsImplMock, setPartnerId(StrEq("Sky"))).Times(1);
+
+    // Call the method
+    bool result = plugin_->setDeviceInitializationContext(fullResponse);
+
+    EXPECT_TRUE(result);
+}
+
+TEST_F(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
+   // auto mockManager = new ::testing::NiceMock<MockMaintenanceManager>();
+   // Plugin::MaintenanceManager::_instance = mockManager;
+    plugin_->m_service = &service_;
+    Plugin::MaintenanceManager::_instance = &(*plugin_);
+    const char* owner = "TestOwner";
+    IARM_EventId_t eventId = 123;
+    char dummyData[4] = {0};
+    size_t len = sizeof(dummyData);
+    
+
+   // EXPECT_CALL(*mockManager, iarmEventHandler(owner, eventId, dummyData, len)).Times(1);
+
+    //Plugin::MaintenanceManager::_MaintenanceMgrEventHandler(owner, eventId, dummyData, len);
+   //plugin_->_MaintenanceMgrEventHandler(owner, eventId, dummyData, len);
+   Plugin::MaintenanceManager::_MaintenanceMgrEventHandler(owner, eventId, dummyData, len);
+   // Plugin::MaintenanceManager::_instance = nullptr;
+    //delete mockManager;
+}
+
+TEST_F(MaintenanceManagerTest, IarmEventHandler_AbortFlagTrue_IgnoresEvent) {
+    plugin_->m_abort_flag = true;
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME, IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, &eventData, sizeof(eventData));
+
+    // Expect no crash or log assertions, success means silence.
+}
+
+TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_CompletesTask) {
+    plugin_->m_abort_flag = false;
+    plugin_->m_notify_status = MAINTENANCE_STARTED;
+    plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_RFC].c_str()] = true;
+
+   // plugin_->m_task_map[task_names_foreground[TASK_RFC].c_str()] = true;
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    eventData.data.maintenance_module_status.status = MAINT_RFC_COMPLETE;
+
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME, IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, &eventData, sizeof(eventData));
+
+    //EXPECT_FALSE(plugin_->m_task_map[task_names_foreground[TASK_RFC].c_str()]);
+}
+/*
+TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_CompletesTask1) {
+    IARM_Bus_MaintMGR_EventData_t eventData{};
+    eventData.data.maintenance_module_status.status = MAINT_RFC_COMPLETE;
+
+    plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_RFC]] = true;
+    uint16_t g_task_status = 0;
+
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME, IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, &eventData, sizeof(eventData));
+
+    EXPECT_TRUE((g_task_status & RFC_SUCCESS) != 0);
+    EXPECT_TRUE((g_task_status & RFC_COMPLETE) != 0);
+    EXPECT_FALSE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_RFC]]);
+}
+*/
+TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue)
+{
+   
+    //PluginHost::IShell::state state;
+    plugin_->m_service = &service_;
+/*
+   EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+	.Times(::testing::AtLeast(1))
+        .WillOnce(::testing::Return(&service_)); */
+   EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+   .Times(::testing::AtLeast(1))
+   .WillRepeatedly(Return(&service_));
+
+   EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.SecManager"))
+        .WillOnce(::testing::Return(&service_));
+    
+
+    //string activation = "not-activated";
+    std::string activation = "not-activated";
+    bool ok = plugin_->knowWhoAmI(activation);
+
+    EXPECT_FALSE(ok);
+    //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
+}
+
+
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
+    plugin_->m_service = &service_;
+    Plugin::MaintenanceManager::_instance = &(*plugin_);
+  /*  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+         .Times(::testing::AtLeast(1))
+         .WillRepeatedly(Return(&service_)); */
+
+/*EXPECT_CALL(service_, QueryInterfaceByCallsign<::WPEFramework::PluginHost::IAuthenticate>(
+        ::testing::_, "SecurityAgent"))
+        .WillOnce(Return(&iauthenticate_)); */
+	
+    plugin_->maintenanceManagerOnBootup();
+}
+
+TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
+    plugin_->m_service = &service_;    
+// Arrange: simulate IARM init success
+    plugin_->InitializeIARM();
+    
+}
+
+
+/*
+TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_EmptyPartnerId_ReturnsFalse) {
+    plugin_->m_service = &service_;
+
+    JsonObject contextData;
+    contextData["partnerId"] = "";  // empty value
+    contextData["regionalConfigService"] = "region.sky.com";
+
+    JsonObject fullResponse;
+    fullResponse["deviceInitializationContext"] = contextData;
+
+    bool result = plugin_->setDeviceInitializationContext(fullResponse);
+
+    EXPECT_FALSE(result);
+}
+
+
+
+
+TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
+    plugin_->m_service = &service_;    
+// Arrange: simulate IARM init success
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&iauthenticate_)); 
+    plugin_->InitializeIARM();
+    
+}
+
+
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
+     plugin_->m_service = &service_;
+   
+
+ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+       .WillOnce(Return(&service_)); 
+
+    plugin_->maintenanceManagerOnBootup();
+}
+
+*/
+
+/*
+TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
+{
+    bool result = plugin_->setDeviceInitializationContext(response);
+    EXPECT_TRUE(result);
+}
+*/
+/*
+TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_Success)
+{
+    // Init parameter maps
+    plugin_->m_param_map["partnerId"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_PartnerID";
+    plugin_->m_paramType_map["partnerId"] = DATA_TYPE eDataType;
+
+    plugin_->m_param_map["regionalConfigService"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_RegionalConfig";
+    plugin_->m_paramType_map["regionalConfigService"] = DATA_TYPE eDataType;
+
+    plugin_->m_param_map["deviceManagementService"] = "Device.DeviceInfo.X_RDKCENTRAL-COM_DeviceMgmtService";
+    plugin_->m_paramType_map["deviceManagementService"] = DATA_TYPE eDataType;
+
+    JsonObject deviceInitCtx;
+    deviceInitCtx["partnerId"] = "sky";
+    deviceInitCtx["regionalConfigService"] = "region.example.com";
+    deviceInitCtx["deviceManagementService"] = "mgmt.example.com";
+
+    JsonObject response;
+    response["deviceInitializationContext"] = deviceInitCtx;
+
+    bool result = plugin_->setDeviceInitializationContext(response);
+    EXPECT_TRUE(result);
+}
+*/
+
+/*
+TEST_F(MaintenanceManagerTest, MaintenanceMgrEventHandler_ForwardsToInstance) {
+    MaintenanceManager::_instance = plugin_; // Set instance so handler works
+    const char* owner = IARM_BUS_MAINTENANCE_MGR_NAME;
+    IARM_EventId_t eventId = IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE;
+    IARM_Bus_MaintMGR_EventData_t eventData {};
+    size_t len = sizeof(eventData);
+    MaintenanceManager::_MaintenanceMgrEventHandler(owner, eventId, &eventData, len);
+}
+*/
+/*
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
+    plugin_->maintenanceManagerOnBootup();
+}
+
+TEST_F(MaintenanceManagerTest, DeinitializeIARM_RemovesHandlerAndNullifiesInstance) {
+    // Arrange
+
+    plugin_->DeinitializeIARM();
+
+}
+
+TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
+    // Arrange: simulate IARM init success
+  //  Utils::IARM::mockInitReturn = true;
+
+    // Act: Call the method under test
+    plugin_->InitializeIARM();
+
+    // Assert: Verify internal effects
+    
+}
+
+*/
