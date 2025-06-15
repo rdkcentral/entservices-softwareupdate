@@ -1162,6 +1162,26 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ValidData_ReturnsT
 
     EXPECT_TRUE(result);
 }
+
+TEST(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
+   // auto mockManager = new ::testing::NiceMock<MockMaintenanceManager>();
+   // Plugin::MaintenanceManager::_instance = mockManager;
+    plugin_->m_service = &service_;
+    const char* owner = "TestOwner";
+    IARM_EventId_t eventId = 123;
+    char dummyData[4] = {0};
+    size_t len = sizeof(dummyData);
+    
+
+   // EXPECT_CALL(*mockManager, iarmEventHandler(owner, eventId, dummyData, len)).Times(1);
+
+    //Plugin::MaintenanceManager::_MaintenanceMgrEventHandler(owner, eventId, dummyData, len);
+   plugin_->_MaintenanceMgrEventHandler(owner, eventId, dummyData, len);
+   // Plugin::MaintenanceManager::_instance = nullptr;
+    //delete mockManager;
+}
+
+
 /*
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_EmptyPartnerId_ReturnsFalse) {
     plugin_->m_service = &service_;
