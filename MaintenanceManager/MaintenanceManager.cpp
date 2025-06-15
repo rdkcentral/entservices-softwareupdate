@@ -1571,8 +1571,9 @@ namespace WPEFramework
             m_statusMutex.lock();
             MaintenanceManager::_instance->onMaintenanceStatusChange(m_notify_status);
             m_statusMutex.unlock();
-
+#if !defined(GTEST_ENABLE)
             m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+#endif
         }
 
         void MaintenanceManager::_MaintenanceMgrEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
