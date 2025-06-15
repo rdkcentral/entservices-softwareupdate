@@ -1231,7 +1231,8 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue)
     EXPECT_CALL(service_, State())
         .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
 
-    string activation = "not-activated";
+    //string activation = "not-activated";
+    std::string activation = "not-activated";
     bool ok = plugin_->knowWhoAmI(activation);
 
     EXPECT_TRUE(ok);
