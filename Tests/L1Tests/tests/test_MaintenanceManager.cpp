@@ -1192,6 +1192,18 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_AbortFlagTrue_IgnoresEvent) {
     // Expect no crash or log assertions, success means silence.
 }
 
+TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_CompletesTask) {
+    plugin_->m_abort_flag = false;
+    plugin_->m_notify_status = MAINTENANCE_STARTED;
+    plugin_->m_task_map[task_names_foreground[TASK_RFC].c_str()] = true;
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    eventData.data.maintenance_module_status.status = MAINT_RFC_COMPLETE;
+
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME, IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, &eventData, sizeof(eventData));
+
+    EXPECT_FALSE(plugin_->m_task_map[task_names_foreground[TASK_RFC].c_str()]);
+}
 
 
 /*
