@@ -1163,21 +1163,24 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ValidData_ReturnsT
     EXPECT_TRUE(result);
 }
 
-TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_MissingPartnerId_ReturnsFalse) {
+TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_EmptyPartnerId_ReturnsFalse) {
     plugin_->m_service = &service_;
 
     JsonObject contextData;
-    // contextData["partnerId"] is missing
+    contextData["partnerId"] = "";  // empty value
     contextData["regionalConfigService"] = "region.sky.com";
 
     JsonObject fullResponse;
     fullResponse["deviceInitializationContext"] = contextData;
 
+    EXPECT_CALL(*p_wrapsImplMock, setRFC(_, _, _)).Times(0);
+    EXPECT_CALL(*p_wrapsImplMock, setPartnerId(_)).Times(0);
 
     bool result = plugin_->setDeviceInitializationContext(fullResponse);
 
     EXPECT_FALSE(result);
 }
+
 
 
 
