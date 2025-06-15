@@ -1167,6 +1167,7 @@ TEST(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
    // auto mockManager = new ::testing::NiceMock<MockMaintenanceManager>();
    // Plugin::MaintenanceManager::_instance = mockManager;
   //  plugin_->m_service = &service_;
+    Plugin::MaintenanceManager::_instance = plugin_.get();
     const char* owner = "TestOwner";
     IARM_EventId_t eventId = 123;
     char dummyData[4] = {0};
@@ -1176,7 +1177,8 @@ TEST(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
    // EXPECT_CALL(*mockManager, iarmEventHandler(owner, eventId, dummyData, len)).Times(1);
 
     //Plugin::MaintenanceManager::_MaintenanceMgrEventHandler(owner, eventId, dummyData, len);
-   plugin_->_MaintenanceMgrEventHandler(owner, eventId, dummyData, len);
+   //plugin_->_MaintenanceMgrEventHandler(owner, eventId, dummyData, len);
+   Plugin::MaintenanceManager::_MaintenanceMgrEventHandler(owner, eventId, dummyData, len);
    // Plugin::MaintenanceManager::_instance = nullptr;
     //delete mockManager;
 }
