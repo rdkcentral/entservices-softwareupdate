@@ -1167,7 +1167,7 @@ TEST_F(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
    // auto mockManager = new ::testing::NiceMock<MockMaintenanceManager>();
    // Plugin::MaintenanceManager::_instance = mockManager;
     plugin_->m_service = &service_;
-    Plugin::MaintenanceManager::_instance = &(*plugin_);;
+    Plugin::MaintenanceManager::_instance = &(*plugin_);
     const char* owner = "TestOwner";
     IARM_EventId_t eventId = 123;
     char dummyData[4] = {0};
@@ -1247,6 +1247,13 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue)
 
     EXPECT_FALSE(ok);
     //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
+}
+
+
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
+    plugin_->m_service = &service_;
+    Plugin::MaintenanceManager::_instance = &(*plugin_);
+    plugin_->maintenanceManagerOnBootup();
 }
 
 
