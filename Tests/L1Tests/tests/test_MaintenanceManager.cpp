@@ -1163,7 +1163,7 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ValidData_ReturnsT
     EXPECT_TRUE(result);
 }
 
-TEST(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
+TEST_F(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
    // auto mockManager = new ::testing::NiceMock<MockMaintenanceManager>();
    // Plugin::MaintenanceManager::_instance = mockManager;
   //  plugin_->m_service = &service_;
