@@ -923,7 +923,7 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull1)
   /*  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
         .WillOnce(::testing::Return()); */
 
-    bool result = plugin_->queryIAuthService(&service_);
+    bool result = plugin_->queryIAuthService();
 
     EXPECT_FALSE(result);
 }
