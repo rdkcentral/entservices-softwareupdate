@@ -175,7 +175,7 @@ namespace WPEFramework
         class MaintenanceManager : public PluginHost::IPlugin, public PluginHost::JSONRPC
         {
 #if defined(GTEST_ENABLE)
-friend class ::MaintenanceManagerTest;
+friend class WPEFramework::MaintenanceManagerTest;
 #endif
         private:
 
