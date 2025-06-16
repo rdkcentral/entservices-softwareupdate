@@ -984,7 +984,7 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentnotPrese
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is not found
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
-        .WillOnce(Return(nullptr));
+        .WillOnce(::testing::Return(nullptr));
     const char* callsign = "SomePlugin";
 
     auto* handle = plugin_->getThunderPluginHandle(callsign);
