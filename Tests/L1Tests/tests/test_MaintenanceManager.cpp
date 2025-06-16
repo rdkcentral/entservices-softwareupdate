@@ -979,6 +979,22 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent)
     delete handle;
 }
 
+TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentnotPresent) {
+
+    plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is not found
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(nullptr));
+    const char* callsign = "SomePlugin";
+
+    auto* handle = plugin_->getThunderPluginHandle(callsign);
+    ASSERT_NE(handle, nullptr);
+
+    // Optional: verify internal state of the returned handle (callsign, query param etc.)
+    delete handle;
+}
+
+
 TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
     //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
