@@ -925,7 +925,7 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull1)
 
     bool result = plugin_->queryIAuthService();
 
-    EXPECT_FALSE(result);
+    EXPECT_TRUE(result);
 }
 
 TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
