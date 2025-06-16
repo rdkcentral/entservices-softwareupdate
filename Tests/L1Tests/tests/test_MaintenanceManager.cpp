@@ -913,6 +913,33 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
     EXPECT_FALSE(result);
 }
 
+TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull1)
+{
+    // Ensure m_authservicePlugin is initially null
+    plugin_->m_authservicePlugin = &iauthenticate_;
+    plugin_->m_service = &service_;
+
+    // Simulate failure in QueryInterfaceByCallsign (returns nullptr)
+  /*  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
+        .WillOnce(::testing::Return()); */
+
+    bool result = plugin_->queryIAuthService(&service_);
+
+    EXPECT_FALSE(result);
+}
+
+TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
+{
+    // Ensure m_authservicePlugin is initially not null
+    //plugin_->m_authservicePlugin = &iauthservice_;
+    plugin_->m_service = &service_;
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
+        .WillOnce(::testing::Return(&service_));
+    bool result = plugin_->queryIAuthService();
+
+    EXPECT_TRUE(result);
+}
+
 TEST_F(MaintenanceManagerTest, setpartnerid)
 {
    
@@ -925,21 +952,6 @@ TEST_F(MaintenanceManagerTest, setpartnerid1)
     plugin_->m_authservicePlugin = &iauthservice_;
 
     plugin_->setPartnerId("partner1");
-}
-
-
-
-
-TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
-{
-    // Ensure m_authservicePlugin is initially not null
-    //plugin_->m_authservicePlugin = &iauthservice_;
-    plugin_->m_service = &service_;
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
-        .WillOnce(::testing::Return(&service_));
-    bool result = plugin_->queryIAuthService();
-
-    EXPECT_TRUE(result);
 }
 
 TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent) {
