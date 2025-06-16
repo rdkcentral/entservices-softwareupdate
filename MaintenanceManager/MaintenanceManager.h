@@ -175,10 +175,10 @@ namespace WPEFramework
         class MaintenanceManager : public PluginHost::IPlugin, public PluginHost::JSONRPC
         {
 #if defined(GTEST_ENABLE)
-friend class WPEFramework::MaintenanceManagerTest;
-#endif
+        public:
+#else
         private:
-
+#endif
             typedef Core::JSON::String JString;
             typedef Core::JSON::ArrayType<JString> JStringArray;
             typedef Core::JSON::Boolean JBool;
