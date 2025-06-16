@@ -916,7 +916,7 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
 TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull1)
 {
     // Ensure m_authservicePlugin is initially null
-    plugin_->m_authservicePlugin = &iauthenticate_;
+    plugin_->m_authservicePlugin = &service_;
     plugin_->m_service = &service_;
 
     // Simulate failure in QueryInterfaceByCallsign (returns nullptr)
