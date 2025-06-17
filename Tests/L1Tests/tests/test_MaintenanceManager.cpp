@@ -1068,8 +1068,8 @@ TEST_F(MaintenanceManagerTest, getServiceActivatedsuccess) {
     EXPECT_CALL(service_, State())
         .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
     bool result = plugin_->getActivatedStatus(skipCheck);
-    //EXPECT_TRUE(result);
-    //EXPECT_FALSE(skipCheck);
+    EXPECT_TRUE(result);
+    EXPECT_FALSE(skipCheck);
 }
 
 
