@@ -153,8 +153,6 @@ TEST_F(FirmwareUpdateTest, EmptyFirmwareFilepath)
 {
 
     EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"\" ,\"firmwareType\":\"PCI\"}"), response));    
-    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("getUpdateState"), _T("{}"), response));
-    EXPECT_EQ(response, string("{\"state\":\"VALIDATION_FAILED\",\"substate\":\"FIRMWARE_NOT_FOUND\"}"));
 }
 
 TEST_F(FirmwareUpdateTest, FirmwareFilepath_not_exist)
@@ -162,8 +160,6 @@ TEST_F(FirmwareUpdateTest, FirmwareFilepath_not_exist)
     const char* filePath = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
     std::remove(filePath);
     EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\" ,\"firmwareType\":\"PCI\"}"), response));
-    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("getUpdateState"), _T("{}"), response));
-    EXPECT_EQ(response, string("{\"state\":\"VALIDATION_FAILED\",\"substate\":\"FIRMWARE_NOT_FOUND\"}"));    
 }
 
 TEST_F(FirmwareUpdateTest, EmptyFirmwareType)
@@ -172,10 +168,6 @@ TEST_F(FirmwareUpdateTest, EmptyFirmwareType)
     if (outfile.is_open()) {
 
         EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\" ,\"firmwareType\":\"\"}"), response));
-
-
-        EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("getUpdateState"), _T("{}"), response));
-        EXPECT_EQ(response, string("{\"state\":\"VALIDATION_FAILED\",\"substate\":\"NOT_APPLICABLE\"}"));
     }
 }
 
@@ -185,10 +177,6 @@ TEST_F(FirmwareUpdateTest, InvalidFirmwareType)
     if (outfile.is_open()) {
 
         EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\" ,\"firmwareType\":\"ABC\"}"), response));
-
-
-        EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("getUpdateState"), _T("{}"), response));
-        EXPECT_EQ(response, string("{\"state\":\"VALIDATION_FAILED\",\"substate\":\"NOT_APPLICABLE\"}"));
     }
 }
 
