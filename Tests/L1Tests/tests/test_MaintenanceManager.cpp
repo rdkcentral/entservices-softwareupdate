@@ -1158,6 +1158,12 @@ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
 TEST_F(MaintenanceManagerTest, isDeviceOnlinesuccess ) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
+
+EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
+          .Times(::testing::AtLeast(1))
+          .WillRepeatedly(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
  
  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
         .WillOnce(Return(&service_));
@@ -1170,6 +1176,12 @@ TEST_F(MaintenanceManagerTest, isDeviceOnlinesuccess ) {
 TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest) {
      plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
+
+EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
+          .Times(::testing::AtLeast(1))
+          .WillRepeatedly(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
  
  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
         .WillOnce(Return(&service_));
