@@ -1057,7 +1057,7 @@ TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
     EXPECT_FALSE(skipCheck);
 }
 
-TEST_F(MaintenanceManagerTest, getServiceActivated) {
+TEST_F(MaintenanceManagerTest, getServiceActivatedsuccess) {
     bool skipCheck = false;
     //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
