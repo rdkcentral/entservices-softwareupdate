@@ -1033,7 +1033,7 @@ TEST_F(MaintenanceManagerTest, checkServiceActivated) {
         .WillRepeatedly(::testing::Return(nullptr)); */
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
           .Times(::testing::AtLeast(1))
-          .WillRepeatedly(::testing::Return(nullptr));
+          .WillRepeatedly(::testing::Return(&service_));
     EXPECT_CALL(service_, State())
         .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
 
