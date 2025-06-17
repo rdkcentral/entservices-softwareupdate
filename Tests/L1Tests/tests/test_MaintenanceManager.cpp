@@ -375,6 +375,7 @@ TEST_F(MaintenanceManagerTest, stopMaintenanceRPC_IDLE2ERROR)
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.getMaintenanceActivityStatus"), _T("{}"), response_));
     EXPECT_EQ(response_, "{\"maintenanceStatus\":\"MAINTENANCE_ERROR\",\"LastSuccessfulCompletionTime\":0,\"isCriticalMaintenance\":false,\"isRebootPending\":false,\"success\":true}");
 }
+#endif
 TEST_F(MaintenanceManagerTest, stopMaintenanceRPC_STARTED2ERROR)
 {
     Maint_notify_status_t status = MAINTENANCE_STARTED;
@@ -393,7 +394,7 @@ TEST_F(MaintenanceManagerTest, stopMaintenanceRPC_STARTED2ERROR)
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.getMaintenanceActivityStatus"), _T("{}"), response_));
     EXPECT_EQ(response_, "{\"maintenanceStatus\":\"MAINTENANCE_ERROR\",\"LastSuccessfulCompletionTime\":0,\"isCriticalMaintenance\":false,\"isRebootPending\":false,\"success\":true}");
 }
-#endif
+
 /* ---- startMaintenance() JsonRPC ---- */
 TEST_F(MaintenanceManagerTest, DISABLED_startMaintenanceRPC_unsolicNotCompleted)
 {
