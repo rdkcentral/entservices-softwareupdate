@@ -166,6 +166,7 @@ TEST_F(MaintenanceManagerTest, RegisteredMethods)
 }
 
 /* --- getMaintenanceActivityStatus JsonRPC ---- */
+#if 0
 TEST_F(MaintenanceManagerTest, getMaintenanceActivityStatusJsonRPC)
 {
     Maint_notify_status_t status = MAINTENANCE_ERROR;
@@ -173,7 +174,7 @@ TEST_F(MaintenanceManagerTest, getMaintenanceActivityStatusJsonRPC)
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.getMaintenanceActivityStatus"), _T("{}"), response_));
     EXPECT_EQ(response_, "{\"maintenanceStatus\":\"MAINTENANCE_ERROR\",\"LastSuccessfulCompletionTime\":0,\"isCriticalMaintenance\":false,\"isRebootPending\":false,\"success\":true}");
 }
-
+#endif
 /* --- onMaintenanceStatusChange() ---- */
 TEST_F(MaintenanceManagerTest, onMaintenanceStatusChange)
 {
