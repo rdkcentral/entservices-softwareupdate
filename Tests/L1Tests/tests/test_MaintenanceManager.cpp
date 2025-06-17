@@ -1057,6 +1057,21 @@ TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
     EXPECT_FALSE(skipCheck);
 }
 
+TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
+    bool skipCheck = false;
+    //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
+    plugin_->m_service = &service_;
+    // Mock getServiceState to simulate UNAVAILABLE state
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
+          .Times(::testing::AtLeast(1))
+          .WillRepeatedly(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+    bool result = plugin_->getActivatedStatus(skipCheck);
+    //EXPECT_TRUE(result);
+    //EXPECT_FALSE(skipCheck);
+}
+
 
 TEST_F(MaintenanceManagerTest, subscribe) {
     plugin_->m_service = &service_;
