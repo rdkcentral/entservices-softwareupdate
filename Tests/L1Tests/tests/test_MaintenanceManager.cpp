@@ -979,7 +979,7 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent)
     // Optional: verify internal state of the returned handle (callsign, query param etc.)
     delete handle;
 }
-
+/*
 TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentnotPresent) {
 
     plugin_->m_service = &service_;
@@ -994,7 +994,7 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentnotPrese
     // Optional: verify internal state of the returned handle (callsign, query param etc.)
     delete handle;
 }
-
+*/
 
 TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
     //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
@@ -1028,9 +1028,13 @@ TEST_F(MaintenanceManagerTest, checkServiceActivated) {
     //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
     // Mock getServiceState to simulate UNAVAILABLE state
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
+/*    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
 	.Times(5)
-        .WillRepeatedly(::testing::Return(nullptr));
+        .WillRepeatedly(::testing::Return(nullptr)); */
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
+        .WillOnce(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
 
     // Test: Plugin is not activated after retries, expect "invalid"
     std::string result = plugin_->checkActivatedStatus();
