@@ -1131,7 +1131,11 @@ ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, ::testing::_))
         return nullptr;
     });
  */
- 
+EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
+          .Times(::testing::AtLeast(1))
+          .WillRepeatedly(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
  
  
 EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
