@@ -1072,15 +1072,23 @@ TEST_F(MaintenanceManagerTest, getServiceActivatedsuccess) {
     EXPECT_TRUE(result);
     EXPECT_FALSE(skipCheck);
 }
+TEST_F(MaintenanceManagerTest, subscribe) {
+    plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
 
+    bool result = plugin_->subscribeToDeviceInitializationEvent();
+    EXPECT_TRUE(result);
+}
 
 TEST_F(MaintenanceManagerTest, subscribefail) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
-        .WillOnce(Return(nullptr));
+        .WillOnce(::testing::Return(nullptr));
 
-    bool result = plugin_->subscribeToDeviceInitializationEvent();
+    plugin_->subscribeToDeviceInitializationEvent();
     //EXPECT_TRUE(result);
 }
 
