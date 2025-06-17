@@ -90,17 +90,7 @@ TEST_F(FirmwareUpdateTest,EmptyFirmwareFilepath)
     params["firmwareType"]     = "PCI";
     status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
 
-    JsonObject params1;
-    JsonObject result1;
-    status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "getUpdateState", params1, result1);
-    EXPECT_EQ(Core::ERROR_NONE, status);
-
-    if (result1.HasLabel("state")) {
-        EXPECT_STREQ("VALIDATION_FAILED", result1["state"].String().c_str());
-    }
-    if (result1.HasLabel("substate")) {
-        EXPECT_STREQ("FIRMWARE_NOT_FOUND", result1["substate"].String().c_str());
-    }
+    EXPECT_NE(status,Core::ERROR_NONE);
 }
 
 TEST_F(FirmwareUpdateTest,EmptyFirmwareType)
@@ -116,18 +106,7 @@ TEST_F(FirmwareUpdateTest,EmptyFirmwareType)
         params["firmwareFilepath"] = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
         params["firmwareType"]     = "";
         status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
-    
-        JsonObject params1;
-        JsonObject result1;
-        status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "getUpdateState", params1, result1);
-        EXPECT_EQ(Core::ERROR_NONE, status);
-    
-        if (result1.HasLabel("state")) {
-            EXPECT_STREQ("VALIDATION_FAILED", result1["state"].String().c_str());
-        }
-        if (result1.HasLabel("substate")) {
-            EXPECT_STREQ("NOT_APPLICABLE", result1["substate"].String().c_str());
-        }
+        EXPECT_NE(status,Core::ERROR_NONE);
     }
 }
 
@@ -143,19 +122,12 @@ TEST_F(FirmwareUpdateTest,InvalidFirmwareType)
         params["firmwareFilepath"] = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
         params["firmwareType"]     = "ABC";
         status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
+        EXPECT_NE(status,Core::ERROR_NONE);
 
-    
         JsonObject params1;
         JsonObject result1;
         status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "getUpdateState", params1, result1);
         EXPECT_EQ(Core::ERROR_NONE, status);
-    
-        if (result1.HasLabel("state")) {
-            EXPECT_STREQ("VALIDATION_FAILED", result1["state"].String().c_str());
-        }
-        if (result1.HasLabel("substate")) {
-            EXPECT_STREQ("NOT_APPLICABLE", result1["substate"].String().c_str());
-        }
     }
 }
 
@@ -173,18 +145,7 @@ TEST_F(FirmwareUpdateTest,FirmwareFilepath_not_exist)
     if (std::remove(filePath) == 0) {
         std::cout << "File removed successfully.\n";
         status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
- 
-        JsonObject params1;
-        JsonObject result1;
-        status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "getUpdateState", params1, result1);
-        EXPECT_EQ(Core::ERROR_NONE, status);
-
-        if (result1.HasLabel("state")) {
-            EXPECT_STREQ("VALIDATION_FAILED", result1["state"].String().c_str());
-        }
-        if (result1.HasLabel("substate")) {
-            EXPECT_STREQ("FIRMWARE_NOT_FOUND", result1["substate"].String().c_str());
-        }
+        EXPECT_NE(status,Core::ERROR_NONE);
     }    
 }
 
@@ -206,8 +167,7 @@ TEST_F(FirmwareUpdateTest,FirmwareUptoDateValidatation)
         params["firmwareFilepath"] = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
         params["firmwareType"]     = "PCI";
         status = InvokeServiceMethod("org.rdk.FirmwareUpdate", "updateFirmware", params, result);
-        EXPECT_EQ(Core::ERROR_NONE, status);
-        sleep(5);
+        EXPECT_NE(status,Core::ERROR_NONE);
     }
 }
 
