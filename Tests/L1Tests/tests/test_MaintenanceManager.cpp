@@ -1267,7 +1267,7 @@ TEST_F(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
 }
 
 TEST_F(MaintenanceManagerTest, StaticEventHandler_InstanceNull_LogsWarning) {
-    MaintenanceManager::_instance = nullptr;
+    WPEFramework::Plugin::MaintenanceManager::_instance = nullptr;
 
     IARM_Bus_MaintMGR_EventData_t eventData = {};
 
