@@ -564,7 +564,6 @@ namespace WPEFramework
         } /* end of task_execution_thread() */
 
 #if defined(ENABLE_WHOAMI) || defined(GTEST_ENABLE)
-//#if defined(ENABLE_WHOAMI)
         /**
          * @brief Determines the device identity by querying the Security Manager.
          *
