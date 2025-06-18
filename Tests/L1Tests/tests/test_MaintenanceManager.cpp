@@ -1091,7 +1091,7 @@ TEST_F(MaintenanceManagerTest, subscribe1) {
         .WillOnce(Return(&service_));
 	
     EXPECT_CALL(mockDispatcher, Subscribe(_, StrEq("onStatusChange"), _))
-        .WillOnce(::testing::Return(WPEFramework::Core::Core::ERROR_NONE));
+        .WillOnce(::testing::Return(WPEFramework::Core::ERROR_NONE));
 	
     bool result = plugin_->subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
