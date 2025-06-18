@@ -112,6 +112,7 @@ public:
 
     MOCK_METHOD(WPEFramework::PluginHost::ILocalDispatcher*, 
                 QueryInterfaceByCallsign, (const std::string&));
+    MOCK_METHOD(WPEFramework::PluginHost::ILocalDispatcher*, Local, (), (override));
 };
 
 
