@@ -96,7 +96,7 @@ public:
     MOCK_METHOD(void*, QueryInterface, (const uint32_t), (override));
 
     MOCK_METHOD(WPEFramework::Core::ProxyType<WPEFramework::Core::JSONRPC::Message>, 
-                Invoke, (const std::string&, uint32_t, const WPEFramework::Core::JSONRPC::Message&), (override));
+                Invoke, (const std::string&, uint32_t, const WPEFramework::Core::JSONRPC::Message&));
 
     MOCK_METHOD(WPEFramework::Core::hresult, 
                 Validate, (const std::string&, const std::string&, const std::string&), (const, override));
@@ -108,10 +108,10 @@ public:
                 Revoke, (ICallback*), (override));
 
     MOCK_METHOD(WPEFramework::Core::hresult, 
-                Subscribe, (ICallback*, const std::string&, const std::string&), (override));
+                Subscribe, (ICallback*, const std::string&, const std::string&));
 
     MOCK_METHOD(WPEFramework::PluginHost::ILocalDispatcher*, 
-                QueryInterfaceByCallsign, (const std::string&), (override));
+                QueryInterfaceByCallsign, (const std::string&));
 };
 
 
