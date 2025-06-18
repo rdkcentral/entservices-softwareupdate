@@ -1375,7 +1375,7 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RebootRequired_GlobalFlagSet) {
     plugin_->m_abort_flag = false;
     plugin_->m_notify_status = MAINTENANCE_STARTED;
 
-    g_is_reboot_pending = "false";
+    //g_is_reboot_pending = "false";
 
     IARM_Bus_MaintMGR_EventData_t eventData = {};
     eventData.data.maintenance_module_status.status = MAINT_REBOOT_REQUIRED;
