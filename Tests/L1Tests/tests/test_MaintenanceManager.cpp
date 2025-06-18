@@ -1119,7 +1119,7 @@ TEST_F(MaintenanceManagerTest, subscribeForInternetStatus) {
     EXPECT_TRUE(result);
 }
 
-TEST_F(MaintenanceManagerTest, subscribeForInternetStatus) {
+TEST_F(MaintenanceManagerTest, subscribeForInternetStatus1) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is not found
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
@@ -1132,34 +1132,6 @@ TEST_F(MaintenanceManagerTest, subscribeForInternetStatus) {
 
 TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
     plugin_->m_service = &service_;
-    // Expectation: SecurityAgent is found
- /*   NiceMock<MockIAuthenticate>* mockAuth = nullptr;
-    mockAuth = new NiceMock<MockIAuthenticate>(); */
-
-/*    ON_CALL(service, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
-        .WillByDefault([this](const uint32_t, const std::string& name) -> void* {
-         mockAuth->AddRef();
-         return static_cast<void*>(mockAuth);
-         ); */
-    
-/*    ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, ::testing::_))
-    .WillByDefault([this](const uint32_t, const std::string& name) -> void* {
-        if (name == "org.rdk.Network") {
-            mockAuth->AddRef();
-            return static_cast<void*>(mockAuth);
-        }
-        return nullptr;
-    }); */
-/*
-ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, ::testing::_))
-    .WillByDefault([this, mockAuth](const uint32_t, const std::string& name) -> void* {
-        if (name == "org.rdk.Network") {
-            mockAuth->AddRef();
-            return static_cast<void*>(mockAuth);
-        }
-        return nullptr;
-    });
- */
 EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
           .Times(::testing::AtLeast(1))
           .WillRepeatedly(::testing::Return(&service_));
@@ -1169,13 +1141,6 @@ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
  
 EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
         .WillOnce(Return(&service_));
-
-/*EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
-        .WillOnce(Return(&service_)); SecurityAgent */
-
- /*  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
-           .WillOnce(::testing::Return(static_cast<void*>(&service_))); */
-    
    	
     bool result = plugin_->checkNetwork();
     EXPECT_TRUE(result);
