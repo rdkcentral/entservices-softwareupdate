@@ -1375,6 +1375,34 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue1)
     //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
 }
 
+TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue2)
+{
+   
+    //PluginHost::IShell::state state;
+    plugin_->m_service = &service_;
+/*
+   EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+	.Times(::testing::AtLeast(1))
+        .WillOnce(::testing::Return(&service_)); */
+   EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+   .Times(::testing::AtLeast(1))
+   .WillRepeatedly(::testing::Return(nullptr));
+
+   EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.SecManager"))
+        .WillOnce(::testing::Return(&service_));
+    
+
+    //string activation = "not-activated";
+    std::string activation = "activated";
+    plugin_->knowWhoAmI(activation);
+
+    //EXPECT_FALSE(ok);
+    //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
+}
+
 TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
     plugin_->m_service = &service_;
     Plugin::MaintenanceManager::_instance = &(*plugin_);
