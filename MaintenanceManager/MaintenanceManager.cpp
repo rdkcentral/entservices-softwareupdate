@@ -1300,8 +1300,7 @@ namespace WPEFramework
                 {
                     MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
                     return joGetResult["connectedToInternet"].Boolean();
-                }
-                
+                }                
                 else
                 {
                     return false;
