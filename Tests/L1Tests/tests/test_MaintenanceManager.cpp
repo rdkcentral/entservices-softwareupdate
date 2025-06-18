@@ -1266,6 +1266,17 @@ TEST_F(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
     Plugin::MaintenanceManager::_MaintenanceMgrEventHandler(owner, eventId, dummyData, len);
 }
 
+TEST_F(MaintenanceManagerTest, StaticEventHandler_InstanceNull_LogsWarning) {
+    MaintenanceManager::_instance = nullptr;
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+
+    MaintenanceManager::_MaintenanceMgrEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME,
+                                                    IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
+                                                    &eventData, sizeof(eventData));
+}
+
+
 TEST_F(MaintenanceManagerTest, IarmEventHandler_AbortFlagTrue_IgnoresEvent) {
     plugin_->m_abort_flag = true;
 
