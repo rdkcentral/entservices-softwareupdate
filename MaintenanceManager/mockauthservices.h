@@ -87,33 +87,5 @@ class DispatcherMock: public WPEFramework::PluginHost::IDispatcher{
          
 };
 */
-class DispatcherMock : public WPEFramework::PluginHost::IDispatcher {
-public:
-    virtual ~DispatcherMock() = default;
-
-    MOCK_METHOD(void, AddRef, (), (const, override));
-    MOCK_METHOD(uint32_t, Release, (), (const, override));
-    MOCK_METHOD(void*, QueryInterface, (const uint32_t), (override));
-
-    MOCK_METHOD(WPEFramework::Core::ProxyType<WPEFramework::Core::JSONRPC::Message>, 
-                Invoke, (const std::string&, uint32_t, const WPEFramework::Core::JSONRPC::Message&));
-
-    MOCK_METHOD(WPEFramework::Core::hresult, 
-                Validate, (const std::string&, const std::string&, const std::string&), (const, override));
-
-    MOCK_METHOD(WPEFramework::Core::hresult, 
-                Invoke, (ICallback*, uint32_t, uint32_t, const std::string&, const std::string&, const std::string&, std::string&), (override));
-
-    MOCK_METHOD(WPEFramework::Core::hresult, 
-                Revoke, (ICallback*), (override));
-
-    MOCK_METHOD(WPEFramework::Core::hresult, 
-                Subscribe, (ICallback*, const std::string&, const std::string&));
-
-    MOCK_METHOD(WPEFramework::PluginHost::ILocalDispatcher*, 
-                QueryInterfaceByCallsign, (const std::string&));
-    MOCK_METHOD(WPEFramework::PluginHost::ILocalDispatcher*, Local, (), (override));
-};
-
 
 #endif
