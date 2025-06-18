@@ -1253,6 +1253,7 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_MissingKey_Returns
 
     bool result = plugin_->setDeviceInitializationContext(fullResponse);
     EXPECT_TRUE(result); 
+}
 
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_EmptyValue_ReturnsFalse) {
     plugin_->m_service = &service_;
