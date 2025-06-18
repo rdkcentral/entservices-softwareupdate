@@ -1341,6 +1341,20 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskInactive_Ignored
 }
 
 
+TEST_F(MaintenanceManagerTest, IarmEventHandler_LogUploadError_TaskActive_Handled) {
+    plugin_->m_abort_flag = false;
+    plugin_->m_notify_status = MAINTENANCE_STARTED;
+    plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_LOGUPLOAD].c_str()] = true;
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    eventData.data.maintenance_module_status.status = MAINT_LOGUPLOAD_ERROR;
+
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME,
+                              IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
+                              &eventData, sizeof(eventData));
+
+    EXPECT_TRUE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_LOGUPLOAD].c_str()]);
+}
 
 
 
