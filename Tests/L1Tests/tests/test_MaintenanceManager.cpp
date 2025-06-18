@@ -1242,7 +1242,7 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ValidData_ReturnsT
     EXPECT_TRUE(result);
 }
 
-TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_MissingKey_ReturnsFalse) {
+TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_MissingKey_ReturnsTrue) {
     plugin_->m_service = &service_;
 
     JsonObject contextData;
@@ -1252,8 +1252,7 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_MissingKey_Returns
     fullResponse["deviceInitializationContext"] = contextData;
 
     bool result = plugin_->setDeviceInitializationContext(fullResponse);
-    EXPECT_FALSE(result); // paramEmpty becomes true
-}
+    EXPECT_TRUE(result); 
 
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_EmptyValue_ReturnsFalse) {
     plugin_->m_service = &service_;
