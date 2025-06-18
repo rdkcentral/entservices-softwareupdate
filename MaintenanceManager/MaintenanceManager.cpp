@@ -391,18 +391,10 @@ namespace WPEFramework
              * "activated" */
             if (activationStatus)
             {
-//#if !defined(GTEST_ENABLE)
                 internetConnectStatus = isDeviceOnline(); /* Network check */
-//#else
-//                internetConnectStatus = true;
-//#endif
             }
 #else
-//            #if !defined(GTEST_ENABLE)
             internetConnectStatus = isDeviceOnline(); /* Network check */
-//            #else
-//            internetConnectStatus = true;
-//           #endif
 #endif
 
 #if defined(ENABLE_WHOAMI)
@@ -953,10 +945,9 @@ namespace WPEFramework
             }
             else
             {
+            #if !defined(GTEST_ENABLE)
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::internetStatusChangeEventHandler, this);
-                #if defined(GTEST_ENABLE)
-                status = Core::ERROR_NONE;
-                #endif
+            #endif
                 if (status == Core::ERROR_NONE)
                 {
                     result = true;
@@ -1244,12 +1235,7 @@ namespace WPEFramework
             PluginHost::IShell::state state;
 
             string token;
-            //#if defined(GTEST_ENABLE)
-            //state = PluginHost::IShell::state::ACTIVATED;
-            //if(state == PluginHost::IShell::state::ACTIVATED)
-            //#else
             if ((getServiceState(m_service, "org.rdk.Network", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
-            //#endif
             {
                 MM_LOGINFO("Network plugin is active");
 
@@ -1442,9 +1428,8 @@ namespace WPEFramework
             }
             else
             {
+            #if !defined(GTEST_ENABLE)
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
-            #if defined(GTEST_ENABLE)
-                status = Core::ERROR_NONE;
             #endif 
                 if (status == Core::ERROR_NONE)
                 {
