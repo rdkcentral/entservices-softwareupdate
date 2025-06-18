@@ -1417,10 +1417,8 @@ namespace WPEFramework
             WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
 
             MM_LOGINFO("Attempting to subscribe for %s events", event.c_str());
-            // subscribe to onDeviceInitializationContextUpdate event
 
             thunder_client = getThunderPluginHandle(secMgr_callsign_ver);
-            MM_LOGINFO("Reaching here %s", event.c_str());
             if (thunder_client == nullptr)
             {
                 MM_LOGINFO("Failed to get plugin handle");
