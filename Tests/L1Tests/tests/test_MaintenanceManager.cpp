@@ -1356,7 +1356,36 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_LogUploadError_TaskActive_Handle
     EXPECT_TRUE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_LOGUPLOAD].c_str()]);
 }
 
+TEST_F(MaintenanceManagerTest, IarmEventHandler_FWDownloadAborted_TaskMarkedSkipped) {
+    plugin_->m_abort_flag = false;
+    plugin_->m_notify_status = MAINTENANCE_STARTED;
+    plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_SWUPDATE].c_str()] = true;
 
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    eventData.data.maintenance_module_status.status = MAINT_FWDOWNLOAD_ABORTED;
+
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME,
+                              IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
+                              &eventData, sizeof(eventData));
+
+    EXPECT_FALSE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_SWUPDATE].c_str()]);
+}
+
+TEST_F(MaintenanceManagerTest, IarmEventHandler_RebootRequired_GlobalFlagSet) {
+    plugin_->m_abort_flag = false;
+    plugin_->m_notify_status = MAINTENANCE_STARTED;
+
+    g_is_reboot_pending = "false";
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    eventData.data.maintenance_module_status.status = MAINT_REBOOT_REQUIRED;
+
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME,
+                              IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
+                              &eventData, sizeof(eventData));
+
+    EXPECT_EQ(g_is_reboot_pending, "true");
+}
 
 
 
