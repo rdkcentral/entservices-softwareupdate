@@ -58,6 +58,7 @@ protected:
     NiceMock<ServiceMock>             service_;
     NiceMock<MockAuthService>         iauthservice_;
     NiceMock<MockIAuthenticate>       iauthenticate_;
+    NiceMock<DispatcherMock> mockDispatcher;
 
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
