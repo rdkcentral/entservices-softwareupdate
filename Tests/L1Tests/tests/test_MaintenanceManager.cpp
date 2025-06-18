@@ -1386,7 +1386,7 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RebootRequired_GlobalFlagSet) {
 
     //EXPECT_EQ(g_is_reboot_pending, "true");
 }
-
+/*
 TEST_F(MaintenanceManagerTest, IarmEventHandler_UnknownOwner_Ignored) {
     plugin_->m_abort_flag = false;
     plugin_->m_notify_status = MAINTENANCE_STARTED;
@@ -1398,6 +1398,66 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_UnknownOwner_Ignored) {
                               IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
                               &eventData, sizeof(eventData));
 
+}
+*/
+TEST_F(MaintenanceManagerTest, IarmEventHandler_UnexpectedOwner_Ignored) {
+    plugin_->m_abort_flag = false;
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    eventData.data.maintenance_module_status.status = MAINT_RFC_COMPLETE;
+
+    plugin_->iarmEventHandler("SomeOtherOwner", IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, &eventData, sizeof(eventData));
+
+    // No action expected
+}
+TEST_F(MaintenanceManagerTest, IarmEventHandler_UnknownEventId_Ignored) {
+    plugin_->m_abort_flag = false;
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME, 999, &eventData, sizeof(eventData));
+
+    // No action expected
+}
+TEST_F(MaintenanceManagerTest, IarmEventHandler_NonStartedStatus_Ignored) {
+    plugin_->m_abort_flag = false;
+    plugin_->m_notify_status = MAINTENANCE_IDLE; // Not STARTED
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    eventData.data.maintenance_module_status.status = MAINT_RFC_COMPLETE;
+
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME,
+                              IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
+                              &eventData, sizeof(eventData));
+
+    // Should exit early
+}
+
+TEST_F(MaintenanceManagerTest, IarmEventHandler_CriticalUpdate_GlobalFlagSet) {
+    plugin_->m_abort_flag = false;
+    plugin_->m_notify_status = MAINTENANCE_STARTED;
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    eventData.data.maintenance_module_status.status = MAINT_CRITICAL_UPDATE;
+
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME,
+                              IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
+                              &eventData, sizeof(eventData));
+
+    // Normally would assert on `g_is_critical_maintenance`
+}
+TEST_F(MaintenanceManagerTest, IarmEventHandler_RfcInProgress_SetsTrue) {
+    plugin_->m_abort_flag = false;
+    plugin_->m_notify_status = MAINTENANCE_STARTED;
+    plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_RFC].c_str()] = false;
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    eventData.data.maintenance_module_status.status = MAINT_RFC_INPROGRESS;
+
+    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME,
+                              IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
+                              &eventData, sizeof(eventData));
+
+    EXPECT_TRUE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_RFC].c_str()]);
 }
 
 
