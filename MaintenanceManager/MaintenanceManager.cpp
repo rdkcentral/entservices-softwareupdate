@@ -1289,20 +1289,18 @@ namespace WPEFramework
             {
                 uint32_t status = thunder_client->Invoke<JsonObject, JsonObject>(5000, "isConnectedToInternet", joGetParams, joGetResult);
                 #if defined(GTEST_ENABLE)
-                status = 0;
+                return true;
                 #endif
                 if (status > 0)
                 {
                     MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
                     return false;
                 }
-                #if defined(GTEST_ENABLE)
                 else
                 {
                     MM_LOGINFO("connectedToInternet status : true");
                     return true;
                 }
-                #else
                 else if (joGetResult.HasLabel("connectedToInternet"))
                 {
                     MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
@@ -1313,7 +1311,6 @@ namespace WPEFramework
                 {
                     return false;
                 }
-                #endif
             }
 
             MM_LOGERR("thunder client failed");
