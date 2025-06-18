@@ -123,6 +123,7 @@ typedef enum
 #define MAX_NETWORK_RETRIES             4
 #define INTERNET_CONNECTED_STATE        3
 #define NETWORK_RETRY_INTERVAL          30
+
 #define MAX_ACTIVATION_RETRIES          4
 #define SECMGR_RETRY_INTERVAL           5
 
@@ -170,7 +171,7 @@ namespace WPEFramework
         class MaintenanceManager : public PluginHost::IPlugin, public PluginHost::JSONRPC
         {
 #if defined(GTEST_ENABLE)
-        public:
+        protected:
 #else
         private:
 #endif
