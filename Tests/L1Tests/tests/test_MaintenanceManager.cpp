@@ -1271,7 +1271,7 @@ TEST_F(MaintenanceManagerTest, StaticEventHandler_InstanceNull_LogsWarning) {
 
     IARM_Bus_MaintMGR_EventData_t eventData = {};
 
-    MaintenanceManager::_MaintenanceMgrEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME,
+    Plugin::MaintenanceManager::_MaintenanceMgrEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME,
                                                     IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
                                                     &eventData, sizeof(eventData));
 }
