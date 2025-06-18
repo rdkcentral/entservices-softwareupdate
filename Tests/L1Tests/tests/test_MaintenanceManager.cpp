@@ -1387,6 +1387,23 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RebootRequired_GlobalFlagSet) {
     //EXPECT_EQ(g_is_reboot_pending, "true");
 }
 
+TEST_F(MaintenanceManagerTest, IarmEventHandler_UnknownOwner_Ignored) {
+    plugin_->m_abort_flag = false;
+    plugin_->m_notify_status = MAINTENANCE_STARTED;
+
+    IARM_Bus_MaintMGR_EventData_t eventData = {};
+    eventData.data.maintenance_module_status.status = MAINT_RFC_COMPLETE;
+
+    plugin_->iarmEventHandler("Unknown.Owner",
+                              IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
+                              &eventData, sizeof(eventData));
+
+}
+
+
+
+
+
 
 
 /*
