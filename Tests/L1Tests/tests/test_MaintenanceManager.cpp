@@ -31,6 +31,7 @@
 #include "ThunderPortability.h"
 #include "UtilsIarm.h"
 #include "mockauthservices.h"
+#include "DispatcherMock.h"
 
 using namespace WPEFramework;
 using ::testing::NiceMock;
