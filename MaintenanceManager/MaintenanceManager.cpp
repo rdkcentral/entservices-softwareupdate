@@ -1402,6 +1402,7 @@ namespace WPEFramework
          */
         bool MaintenanceManager::subscribeToDeviceInitializationEvent()
         {
+            // subscribe to onDeviceInitializationContextUpdate event
             int32_t status = Core::ERROR_NONE;
             bool result = false;
             string event = "onDeviceInitializationContextUpdate";
