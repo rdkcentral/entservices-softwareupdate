@@ -391,10 +391,18 @@ namespace WPEFramework
              * "activated" */
             if (activationStatus)
             {
+//#if !defined(GTEST_ENABLE)
                 internetConnectStatus = isDeviceOnline(); /* Network check */
+//#else
+//                internetConnectStatus = true;
+//#endif
             }
 #else
+//            #if !defined(GTEST_ENABLE)
             internetConnectStatus = isDeviceOnline(); /* Network check */
+//            #else
+//            internetConnectStatus = true;
+//           #endif
 #endif
 
 #if defined(ENABLE_WHOAMI)
@@ -533,7 +541,9 @@ namespace WPEFramework
                     else /* system() executes successfully */
                     {
                         MM_LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
+                #if !defined(GTEST_ENABLE)
                         task_thread.wait(lck);
+                #endif
                         if (task_stopTimer())
                         {
                             MM_LOGINFO("Stopped Timer Successfully");
@@ -561,7 +571,8 @@ namespace WPEFramework
             MM_LOGINFO("Worker Thread Completed");
         } /* end of task_execution_thread() */
 
-#if defined(ENABLE_WHOAMI)
+#if defined(ENABLE_WHOAMI) || defined(GTEST_ENABLE)
+//#if defined(ENABLE_WHOAMI)
         /**
          * @brief Determines the device identity by querying the Security Manager.
          *
@@ -943,6 +954,9 @@ namespace WPEFramework
             else
             {
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::internetStatusChangeEventHandler, this);
+                #if defined(GTEST_ENABLE)
+                status = Core::ERROR_NONE;
+                #endif
                 if (status == Core::ERROR_NONE)
                 {
                     result = true;
@@ -1230,8 +1244,12 @@ namespace WPEFramework
             PluginHost::IShell::state state;
 
             string token;
-
+            #if defined(GTEST_ENABLE)
+            state = PluginHost::IShell::state::ACTIVATED;
+            if(state == PluginHost::IShell::state::ACTIVATED)
+            #else
             if ((getServiceState(m_service, "org.rdk.Network", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
+            #endif
             {
                 MM_LOGINFO("Network plugin is active");
 
@@ -1285,20 +1303,32 @@ namespace WPEFramework
             if (thunder_client != nullptr)
             {
                 uint32_t status = thunder_client->Invoke<JsonObject, JsonObject>(5000, "isConnectedToInternet", joGetParams, joGetResult);
+                #if defined(GTEST_ENABLE)
+                status = 0;
+                #endif
                 if (status > 0)
                 {
                     MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
                     return false;
                 }
+                #if defined(GTEST_ENABLE)
+                else
+                {
+                    MM_LOGINFO("connectedToInternet status : true");
+                    return true;
+                }
+                #else
                 else if (joGetResult.HasLabel("connectedToInternet"))
                 {
                     MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
                     return joGetResult["connectedToInternet"].Boolean();
                 }
+                
                 else
                 {
                     return false;
                 }
+                #endif
             }
 
             MM_LOGERR("thunder client failed");
@@ -1401,10 +1431,11 @@ namespace WPEFramework
             const char *secMgr_callsign_ver = "org.rdk.SecManager.1";
             WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
 
-            // subscribe to onDeviceInitializationContextUpdate event
             MM_LOGINFO("Attempting to subscribe for %s events", event.c_str());
+            // subscribe to onDeviceInitializationContextUpdate event
 
             thunder_client = getThunderPluginHandle(secMgr_callsign_ver);
+            MM_LOGINFO("Reaching here %s", event.c_str());
             if (thunder_client == nullptr)
             {
                 MM_LOGINFO("Failed to get plugin handle");
@@ -1412,6 +1443,9 @@ namespace WPEFramework
             else
             {
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
+            #if defined(GTEST_ENABLE)
+                status = Core::ERROR_NONE;
+            #endif
                 if (status == Core::ERROR_NONE)
                 {
                     result = true;
@@ -1537,8 +1571,9 @@ namespace WPEFramework
             m_statusMutex.lock();
             MaintenanceManager::_instance->onMaintenanceStatusChange(m_notify_status);
             m_statusMutex.unlock();
-
+#if !defined(GTEST_ENABLE)
             m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+#endif
         }
 
         void MaintenanceManager::_MaintenanceMgrEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
