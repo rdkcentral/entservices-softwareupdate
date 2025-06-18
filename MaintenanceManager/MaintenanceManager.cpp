@@ -1296,11 +1296,6 @@ namespace WPEFramework
                     MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
                     return false;
                 }
-                else
-                {
-                    MM_LOGINFO("connectedToInternet status : true");
-                    return true;
-                }
                 else if (joGetResult.HasLabel("connectedToInternet"))
                 {
                     MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
