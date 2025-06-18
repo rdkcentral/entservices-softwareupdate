@@ -1083,6 +1083,20 @@ TEST_F(MaintenanceManagerTest, subscribe) {
     EXPECT_TRUE(result);
 }
 
+// subscribe check
+TEST_F(MaintenanceManagerTest, subscribe1) {
+    plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+	
+    EXPECT_CALL(mockDispatcher, Subscribe(_, StrEq("onStatusChange"), _))
+        .WillOnce(Return(WPEFramework::Core::ERROR_GENERAL));
+	
+    bool result = plugin_->subscribeToDeviceInitializationEvent();
+    EXPECT_TRUE(result);
+}
+
 TEST_F(MaintenanceManagerTest, subscribefail) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
