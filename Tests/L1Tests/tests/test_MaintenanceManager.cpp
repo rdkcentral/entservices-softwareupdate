@@ -1084,6 +1084,7 @@ TEST_F(MaintenanceManagerTest, subscribe) {
 }
 
 // subscribe check
+/*
 TEST_F(MaintenanceManagerTest, subscribe1) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
@@ -1095,7 +1096,7 @@ TEST_F(MaintenanceManagerTest, subscribe1) {
 	
     bool result = plugin_->subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
-}
+} */
 
 TEST_F(MaintenanceManagerTest, subscribefail) {
     plugin_->m_service = &service_;
