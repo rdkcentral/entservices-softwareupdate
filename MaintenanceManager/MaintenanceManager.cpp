@@ -1443,9 +1443,9 @@ namespace WPEFramework
             else
             {
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
-            #if defined(GTEST_ENABLE)
+          /*  #if defined(GTEST_ENABLE)
                 status = Core::ERROR_NONE;
-            #endif
+            #endif */
                 if (status == Core::ERROR_NONE)
                 {
                     result = true;
