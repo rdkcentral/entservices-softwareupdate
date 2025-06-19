@@ -1269,6 +1269,20 @@ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
 
 }
 
+TEST_F(MaintenanceManagerTest, TaskExecutionThread_NoSecurityAgent) {
+    plugin_->m_service = &service_;
+
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
+        .WillRepeatedly(Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillRepeatedly(Return(PluginHost::IShell::state::ACTIVATED));
+
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(::testing::Return(nullptr));
+
+    plugin_->task_execution_thread();
+}
+
 TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest1) {
      plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
