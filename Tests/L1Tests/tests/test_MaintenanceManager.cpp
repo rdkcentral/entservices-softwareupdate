@@ -885,7 +885,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Fail)
     EXPECT_FALSE(result);
 }
 
-TEST_F(MaintenanceManagerTest, TimerHandler_HandlesSignalCorrectly) {
+TEST_F(MaintenanceManagerTest, TimerHandler_Handles_failedtask) {
     using namespace WPEFramework::Plugin;
 
     std::string matchedTask = task_names_foreground[TASK_RFC]; // use a known task name
