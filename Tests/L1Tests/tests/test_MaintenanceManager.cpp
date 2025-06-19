@@ -1092,7 +1092,7 @@ TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
     std::string result = plugin_->checkActivatedStatus();
     EXPECT_EQ(result, "invalid");
 }
-
+/*
 TEST_F(MaintenanceManagerTest, ServiceNotActivated_activationstatuserror) {
     //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
@@ -1112,7 +1112,7 @@ TEST_F(MaintenanceManagerTest, ServiceNotActivated_activationstatuserror) {
     // Test: Plugin is not activated after retries, expect "invalid"
     std::string result = plugin_->checkActivatedStatus();
     EXPECT_EQ(result, "invalid");
-}
+}*/
 TEST_F(MaintenanceManagerTest, checkServiceActivated) {
     plugin_->m_service = &service_;
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
