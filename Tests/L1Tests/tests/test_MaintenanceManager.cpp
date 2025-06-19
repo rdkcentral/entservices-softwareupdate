@@ -1677,9 +1677,9 @@ TEST_F(MaintenanceManagerTest, SecManagerInactive_RetriesOnce)
     plugin_->m_service = &service_;
 
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.SecManager"))
-        .WillOnce(Return(&service_));
+        .WillOnce(::testing::(&service_));
     EXPECT_CALL(service_, State())
-        .WillOnce(Return(PluginHost::IShell::state::DEACTIVATED));
+        .WillOnce(::testing::Return(PluginHost::IShell::state::DEACTIVATED));
 
     std::string activation = "not-activated";
 
