@@ -889,6 +889,42 @@ TEST_F(MaintenanceManagerTest, TimerHandler_HandlesSignalCorrectly) {
     int test_signo = SIGALRM; // or any relevant signal number
     plugin_->timer_handler(test_signo);
 }
+TEST_F(MaintenanceManagerTest, TimerHandler_NonSIGALRM_Ignored)
+{
+    plugin_->timer_handler(SIGINT); // simulate a wrong signal
+    // Expect MM_LOGERR about wrong signal (mock/log assertion if needed)
+}
+TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_NoTaskMatch)
+{
+    currentTask = "unknown_task"; // Simulate no match in task_names_foreground
+
+    plugin_->timer_handler(SIGALRM);
+
+    // Nothing should be updated in m_task_map
+    // Could check logs or ensure m_task_map untouched
+}
+TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_TaskAlreadyHandled)
+{
+    currentTask = "DownloadFirmware"; // Assuming this matches task_names_foreground[0]
+
+    plugin_->m_task_map["DownloadFirmware"] = false; // Already marked
+
+    plugin_->timer_handler(SIGALRM);
+
+    // Should log "Ignoring Error Event for Task"
+}
+TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_TaskSetToError)
+{
+    currentTask = "DownloadFirmware";
+
+    plugin_->m_task_map["DownloadFirmware"] = true; // Still active
+
+    plugin_->timer_handler(SIGALRM);
+
+    EXPECT_FALSE(plugin_->m_task_map["DownloadFirmware"]);
+    // Could also validate g_task_status or check for notification being sent
+}
+
 
 TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
     const char* owner = "TestOwner";
