@@ -1672,6 +1672,27 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue2)
     //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
 }
 
+TEST_F(MaintenanceManagerTest, SecManagerInactive_RetriesOnce)
+{
+    plugin_->m_service = &service_;
+
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.SecManager"))
+        .WillOnce(Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(Return(PluginHost::IShell::state::DEACTIVATED));
+
+    std::string activation = "not-activated";
+
+    std::thread t([&]() {
+        plugin_->knowWhoAmI(activation); // This would loop forever in real case
+    });
+
+    sleep(1); // allow time for log/first retry
+    t.detach(); // avoid blocking test
+}
+
+
+
 TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
     plugin_->m_service = &service_;
     Plugin::MaintenanceManager::_instance = &(*plugin_);
