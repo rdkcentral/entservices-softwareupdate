@@ -996,16 +996,11 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull)
     EXPECT_FALSE(result);
 }
 
-TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsNull1)
+TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPluginIsnotNull1)
 {
     // Ensure m_authservicePlugin is initially null
     plugin_->m_authservicePlugin = &iauthservice_;
     plugin_->m_service = &service_;
-
-    // Simulate failure in QueryInterfaceByCallsign (returns nullptr)
-  /*  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.AuthService"))
-        .WillOnce(::testing::Return()); */
-
     bool result = plugin_->queryIAuthService();
 
     EXPECT_TRUE(result);
@@ -1098,21 +1093,6 @@ TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
     EXPECT_EQ(result, "invalid");
 }
 
-/*
-TEST_F(MaintenanceManagerTest, ServiceActivatedcheck) {
-    PluginHost::IShell::state state;
-    plugin_->m_service = &service_;
-    
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
-	.Times(5)
-        .WillRepeatedly(::testing::Return(&service_));
-
-
-    EXPECT_CALL(service_, State())
-        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
-
-}
-*/
 TEST_F(MaintenanceManagerTest, checkServiceActivated) {
     plugin_->m_service = &service_;
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
@@ -1134,7 +1114,6 @@ TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
 	.Times(5)
         .WillRepeatedly(::testing::Return(&service_));
 
-    // Test: Plugin is not activated after retries, expect "invalid"
     bool result = plugin_->getActivatedStatus(skipCheck);
     
     EXPECT_TRUE(result);
@@ -1162,22 +1141,6 @@ TEST_F(MaintenanceManagerTest, subscribe) {
     bool result = plugin_->subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
 }
-
-// subscribe check
-/*
-TEST_F(MaintenanceManagerTest, subscribe1) {
-    plugin_->m_service = &service_;
-    // Expectation: SecurityAgent is found
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
-        .WillOnce(Return(&service_));
-	
-    EXPECT_CALL(mockDispatcher, Subscribe(_, StrEq("onStatusChange"), _))
-        .WillOnce(::testing::Return(WPEFramework::Core::ERROR_NONE));
-	
-    bool result = plugin_->subscribeToDeviceInitializationEvent();
-    EXPECT_TRUE(result);
-} */
-
 TEST_F(MaintenanceManagerTest, subscribewithoutsecurityagent) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
@@ -1211,14 +1174,12 @@ TEST_F(MaintenanceManagerTest, subscribeForInternetStatus1) {
 
 TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
     plugin_->m_service = &service_;
-EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
-          .Times(::testing::AtLeast(1))
-          .WillRepeatedly(::testing::Return(&service_));
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(&service_));
     EXPECT_CALL(service_, State())
         .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
- 
- 
-EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
         .WillOnce(Return(&service_));
    	
     bool result = plugin_->checkNetwork();
@@ -1239,23 +1200,20 @@ TEST_F(MaintenanceManagerTest, CheckNetwork_ReturnsFalse_WhenNetworkInactive)
 }
 
 
-TEST_F(MaintenanceManagerTest, CheckNetworkStatus1) {
+TEST_F(MaintenanceManagerTest, CheckNetworkStatuswithoutsecurityagent) {
     plugin_->m_service = &service_;
-    // Expectation: SecurityAgent is found
  
-EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
-          .Times(::testing::AtLeast(1))
-          .WillRepeatedly(::testing::Return(&service_));
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(&service_));
     EXPECT_CALL(service_, State())
         .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
  
- 
-EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
         .WillOnce(::testing::Return(nullptr));
-
-   	
-    plugin_->checkNetwork();
-    //EXPECT_TRUE(result);
+	
+    bool result = plugin_->checkNetwork();
+    EXPECT_TRUE(result);
 }
 
 
