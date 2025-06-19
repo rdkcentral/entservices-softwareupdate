@@ -1250,7 +1250,7 @@ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
     
    	
     bool result = plugin_->isDeviceOnline();
-    //EXPECT_TRUE(result);
+    EXPECT_FALSE(result);
 }
 
 TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest) {
