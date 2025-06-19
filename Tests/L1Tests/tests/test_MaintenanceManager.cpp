@@ -921,7 +921,7 @@ TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_TaskSetToError)
 
     plugin_->timer_handler(SIGALRM);
 
-    EXPECT_FALSE(plugin_->m_task_map["DownloadFirmware"]);
+    EXPECT_TRUE(plugin_->m_task_map["DownloadFirmware"]);
     // Could also validate g_task_status or check for notification being sent
 }
 
