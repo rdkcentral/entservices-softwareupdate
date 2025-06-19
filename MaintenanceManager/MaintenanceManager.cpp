@@ -1291,11 +1291,11 @@ namespace WPEFramework
                 if (status > 0)
                 {
                     MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
-                    #if defined(GTEST_ENABLE)
-                    return true;
-                    #else
+                    //#if defined(GTEST_ENABLE)
+                    //return true;
+                    //#else
                     return false;
-                    #endif
+                    //#endif
                 }
                 else if (joGetResult.HasLabel("connectedToInternet"))
                 {
