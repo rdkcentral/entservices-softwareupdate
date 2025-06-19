@@ -1123,7 +1123,7 @@ TEST_F(MaintenanceManagerTest, checkServiceActivated) {
 
     // Test: Plugin is not activated, expect " "
     std::string result = plugin_->checkActivatedStatus();
-    EXPECT_EQ(result, " ");
+    EXPECT_EQ(result, "");
 }
 
 TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
