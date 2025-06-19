@@ -1100,6 +1100,9 @@ TEST_F(MaintenanceManagerTest, ServiceNotActivated_activationstatuserror) {
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
 	.Times(5)
         .WillRepeatedly(::testing::Return(&service_));
+
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
 	
     EXPECT_CALL(iauthservice_, GetActivationStatus(::testing::_))
         .WillOnce([](WPEFramework::Exchange::IAuthService::ActivationStatusResult& result) {
