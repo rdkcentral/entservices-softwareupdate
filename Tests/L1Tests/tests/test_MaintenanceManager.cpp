@@ -1186,7 +1186,7 @@ TEST_F(MaintenanceManagerTest, CheckNetwork_ReturnsFalse_WhenNetworkInactive)
 {
     // Mock inactive plugin
     plugin_->m_service = &service_;
-    EXPECT_CALL(service_, QueryInterfaceByCallsign<PluginHost::IShell>("org.rdk.Network"))
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
         .WillOnce(Return(&service_));
     EXPECT_CALL(service_, State())
         .WillOnce(::testing::Return(PluginHost::IShell::state::DEACTIVATED));
