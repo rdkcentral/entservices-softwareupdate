@@ -1242,7 +1242,8 @@ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
           .Times(::testing::AtLeast(1))
           .WillRepeatedly(::testing::Return(&service_));
     EXPECT_CALL(service_, State())
-        .WillOnce(::testing::Return(PluginHost::IShell::state::DEACTIVATED));
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(&service_));
  
  /*EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
         .WillOnce(Return(&service_));*/
