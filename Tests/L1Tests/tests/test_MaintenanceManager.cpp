@@ -1061,7 +1061,33 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent)
     // Optional: verify internal state of the returned handle (callsign, query param etc.)
     delete handle;
 }
-/*
+
+TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithoutTokenWhenSecurityAgentPresent) {
+    
+    plugin_->m_service = &service_;
+   // plugin->m_auth = &iauthenticate_;
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
+
+    // Expectation: CreateToken Fails
+    EXPECT_CALL(iauthenticate_, CreateToken(_, _, _))
+        .WillOnce([](uint16_t, const uint8_t*, string& token) {
+            token = "mock_token";
+            return Core::ERROR_GENERAL;
+        });
+
+    const char* callsign = "SomePlugin";
+
+    auto* handle = plugin_->getThunderPluginHandle(callsign);
+    ASSERT_NE(handle, nullptr);
+
+    // Optional: verify internal state of the returned handle (callsign, query param etc.)
+    delete handle;
+}
+
+
+
 TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentnotPresent) {
 
     plugin_->m_service = &service_;
@@ -1076,7 +1102,7 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentnotPrese
     // Optional: verify internal state of the returned handle (callsign, query param etc.)
     delete handle;
 }
-*/
+
 
 TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
     //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
