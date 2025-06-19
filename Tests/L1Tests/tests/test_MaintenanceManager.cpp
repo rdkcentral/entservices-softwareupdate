@@ -1234,7 +1234,7 @@ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
     EXPECT_TRUE(result);
 }
 
-TEST_F(MaintenanceManagerTest, isDeviceOnlinesuccess ) {
+TEST_F(MaintenanceManagerTest, isDeviceOnlinefail ) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
 
