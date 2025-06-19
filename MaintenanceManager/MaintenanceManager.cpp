@@ -1408,6 +1408,7 @@ namespace WPEFramework
             string event = "onDeviceInitializationContextUpdate";
             const char *secMgr_callsign_ver = "org.rdk.SecManager.1";
             WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
+
             // subscribe to onDeviceInitializationContextUpdate event
             MM_LOGINFO("Attempting to subscribe for %s events", event.c_str());
 
