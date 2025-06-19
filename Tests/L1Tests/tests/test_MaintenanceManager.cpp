@@ -1690,6 +1690,20 @@ TEST_F(MaintenanceManagerTest, SecManagerInactive_RetriesOnce)
     sleep(1); // allow time for log/first retry
     t.detach(); // avoid blocking test
 }
+TEST_F(MaintenanceManagerTest, SecManagerInactive_ActivatedDevice_ExitsImmediately)
+{
+    plugin_->m_service = &service_;
+
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.SecManager"))
+        .WillOnce(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::DEACTIVATED));
+
+    std::string activation = "activated";
+    bool result = plugin_->knowWhoAmI(activation);
+
+    EXPECT_FALSE(result);
+}
 
 
 
