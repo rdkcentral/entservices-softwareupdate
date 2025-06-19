@@ -1067,7 +1067,16 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithoutTokenWhenSecurityAgentPrese
     plugin_->m_service = &service_;
    // plugin->m_auth = &iauthenticate_;
     // Expectation: SecurityAgent is found
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+   EXPECT_CALL(service_, QueryInterfaceByCallsign<::testing::NiceMock<PluginHost::IAuthenticate>>(::testing::_, "SecurityAgent"))
+    .WillOnce(Return(&iauthenticate_));
+
+EXPECT_CALL(iauthenticate_, CreateToken(_, _, _))
+    .WillOnce([](uint16_t, const uint8_t*, std::string& token) {
+        token = "mock_token";
+        return Core::ERROR_GENERAL;
+    });
+	
+  /*  EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
         .WillOnce(Return(&service_));
 
     // Expectation: CreateToken Fails
@@ -1075,7 +1084,7 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithoutTokenWhenSecurityAgentPrese
         .WillOnce([](uint16_t, const uint8_t*, string& token) {
             token = "mock_token";
             return Core::ERROR_GENERAL;
-        });
+        }); */
 
     const char* callsign = "SomePlugin";
 
