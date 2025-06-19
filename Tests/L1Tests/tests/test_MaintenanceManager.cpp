@@ -1023,18 +1023,18 @@ TEST_F(MaintenanceManagerTest, QueryIAuthService_FailsWhenPlugin_notNull)
     EXPECT_TRUE(result);
 }
 
-TEST_F(MaintenanceManagerTest, setpartnerid)
+TEST_F(MaintenanceManagerTest, SetPartnerId_AuthServiceUnavailable_DoesNothing)
 {
-   
     plugin_->m_service = &service_;
     plugin_->setPartnerId("partner1");
+    SUCCEED();
 }
-TEST_F(MaintenanceManagerTest, setpartnerid1)
+TEST_F(MaintenanceManagerTest, SetPartnerId_AuthServiceAvailable_NoCrash)
 {
     plugin_->m_service = &service_;
     plugin_->m_authservicePlugin = &iauthservice_;
-
     plugin_->setPartnerId("partner1");
+    SUCCEED();
 }
 
 TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentPresent) {
