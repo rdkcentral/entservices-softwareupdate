@@ -1291,11 +1291,11 @@ namespace WPEFramework
                 if (status > 0)
                 {
                     MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
-                    //#if defined(GTEST_ENABLE)
-                    //return true;
-                    //#else
+                #if defined(GTEST_ENABLE)
+                    return true;
+                #else
                     return false;
-                    //#endif
+                #endif
                 }
                 else if (joGetResult.HasLabel("connectedToInternet"))
                 {
@@ -1402,13 +1402,12 @@ namespace WPEFramework
          */
         bool MaintenanceManager::subscribeToDeviceInitializationEvent()
         {
-            // subscribe to onDeviceInitializationContextUpdate event
             int32_t status = Core::ERROR_NONE;
             bool result = false;
             string event = "onDeviceInitializationContextUpdate";
             const char *secMgr_callsign_ver = "org.rdk.SecManager.1";
             WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
-
+            // subscribe to onDeviceInitializationContextUpdate event
             MM_LOGINFO("Attempting to subscribe for %s events", event.c_str());
 
             thunder_client = getThunderPluginHandle(secMgr_callsign_ver);
