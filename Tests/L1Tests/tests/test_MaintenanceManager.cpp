@@ -1128,7 +1128,6 @@ TEST_F(MaintenanceManagerTest, checkServiceActivated) {
 
 TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
     bool skipCheck = false;
-    //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
     // Mock getServiceState to simulate UNAVAILABLE state
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
@@ -1137,16 +1136,14 @@ TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
 
     // Test: Plugin is not activated after retries, expect "invalid"
     plugin_->getActivatedStatus(skipCheck);
-    /* Expecting values causing [  FAILED  ] 2 tests, getMaintenanceActivityStatusJsonRPC, stopMaintenanceRPC_STARTED2ERROR 
-    EXPECT_TRUE(result);
-    EXPECT_FALSE(skipCheck); */
+    
+    EXPECT_EQ(result, "invalid");
+    EXPECT_FALSE(skipCheck);
 }
 
 TEST_F(MaintenanceManagerTest, getServiceActivatedsuccess) {
     bool skipCheck = false;
-    //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
-    // Mock getServiceState to simulate UNAVAILABLE state
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
           .Times(::testing::AtLeast(1))
           .WillRepeatedly(::testing::Return(&service_));
