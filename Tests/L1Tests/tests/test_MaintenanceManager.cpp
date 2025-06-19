@@ -1067,7 +1067,7 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithoutTokenWhenSecurityAgentPrese
     plugin_->m_service = &service_;
    // plugin->m_auth = &iauthenticate_;
     // Expectation: SecurityAgent is found
-   EXPECT_CALL(service_, QueryInterfaceByCallsign<::testing::NiceMock<PluginHost::IAuthenticate>>(::testing::_, "SecurityAgent"))
+   EXPECT_CALL(service_, QueryInterfaceByCallsign(_, "SecurityAgent"))
     .WillOnce(Return(&iauthenticate_));
 
 EXPECT_CALL(iauthenticate_, CreateToken(_, _, _))
