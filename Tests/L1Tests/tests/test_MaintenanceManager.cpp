@@ -891,12 +891,12 @@ TEST_F(MaintenanceManagerTest, TimerHandler_HandlesSignalCorrectly) {
     std::string matchedTask = task_names_foreground[TASK_RFC]; // use a known task name
     MaintenanceManager::currentTask = matchedTask;
     plugin_->m_task_map[matchedTask] = true;
-    g_task_status = 0; // initial value
+    plugin_->g_task_status = 0; // initial value
 
     plugin_->timer_handler(SIGALRM);
 
     EXPECT_FALSE(plugin_->m_task_map[matchedTask]); // should be set to false
-    EXPECT_EQ(g_task_status, task_complete_status[TASK_RFC]); // status should be updated
+    EXPECT_EQ(plugin_->g_task_status, task_complete_status[TASK_RFC]); // status should be updated
 }
 
 TEST_F(MaintenanceManagerTest, TimerHandler_NonSIGALRM_Ignored)
@@ -906,12 +906,12 @@ TEST_F(MaintenanceManagerTest, TimerHandler_NonSIGALRM_Ignored)
     std::string task = task_names_foreground[TASK_LOGUPLOAD];
     MaintenanceManager::currentTask = task;
     plugin_->m_task_map[task] = true;
-    g_task_status = 999; // sentinel value
+    plugin_->g_task_status = 999; // sentinel value
 
     plugin_->timer_handler(SIGINT); // wrong signal
 
     EXPECT_TRUE(plugin_->m_task_map[task]); // no change
-    EXPECT_EQ(g_task_status, 999); // unchanged
+    EXPECT_EQ(plugin_->g_task_status, 999); // unchanged
 }
 
 TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_NoTaskMatch)
@@ -920,12 +920,12 @@ TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_NoTaskMatch)
 
     MaintenanceManager::currentTask = "unknown_task";
     plugin_->m_task_map.clear();
-    g_task_status = 1234; // sentinel value
+    plugin_->g_task_status = 1234; // sentinel value
 
     plugin_->timer_handler(SIGALRM);
 
     EXPECT_TRUE(plugin_->m_task_map.empty()); // no new entries
-    EXPECT_EQ(g_task_status, 1234); // unchanged
+    EXPECT_EQ(plugin_->g_task_status, 1234); // unchanged
 }
 
 /*
