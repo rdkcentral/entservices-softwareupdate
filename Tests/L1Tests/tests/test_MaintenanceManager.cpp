@@ -1114,21 +1114,16 @@ TEST_F(MaintenanceManagerTest, ServiceActivatedcheck) {
 }
 */
 TEST_F(MaintenanceManagerTest, checkServiceActivated) {
-    //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
-    // Mock getServiceState to simulate UNAVAILABLE state
-/*    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
-	.Times(5)
-        .WillRepeatedly(::testing::Return(nullptr)); */
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
-          .Times(::testing::AtLeast(1))
-          .WillRepeatedly(::testing::Return(&service_));
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(&service_));
     EXPECT_CALL(service_, State())
         .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
 
-    // Test: Plugin is not activated after retries, expect "invalid"
+    // Test: Plugin is not activated, expect " "
     std::string result = plugin_->checkActivatedStatus();
-    //EXPECT_EQ(result, "invalid");
+    EXPECT_EQ(result, " ");
 }
 
 TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
