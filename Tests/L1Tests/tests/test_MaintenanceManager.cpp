@@ -1182,6 +1182,20 @@ EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
     EXPECT_TRUE(result);
 }
 
+TEST_F(MaintenanceManagerTest, CheckNetwork_ReturnsFalse_WhenNetworkInactive)
+{
+    // Mock inactive plugin
+    plugin_->m_service = &service_;
+    EXPECT_CALL(service_, QueryInterfaceByCallsign<PluginHost::IShell>("org.rdk.Network"))
+        .WillOnce(Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::DEACTIVATED));
+
+    bool result = plugin_->checkNetwork();
+    EXPECT_FALSE(result);
+}
+
+
 TEST_F(MaintenanceManagerTest, CheckNetworkStatus1) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
