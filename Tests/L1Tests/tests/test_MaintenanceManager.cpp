@@ -896,7 +896,7 @@ TEST_F(MaintenanceManagerTest, TimerHandler_NonSIGALRM_Ignored)
 }
 TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_NoTaskMatch)
 {
-    MaintenanceManager::currentTask = "unknown_task"; // Simulate no match in task_names_foreground
+    WPEFramework::Plugin::MaintenanceManager::currentTask = "unknown_task"; // Simulate no match in task_names_foreground
 
     plugin_->timer_handler(SIGALRM);
 
@@ -905,7 +905,7 @@ TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_NoTaskMatch)
 }
 TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_TaskAlreadyHandled)
 {
-    MaintenanceManager::currentTask = "DownloadFirmware"; // Assuming this matches task_names_foreground[0]
+    WPEFramework::Plugin::MaintenanceManager::currentTask = "DownloadFirmware"; // Assuming this matches task_names_foreground[0]
 
     plugin_->m_task_map["DownloadFirmware"] = false; // Already marked
 
@@ -915,7 +915,7 @@ TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_TaskAlreadyHandled)
 }
 TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_TaskSetToError)
 {
-    MaintenanceManager::currentTask = "DownloadFirmware";
+    WPEFramework::Plugin::MaintenanceManager::currentTask = "DownloadFirmware";
 
     plugin_->m_task_map["DownloadFirmware"] = true; // Still active
 
