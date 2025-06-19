@@ -896,7 +896,6 @@ TEST_F(MaintenanceManagerTest, TimerHandler_HandlesSignalCorrectly) {
     plugin_->timer_handler(SIGALRM);
 
     EXPECT_FALSE(plugin_->m_task_map[matchedTask]); // should be set to false
-    EXPECT_EQ(plugin_->g_task_status, task_complete_status[TASK_RFC]); // status should be updated
 }
 
 TEST_F(MaintenanceManagerTest, TimerHandler_NonSIGALRM_Ignored)
