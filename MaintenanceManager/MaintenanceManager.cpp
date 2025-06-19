@@ -533,9 +533,9 @@ namespace WPEFramework
                     else /* system() executes successfully */
                     {
                         MM_LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
-                #if !defined(GTEST_ENABLE)
+#if !defined(GTEST_ENABLE)
                         task_thread.wait(lck);
-                #endif
+#endif
                         if (task_stopTimer())
                         {
                             MM_LOGINFO("Stopped Timer Successfully");
@@ -944,9 +944,9 @@ namespace WPEFramework
             }
             else
             {
-            #if !defined(GTEST_ENABLE)
+#if !defined(GTEST_ENABLE)
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::internetStatusChangeEventHandler, this);
-            #endif
+#endif
                 if (status == Core::ERROR_NONE)
                 {
                     result = true;
@@ -1291,11 +1291,11 @@ namespace WPEFramework
                 if (status > 0)
                 {
                     MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
-                #if defined(GTEST_ENABLE)
+#if defined(GTEST_ENABLE)
                     return true;
-                #else
+#else
                     return false;
-                #endif
+#endif
                 }
                 else if (joGetResult.HasLabel("connectedToInternet"))
                 {
@@ -1417,9 +1417,9 @@ namespace WPEFramework
             }
             else
             {
-            #if !defined(GTEST_ENABLE)
+#if !defined(GTEST_ENABLE)
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
-            #endif 
+#endif 
                 if (status == Core::ERROR_NONE)
                 {
                     result = true;
