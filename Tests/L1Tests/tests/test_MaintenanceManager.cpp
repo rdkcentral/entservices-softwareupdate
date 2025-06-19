@@ -1275,7 +1275,7 @@ TEST_F(MaintenanceManagerTest, TaskExecutionThread_NoSecurityAgent) {
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
         .WillRepeatedly(Return(&service_));
     EXPECT_CALL(service_, State())
-        .WillRepeatedly(Return(PluginHost::IShell::state::ACTIVATED));
+        .WillRepeatedly(::testing::Return(PluginHost::IShell::state::ACTIVATED));
 
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
         .WillOnce(::testing::Return(nullptr));
