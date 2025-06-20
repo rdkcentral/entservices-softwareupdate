@@ -30,8 +30,9 @@
 #include "WrapsMock.h"
 #include "ThunderPortability.h"
 #include "UtilsIarm.h"
+#if defined(GTEST_ENABLE)
 #include "mockauthservices.h"
-#include "DispatcherMock.h"
+#endif
 
 using namespace WPEFramework;
 using ::testing::NiceMock;
