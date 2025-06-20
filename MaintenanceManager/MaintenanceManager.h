@@ -171,7 +171,7 @@ namespace WPEFramework
          * this class exposes a public method called, Notify(), using this methods, all subscribed clients
          * will receive a JSONRPC message as a notification, in case this method is called.
          */
-
+         class MaintenanceManagerTest;
         class MaintenanceManager : public PluginHost::IPlugin, public PluginHost::JSONRPC
         {
 #if defined(GTEST_ENABLE)
@@ -258,7 +258,7 @@ namespace WPEFramework
         public:
             MaintenanceManager();
             virtual ~MaintenanceManager();
-
+            friend MaintenanceManagerTest;
             static MaintenanceManager *_instance;
             virtual const string Initialize(PluginHost::IShell *service) override;
             virtual void Deinitialize(PluginHost::IShell *service) override;
