@@ -849,8 +849,14 @@ TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_TimerCreateFails)
     MaintenanceManagerMock mockPlugin;
     WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = false;
 
-    EXPECT_CALL(mockPlugin, createTimer(::testing::_, ::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(-1));  // Simulate failure
+   /* EXPECT_CALL(mockPlugin, createTimer(::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(-1));  // Simulate failure */
+
+   EXPECT_CALL(mockPlugin, createTimer(::testing::_, ::testing::_, ::testing::_))
+    .WillOnce([](clockid_t, struct sigevent*, timer_t*) {
+        std::cout << "Mock createTimer called\n";
+        return -1;
+    });
 
     // Act
     bool result = mockPlugin.maintenance_initTimer();
