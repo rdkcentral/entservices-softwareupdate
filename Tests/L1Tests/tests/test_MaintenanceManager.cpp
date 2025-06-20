@@ -49,7 +49,7 @@ using namespace WPEFramework::Plugin;
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
 
-class  MaintenanceManagerTest : public Test {
+class  WPEFramework::Plugin::MaintenanceManagerTest : public Test {
 protected:
     Core::ProxyType<Plugin::MaintenanceManager> plugin_;
     Core::JSONRPC::Handler&                 handler_;
@@ -839,6 +839,9 @@ TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_AlreadyCreated_ReturnsTrue)
 class MaintenanceManagerMock : public MaintenanceManager {
 public:
     MOCK_METHOD(int, createTimer, (clockid_t, struct sigevent*, timer_t*), (override));
+    MOCK_METHOD(void, AddRef, (), (const, override));
+    MOCK_METHOD(uint32_t, Release, (), (const, override));
+
 };
 
 TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_TimerCreateFails)
