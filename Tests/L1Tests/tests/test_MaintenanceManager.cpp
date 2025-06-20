@@ -829,11 +829,11 @@ TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Success)
 TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_AlreadyCreated_ReturnsTrue)
 {
     // Simulate that the timer is already created
-    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = false;
+    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = true;
 
     // Should return true and not try to create the timer again
     bool result = plugin_->maintenance_initTimer();
-   // EXPECT_FALSE(WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated);
+    EXPECT_TRUE(WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated);
     EXPECT_TRUE(result);
 }
 /*
