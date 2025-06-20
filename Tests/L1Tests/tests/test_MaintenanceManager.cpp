@@ -1686,7 +1686,17 @@ TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly1)
 
     // Set a garbage value initially to verify changes
     plugin_->m_setting.setValue("softwareoptout", "INVALID_MODE");
-
+    
+    plugin_->m_service = &service_;
+    // Expectation: SecurityAgent is found
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+ 
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillOnce(Return(&service_));
     plugin_->maintenanceManagerOnBootup();
 
     // Check that the default mode is set
