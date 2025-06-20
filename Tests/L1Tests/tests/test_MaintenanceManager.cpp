@@ -1679,5 +1679,57 @@ TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     plugin_->InitializeIARM();
     
 }
+
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
+    plugin_->m_service = &service_;
+    Plugin::MaintenanceManager::_instance = &(*plugin_);
+
+    // Set a garbage value initially to verify changes
+    plugin_->m_setting.setValue("softwareoptout", "INVALID_MODE");
+
+    plugin_->maintenanceManagerOnBootup();
+
+    // Check that the default mode is set
+    EXPECT_EQ(MaintenanceManager::g_currentMode, FOREGROUND_MODE);
+
+    // Check the default notify status
+    EXPECT_EQ(MaintenanceManager::m_notify_status, MAINTENANCE_IDLE);
+
+    // Check epoch time is reset
+    EXPECT_EQ(MaintenanceManager::g_epoch_time, "");
+
+    // Check unsolicited maintenance type is set
+    EXPECT_EQ(g_maintenance_type, UNSOLICITED_MAINTENANCE);
+
+    // Opt-out should be reset to "NONE"
+    EXPECT_EQ(plugin_->m_setting.getValue("softwareoptout").String(), "NONE");
+
+    // Critical maintenance flag
+    EXPECT_EQ(MaintenanceManager::g_is_critical_maintenance, "false");
+
+    // Reboot pending flag
+    EXPECT_EQ(MaintenanceManager::g_is_reboot_pending, "false");
+
+    // Last successful time reset
+    EXPECT_EQ(MaintenanceManager::g_lastSuccessful_maint_time, "");
+
+    // Task status should be 0
+    EXPECT_EQ(MaintenanceManager::g_task_status, 0);
+
+    // Abort flag should be false
+    EXPECT_FALSE(MaintenanceManager::m_abort_flag);
+
+    // Unsolicited complete should be false
+    EXPECT_FALSE(MaintenanceManager::g_unsolicited_complete);
+
+    // Thread should be joinable (started)
+    EXPECT_TRUE(plugin_->m_thread.joinable());
+
+    // Cleanup the thread to avoid crash during test teardown
+    plugin_->m_abort_flag = true;
+    plugin_->m_thread.join();
+}
+
+
 #endif
 
