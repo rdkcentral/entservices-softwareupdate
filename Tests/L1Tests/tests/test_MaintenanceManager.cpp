@@ -1690,16 +1690,16 @@ TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly1)
     plugin_->maintenanceManagerOnBootup();
 
     // Check that the default mode is set
-    EXPECT_EQ(Plugin->g_currentMode, FOREGROUND_MODE);
+    EXPECT_EQ(plugin_->g_currentMode, FOREGROUND_MODE);
 
     // Check the default notify status
-    EXPECT_EQ(Plugin->m_notify_status, MAINTENANCE_IDLE);
+    EXPECT_EQ(plugin_->m_notify_status, MAINTENANCE_IDLE);
 
     // Check epoch time is reset
-    EXPECT_EQ(Plugin->g_epoch_time, "");
+    EXPECT_EQ(plugin_->g_epoch_time, "");
 
     // Check unsolicited maintenance type is set
-    EXPECT_EQ(Plugin->g_maintenance_type, UNSOLICITED_MAINTENANCE);
+    EXPECT_EQ(plugin_->g_maintenance_type, UNSOLICITED_MAINTENANCE);
 
     // Opt-out should be reset to "NONE"
     EXPECT_EQ(plugin_->m_setting.getValue("softwareoptout").String(), "NONE");
@@ -1708,19 +1708,19 @@ TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly1)
     EXPECT_EQ(WPEFramework::Plugin::MaintenanceManager::g_is_critical_maintenance, "false");
 
     // Reboot pending flag
-    EXPECT_EQ(Plugin->g_is_reboot_pending, "false");
+    EXPECT_EQ(plugin_->g_is_reboot_pending, "false");
 
     // Last successful time reset
-    EXPECT_EQ(Plugin->g_lastSuccessful_maint_time, "");
+    EXPECT_EQ(plugin_->g_lastSuccessful_maint_time, "");
 
     // Task status should be 0
-    EXPECT_EQ(Plugin->g_task_status, 0);
+    EXPECT_EQ(plugin_->g_task_status, 0);
 
     // Abort flag should be false
-    EXPECT_FALSE(Plugin->m_abort_flag);
+    EXPECT_FALSE(plugin_->m_abort_flag);
 
     // Unsolicited complete should be false
-    EXPECT_FALSE(Plugin->g_unsolicited_complete);
+    EXPECT_FALSE(plugin_->g_unsolicited_complete);
 
     // Thread should be joinable (started)
     EXPECT_TRUE(plugin_->m_thread.joinable());
