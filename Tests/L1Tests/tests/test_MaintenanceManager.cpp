@@ -58,8 +58,10 @@ protected:
     RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
     NiceMock<ServiceMock>             service_;
+#if defined(GTEST_ENABLE)
     NiceMock<MockAuthService>         iauthservice_;
     NiceMock<MockIAuthenticate>       iauthenticate_;
+#endif
 
     MaintenanceManagerTest()
         : plugin_(Core::ProxyType<Plugin::MaintenanceManager>::Create())
@@ -815,6 +817,7 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	}
 }
 #endif
+#if defined(GTEST_ENABLE)
 TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Success)
 {
     bool result = plugin_->maintenance_initTimer();
@@ -1677,4 +1680,5 @@ TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     plugin_->InitializeIARM();
     
 }
+#endif
 
