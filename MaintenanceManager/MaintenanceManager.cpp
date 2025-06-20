@@ -694,6 +694,7 @@ namespace WPEFramework
          */
         bool MaintenanceManager::maintenance_initTimer()
         {
+            MM_LOGINFO("Inside maintenance_initTimer(), g_task_timerCreated = %d", g_task_timerCreated);
             if (g_task_timerCreated)
             {
                 MM_LOGINFO("Timer has already been created, no need to create a Timer.");
