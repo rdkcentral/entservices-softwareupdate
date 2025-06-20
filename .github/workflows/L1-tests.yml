@@ -113,7 +113,7 @@ jobs:
         with:
           repository: rdkcentral/entservices-testframework
           path: entservices-testframework
-          ref: develop
+          ref: feature/RDK-55641
           token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Checkout entservices-softwareupdate
@@ -410,6 +410,7 @@ jobs:
           -Wl,-wrap,system -Wl,-wrap,popen -Wl,-wrap,syslog -Wl,-wrap,v_secure_system -Wl,-wrap,v_secure_popen -Wl,-wrap,v_secure_pclose -Wl,-wrap,unlink
           -DENABLE_TELEMETRY_LOGGING
           -DUSE_IARMBUS
+          -DGTEST_ENABLE
           -DENABLE_SYSTEM_GET_STORE_DEMO_LINK
           -DENABLE_DEEP_SLEEP
           -DENABLE_SET_WAKEUP_SRC_CONFIG
@@ -650,6 +651,10 @@ jobs:
           -o coverage
           -t "entservices-softwareupdate coverage"
           filtered_coverage.info
+          &&
+          lcov --extract filtered_coverage.info "*/MaintenanceManager/MaintenanceManager.cpp" -o maintenancemanager_coverage.info
+          &&
+          genhtml -o coverage -t "MaintenanceManager coverage" maintenancemanager_coverage.info
 
       - name: Upload artifacts
         if: ${{ !env.ACT }}
@@ -662,4 +667,3 @@ jobs:
             rdkL1TestResultsWithoutValgrind.json
             rdkL1TestResultsWithValgrind.json
           if-no-files-found: warn
-
