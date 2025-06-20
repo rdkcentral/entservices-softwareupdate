@@ -828,7 +828,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Success)
 TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_AlreadyCreated_ReturnsTrue)
 {
     // Simulate that the timer is already created
-    g_task_timerCreated = true;
+    plugin_->g_task_timerCreated = true;
 
     // Should return true and not try to create the timer again
     bool result = plugin_->maintenance_initTimer();
@@ -844,7 +844,7 @@ public:
 TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_TimerCreateFails)
 {
     MaintenanceManagerMock mockPlugin;
-    g_task_timerCreated = false;
+    mockPlugin.g_task_timerCreated = false;
 
     EXPECT_CALL(mockPlugin, createTimer(::testing::_, ::testing::_, ::testing::_))
         .WillOnce(::testing::Return(-1));  // Simulate failure
