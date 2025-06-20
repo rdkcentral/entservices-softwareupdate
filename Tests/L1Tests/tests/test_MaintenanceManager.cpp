@@ -890,6 +890,18 @@ TEST_F(MaintenanceManagerTest, TaskStartTimer_Success)
     // The result should be true if the timer started successfully
     EXPECT_TRUE(result);
 }
+TEST_F(MaintenanceManagerTest, TaskStartTimer_Fail)
+{
+    // Ensure the timer is not already created
+    plugin_->maintenance_deleteTimer();
+    plugin_->timerid = (timer_t)-1;
+    // Attempt to start the timer
+    bool result = plugin_->task_startTimer();
+    //EXPECT_FALSE(WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated);
+    // The result should be true if the timer started successfully
+    EXPECT_FALSE(result);
+}
+
 TEST_F(MaintenanceManagerTest, TaskStartTimer_earlyreturn)
 {
     WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = true;
