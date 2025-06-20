@@ -823,6 +823,45 @@ TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Success)
     bool result = plugin_->maintenance_initTimer();
     EXPECT_TRUE(result); 
 }
+//new
+
+TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_AlreadyCreated_ReturnsTrue)
+{
+    // Simulate that the timer is already created
+    g_task_timerCreated = true;
+
+    // Should return true and not try to create the timer again
+    bool result = plugin_->maintenance_initTimer();
+
+    EXPECT_TRUE(result);
+}
+
+class MaintenanceManagerMock : public MaintenanceManager {
+public:
+    MOCK_METHOD(int, createTimer, (clockid_t, struct sigevent*, timer_t*), (override));
+};
+
+TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_TimerCreateFails)
+{
+    MaintenanceManagerMock mockPlugin;
+    g_task_timerCreated = false;
+
+    EXPECT_CALL(mockPlugin, createTimer(::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(-1));  // Simulate failure
+
+    // Act
+    bool result = mockPlugin.maintenance_initTimer();
+
+    // Assert
+    EXPECT_FALSE(result);
+}
+
+
+
+
+
+
+
 /*
 TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Fail)
 {
