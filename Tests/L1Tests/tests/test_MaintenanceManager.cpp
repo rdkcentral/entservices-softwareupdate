@@ -1727,7 +1727,6 @@ TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly1)
 
     // Cleanup the thread to avoid crash during test teardown
     plugin_->m_abort_flag = true;
-    plugin_->m_thread.join();
 }
 
 
