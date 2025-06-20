@@ -1705,7 +1705,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly1)
     EXPECT_EQ(plugin_->m_setting.getValue("softwareoptout").String(), "NONE");
 
     // Critical maintenance flag
-    EXPECT_EQ(WPEFramework::Plugin::MaintenanceManager::g_is_critical_maintenance, "false");
+    EXPECT_EQ(plugin_->g_is_critical_maintenance, "false");
 
     // Reboot pending flag
     EXPECT_EQ(plugin_->g_is_reboot_pending, "false");
