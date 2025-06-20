@@ -119,6 +119,7 @@ class MaintenanceManagerInitializedEventTest : public MaintenanceManagerTest {
 protected:
     IARM_EventHandler_t               controlEventHandler_;
     NiceMock<FactoriesImplementation> factoriesImplementation_;
+    NiceMock<ServiceMock>             service_;
     PLUGINHOST_DISPATCHER* dispatcher_;
     Core::JSONRPC::Message message_;
 
