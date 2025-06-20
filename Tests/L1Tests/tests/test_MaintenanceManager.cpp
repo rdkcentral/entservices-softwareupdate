@@ -48,7 +48,7 @@ using ::testing::AssertionFailure;
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
 
-class MaintenanceManagerTest : public Test {
+class  WPEFramework::Plugin::MaintenanceManagerTest : public Test {
 protected:
     Core::ProxyType<Plugin::MaintenanceManager> plugin_;
     Core::JSONRPC::Handler&                 handler_;
