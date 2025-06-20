@@ -169,7 +169,6 @@ TEST_F(MaintenanceManagerTest, RegisteredMethods)
 }
 
 /* --- getMaintenanceActivityStatus JsonRPC ---- */
-
 TEST_F(MaintenanceManagerTest, getMaintenanceActivityStatusJsonRPC)
 {
     Maint_notify_status_t status = MAINTENANCE_ERROR;
@@ -663,8 +662,6 @@ TEST(GetTimeZoneTest, TimeZoneOffsetMapFileCreated) {
     remove("/tmp/timeZone_offset_map");
 }
 
-
-
 TEST_F(MaintenanceManagerTest, GetServiceState_Unavailable) {
     PluginHost::IShell::state state;
     EXPECT_CALL(service, QueryInterfaceByCallsign("test"))
@@ -864,7 +861,6 @@ TEST_F(MaintenanceManagerTest, TaskStopTimer_Fail)
     EXPECT_FALSE(result);
 }
 
-
 TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
 {
     // Ensure the timer is created first
@@ -929,36 +925,6 @@ TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_NoTaskMatch)
     EXPECT_EQ(plugin_->g_task_status, 1234); // unchanged
 }
 
-/*
-TEST_F(MaintenanceManagerTest, TimerHandler_HandlesSignalCorrectly) {
-    int test_signo = SIGALRM; // or any relevant signal number
-    plugin_->timer_handler(test_signo);
-}
-TEST_F(MaintenanceManagerTest, TimerHandler_NonSIGALRM_Ignored)
-{
-    plugin_->timer_handler(SIGINT); // simulate a wrong signal
-    // Expect MM_LOGERR about wrong signal (mock/log assertion if needed)
-}
-TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_NoTaskMatch)
-{
-    WPEFramework::Plugin::MaintenanceManager::currentTask = "unknown_task"; // Simulate no match in task_names_foreground
-
-    plugin_->timer_handler(SIGALRM);
-
-    // Nothing should be updated in m_task_map
-    // Could check logs or ensure m_task_map untouched
-}
-TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_TaskAlreadyHandled)
-{
-    WPEFramework::Plugin::MaintenanceManager::currentTask = "DownloadFirmware"; // Assuming this matches task_names_foreground[0]
-
-    plugin_->m_task_map["DownloadFirmware"] = false; // Already marked
-
-    plugin_->timer_handler(SIGALRM);
-
-    // Should log "Ignoring Error Event for Task"
-}
-*/
 TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_TaskSetToError)
 {
     WPEFramework::Plugin::MaintenanceManager::currentTask = "DownloadFirmware";
@@ -970,7 +936,6 @@ TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_TaskSetToError)
     EXPECT_TRUE(plugin_->m_task_map["DownloadFirmware"]);
     // Could also validate g_task_status or check for notification being sent
 }
-
 
 TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
     const char* owner = "TestOwner";
@@ -1066,8 +1031,6 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithoutTokenWhenSecurityAgentPrese
     delete handle;
 }
 
-
-
 TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentnotPresent) {
 
     plugin_->m_service = &service_;
@@ -1081,7 +1044,6 @@ TEST_F(MaintenanceManagerTest, ReturnsLinkTypeWithTokenWhenSecurityAgentnotPrese
     delete handle;
 }
 
-
 TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
     //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
     plugin_->m_service = &service_;
@@ -1094,27 +1056,7 @@ TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
     std::string result = plugin_->checkActivatedStatus();
     EXPECT_EQ(result, "invalid");
 }
-/*
-TEST_F(MaintenanceManagerTest, ServiceNotActivated_activationstatuserror) {
-    //PluginHost::IShell::state state = PluginHost::IShell::state::UNAVAILABLE;
-    plugin_->m_service = &service_;
-    // Mock getServiceState to simulate UNAVAILABLE state
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
-	.Times(5)
-        .WillRepeatedly(::testing::Return(&service_));
 
-    EXPECT_CALL(service_, State())
-        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
-	
-    EXPECT_CALL(iauthservice_, GetActivationStatus(::testing::_))
-        .WillOnce([](WPEFramework::Exchange::IAuthService::ActivationStatusResult& result) {
-            return Core::ERROR_GENERAL;
-        });
-
-    // Test: Plugin is not activated after retries, expect "invalid"
-    std::string result = plugin_->checkActivatedStatus();
-    EXPECT_EQ(result, "invalid");
-}*/
 TEST_F(MaintenanceManagerTest, checkServiceActivated) {
     plugin_->m_service = &service_;
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
@@ -1154,6 +1096,7 @@ TEST_F(MaintenanceManagerTest, getActivatedstatussuccess) {
     EXPECT_TRUE(result);
     EXPECT_FALSE(skipCheck);
 }
+
 TEST_F(MaintenanceManagerTest, subscribe) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
@@ -1163,6 +1106,7 @@ TEST_F(MaintenanceManagerTest, subscribe) {
     bool result = plugin_->subscribeToDeviceInitializationEvent();
     EXPECT_TRUE(result);
 }
+
 TEST_F(MaintenanceManagerTest, subscribewithoutsecurityagent) {
     plugin_->m_service = &service_;
     // Expectation: SecurityAgent is found
@@ -1193,7 +1137,6 @@ TEST_F(MaintenanceManagerTest, subscribeForInternetStatus1) {
     EXPECT_TRUE(result);
 }
 
-
 TEST_F(MaintenanceManagerTest, CheckNetworkStatus) {
     plugin_->m_service = &service_;
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
@@ -1221,7 +1164,6 @@ TEST_F(MaintenanceManagerTest, CheckNetwork_ReturnsFalse_WhenNetworkInactive)
     EXPECT_FALSE(result);
 }
 
-
 TEST_F(MaintenanceManagerTest, CheckNetworkStatuswithoutsecurityagent) {
     plugin_->m_service = &service_;
  
@@ -1237,7 +1179,6 @@ TEST_F(MaintenanceManagerTest, CheckNetworkStatuswithoutsecurityagent) {
     bool result = plugin_->checkNetwork();
     EXPECT_TRUE(result);
 }
-
 
 TEST_F(MaintenanceManagerTest, isDeviceOnlinesuccess ) {
     plugin_->m_service = &service_;
@@ -1310,7 +1251,6 @@ TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest1) {
 
 }
 
-
 TEST_F(MaintenanceManagerTest, DeinitializeIARM_RemovesHandlerAndNullifiesInstance) {
     // Arrange
     plugin_->m_service = &service_; 
@@ -1325,18 +1265,12 @@ TEST_F(MaintenanceManagerTest, GetServiceState_Available) {
         .WillOnce(::testing::Return(&service_));
     EXPECT_CALL(service_, State())
         .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
-/*    uint32_t result = plugin_->getServiceState(&service_, "test", state);
-    EXPECT_EQ(result, Core::ERROR_NONE);
-    EXPECT_EQ(state, PluginHost::IShell::state::ACTIVATED); */
-    
-/*    uint32_t result = getServiceState(&service_, "test", state); */
     uint32_t result = WPEFramework::Plugin::getServiceState(&service_, "test", state);
 
     EXPECT_EQ(result, Core::ERROR_NONE);
     EXPECT_EQ(state, PluginHost::IShell::state::ACTIVATED);
 
 }
-
 
 TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ValidData_ReturnsTrue) {
     plugin_->m_service = &service_;
@@ -1395,7 +1329,6 @@ TEST_F(MaintenanceManagerTest, SetDeviceInitializationContext_ExtraKeys_Ignored_
     EXPECT_TRUE(result); // Extra keys ignored, required keys present
 }
 
-
 TEST_F(MaintenanceManagerTest, EventHandler_InstanceSet_DelegatesCall) {
     plugin_->m_service = &service_;
     Plugin::MaintenanceManager::_instance = &(*plugin_);
@@ -1415,7 +1348,6 @@ TEST_F(MaintenanceManagerTest, StaticEventHandler_InstanceNull_LogsWarning) {
                                                     IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
                                                     &eventData, sizeof(eventData));
 }
-
 
 TEST_F(MaintenanceManagerTest, IarmEventHandler_AbortFlagTrue_IgnoresEvent) {
     plugin_->m_abort_flag = true;
@@ -1441,7 +1373,6 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskActive_Completes
     //EXPECT_FALSE(plugin_->m_task_map[task_names_foreground[TASK_RFC].c_str()]);
 }
 
-
 TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskInactive_Ignored) {
     plugin_->m_abort_flag = false;
     plugin_->m_notify_status = MAINTENANCE_STARTED;
@@ -1457,7 +1388,6 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskInactive_Ignored
     // Still false — no change
     EXPECT_FALSE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_RFC].c_str()]);
 }
-
 
 TEST_F(MaintenanceManagerTest, IarmEventHandler_LogUploadError_TaskActive_Handled) {
     plugin_->m_abort_flag = false;
@@ -1493,8 +1423,6 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RebootRequired_GlobalFlagSet) {
     plugin_->m_abort_flag = false;
     plugin_->m_notify_status = MAINTENANCE_STARTED;
 
-    //g_is_reboot_pending = "false";
-
     IARM_Bus_MaintMGR_EventData_t eventData = {};
     eventData.data.maintenance_module_status.status = MAINT_REBOOT_REQUIRED;
 
@@ -1502,22 +1430,8 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RebootRequired_GlobalFlagSet) {
                               IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
                               &eventData, sizeof(eventData));
 
-    //EXPECT_EQ(g_is_reboot_pending, "true");
 }
-/*
-TEST_F(MaintenanceManagerTest, IarmEventHandler_UnknownOwner_Ignored) {
-    plugin_->m_abort_flag = false;
-    plugin_->m_notify_status = MAINTENANCE_STARTED;
 
-    IARM_Bus_MaintMGR_EventData_t eventData = {};
-    eventData.data.maintenance_module_status.status = MAINT_RFC_COMPLETE;
-
-    plugin_->iarmEventHandler("Unknown.Owner",
-                              IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
-                              &eventData, sizeof(eventData));
-
-}
-*/
 TEST_F(MaintenanceManagerTest, IarmEventHandler_UnexpectedOwner_Ignored) {
     plugin_->m_abort_flag = false;
 
@@ -1526,7 +1440,6 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_UnexpectedOwner_Ignored) {
 
     plugin_->iarmEventHandler("SomeOtherOwner", IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, &eventData, sizeof(eventData));
 
-    // No action expected
 }
 TEST_F(MaintenanceManagerTest, IarmEventHandler_UnknownEventId_Ignored) {
     plugin_->m_abort_flag = false;
@@ -1534,7 +1447,6 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_UnknownEventId_Ignored) {
     IARM_Bus_MaintMGR_EventData_t eventData = {};
     plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME, 999, &eventData, sizeof(eventData));
 
-    // No action expected
 }
 TEST_F(MaintenanceManagerTest, IarmEventHandler_NonStartedStatus_Ignored) {
     plugin_->m_abort_flag = false;
@@ -1547,7 +1459,6 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_NonStartedStatus_Ignored) {
                               IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
                               &eventData, sizeof(eventData));
 
-    // Should exit early
 }
 
 TEST_F(MaintenanceManagerTest, IarmEventHandler_CriticalUpdate_GlobalFlagSet) {
@@ -1561,7 +1472,6 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_CriticalUpdate_GlobalFlagSet) {
                               IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
                               &eventData, sizeof(eventData));
 
-    // Normally would assert on `g_is_critical_maintenance`
 }
 TEST_F(MaintenanceManagerTest, IarmEventHandler_RfcInProgress_SetsTrue) {
     plugin_->m_abort_flag = false;
@@ -1595,7 +1505,6 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue)
     bool ok = plugin_->knowWhoAmI(activation);
 
     EXPECT_FALSE(ok);
-    //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
 }
 TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue1)
 {
@@ -1613,7 +1522,6 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue1)
     bool ok = plugin_->knowWhoAmI(activation);
 
     EXPECT_FALSE(ok);
-    //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
 }
 
 TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue2)
@@ -1631,7 +1539,6 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue2)
     
     std::string activation = "activated";
     plugin_->knowWhoAmI(activation);
-
 }
 
 TEST_F(MaintenanceManagerTest, SecManagerInactive_RetriesOnce)
