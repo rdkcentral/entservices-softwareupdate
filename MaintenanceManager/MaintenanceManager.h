@@ -120,7 +120,11 @@ typedef enum
 #define ALL_TASKS_SUCCESS               0x3F
 #define MAINTENANCE_TASK_SKIPPED        0x200
 
+#if defined(GTEST_ENABLE)
+#define MAX_NETWORK_RETRIES             1
+#else
 #define MAX_NETWORK_RETRIES             4
+#endif
 #define INTERNET_CONNECTED_STATE        3
 #define NETWORK_RETRY_INTERVAL          30
 
@@ -167,10 +171,14 @@ namespace WPEFramework
          * this class exposes a public method called, Notify(), using this methods, all subscribed clients
          * will receive a JSONRPC message as a notification, in case this method is called.
          */
-
+         class MaintenanceManagerTest;
         class MaintenanceManager : public PluginHost::IPlugin, public PluginHost::JSONRPC
         {
+#if defined(GTEST_ENABLE)
+        public:
+#else
         private:
+#endif
             typedef Core::JSON::String JString;
             typedef Core::JSON::ArrayType<JString> JStringArray;
             typedef Core::JSON::Boolean JBool;
@@ -250,7 +258,7 @@ namespace WPEFramework
         public:
             MaintenanceManager();
             virtual ~MaintenanceManager();
-
+            friend MaintenanceManagerTest;
             static MaintenanceManager *_instance;
             virtual const string Initialize(PluginHost::IShell *service) override;
             virtual void Deinitialize(PluginHost::IShell *service) override;
@@ -284,6 +292,11 @@ namespace WPEFramework
                 auto result = getThunderPluginHandle(callsign);
                 std::cout << "Exiting PublicGetThunderPluginHandle" << std::endl;
                 return result;
+            }
+
+            virtual int createTimer(clockid_t clockid, struct sigevent* sev, timer_t* timerid) {
+                std::cout << "Base createTimer called\n";
+                return timer_create(clockid, sev, timerid);
             }
             /* ---- Accessors ---- */
             BEGIN_INTERFACE_MAP(MaintenanceManager)
