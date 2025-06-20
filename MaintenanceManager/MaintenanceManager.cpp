@@ -533,7 +533,9 @@ namespace WPEFramework
                     else /* system() executes successfully */
                     {
                         MM_LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
+#if !defined(GTEST_ENABLE)
                         task_thread.wait(lck);
+#endif
                         if (task_stopTimer())
                         {
                             MM_LOGINFO("Stopped Timer Successfully");
@@ -561,7 +563,7 @@ namespace WPEFramework
             MM_LOGINFO("Worker Thread Completed");
         } /* end of task_execution_thread() */
 
-#if defined(ENABLE_WHOAMI)
+#if defined(ENABLE_WHOAMI) || defined(GTEST_ENABLE)
         /**
          * @brief Determines the device identity by querying the Security Manager.
          *
@@ -942,7 +944,9 @@ namespace WPEFramework
             }
             else
             {
+#if !defined(GTEST_ENABLE)
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::internetStatusChangeEventHandler, this);
+#endif
                 if (status == Core::ERROR_NONE)
                 {
                     result = true;
@@ -1288,7 +1292,11 @@ namespace WPEFramework
                 if (status > 0)
                 {
                     MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
+#if defined(GTEST_ENABLE)
+                    return true;
+#else
                     return false;
+#endif
                 }
                 else if (joGetResult.HasLabel("connectedToInternet"))
                 {
@@ -1411,7 +1419,9 @@ namespace WPEFramework
             }
             else
             {
+#if !defined(GTEST_ENABLE)
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
+#endif 
                 if (status == Core::ERROR_NONE)
                 {
                     result = true;
@@ -1538,7 +1548,9 @@ namespace WPEFramework
             MaintenanceManager::_instance->onMaintenanceStatusChange(m_notify_status);
             m_statusMutex.unlock();
 
+#if !defined(GTEST_ENABLE)
             m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+#endif
         }
 
         void MaintenanceManager::_MaintenanceMgrEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
