@@ -118,8 +118,6 @@ static AssertionResult isValidCtrlmRcuIarmEvent(IARM_EventId_t ctrlmRcuIarmEvent
 class MaintenanceManagerInitializedEventTest : public MaintenanceManagerTest {
 protected:
     IARM_EventHandler_t               controlEventHandler_;
-    NiceMock<ServiceMock>             service_;
-    NiceMock<MockAuthService>         iauthservice_;
     NiceMock<FactoriesImplementation> factoriesImplementation_;
     PLUGINHOST_DISPATCHER* dispatcher_;
     Core::JSONRPC::Message message_;
