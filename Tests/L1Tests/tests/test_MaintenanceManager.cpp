@@ -1574,10 +1574,25 @@ TEST_F(MaintenanceManagerTest, SecManagerInactive_ActivatedDevice_ExitsImmediate
     EXPECT_FALSE(result);
 }
 
-TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly1) {
     plugin_->m_service = &service_;
-    Plugin::MaintenanceManager::_instance = &(*plugin_);	
+    Plugin::MaintenanceManager::_instance = &(*plugin_);
+    // Set a garbage value initially to verify changes
+    plugin_->m_setting.setValue("softwareoptout", "INVALID_MODE");
+    
     plugin_->maintenanceManagerOnBootup();
+    EXPECT_EQ(plugin_->g_currentMode, FOREGROUND_MODE);
+    EXPECT_EQ(plugin_->m_notify_status, MAINTENANCE_IDLE);
+    EXPECT_EQ(plugin_->g_epoch_time, "");
+    EXPECT_EQ(plugin_->g_maintenance_type, UNSOLICITED_MAINTENANCE);
+    EXPECT_EQ(plugin_->m_setting.getValue("softwareoptout").String(), "NONE");
+    EXPECT_EQ(plugin_->g_is_critical_maintenance, "false");
+    EXPECT_EQ(plugin_->g_is_reboot_pending, "false");
+    EXPECT_EQ(plugin_->g_lastSuccessful_maint_time, "");
+    EXPECT_EQ(plugin_->g_task_status, 0);
+    EXPECT_FALSE(plugin_->m_abort_flag);
+    EXPECT_FALSE(plugin_->g_unsolicited_complete);
+
 }
 
 TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
