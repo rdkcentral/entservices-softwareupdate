@@ -293,6 +293,10 @@ namespace WPEFramework
                 std::cout << "Exiting PublicGetThunderPluginHandle" << std::endl;
                 return result;
             }
+
+            virtual int createTimer(clockid_t clockid, struct sigevent* sev, timer_t* timerid) {
+                return timer_create(clockid, sev, timerid);
+            }
             /* ---- Accessors ---- */
             BEGIN_INTERFACE_MAP(MaintenanceManager)
             INTERFACE_ENTRY(PluginHost::IPlugin)
