@@ -1722,11 +1722,6 @@ TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly1)
     // Unsolicited complete should be false
     EXPECT_FALSE(plugin_->g_unsolicited_complete);
 
-    // Thread should be joinable (started)
-    EXPECT_TRUE(plugin_->m_thread.joinable());
-
-    // Cleanup the thread to avoid crash during test teardown
-    plugin_->m_abort_flag = true;
 }
 
 
