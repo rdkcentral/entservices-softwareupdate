@@ -1680,7 +1680,7 @@ TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     
 }
 
-TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly) {
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly1) {
     plugin_->m_service = &service_;
     Plugin::MaintenanceManager::_instance = &(*plugin_);
 
