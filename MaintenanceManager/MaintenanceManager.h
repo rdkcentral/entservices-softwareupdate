@@ -295,6 +295,7 @@ namespace WPEFramework
             }
 
             virtual int createTimer(clockid_t clockid, struct sigevent* sev, timer_t* timerid) {
+                std::cout << "Base createTimer called\n";
                 return timer_create(clockid, sev, timerid);
             }
             /* ---- Accessors ---- */
