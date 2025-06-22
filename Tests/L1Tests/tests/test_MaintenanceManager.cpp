@@ -1690,7 +1690,8 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue2)
         .WillOnce(::testing::Return(&service_));
     
     std::string activation = "activated";
-    plugin_->knowWhoAmI(activation);
+    bool result = plugin_->knowWhoAmI(activation);
+    EXPECT_FALSE(result);
 
 }
 
