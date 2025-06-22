@@ -1546,7 +1546,7 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_FWDownloadAborted_TaskMarkedSkip
                               IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
                               &eventData, sizeof(eventData));
 
-   // EXPECT_FALSE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_SWUPDATE].c_str()]);
+    EXPECT_FALSE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_SWUPDATE].c_str()]);
 }
 
 TEST_F(MaintenanceManagerTest, IarmEventHandler_RebootRequired_GlobalFlagSet) {
@@ -1562,7 +1562,7 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RebootRequired_GlobalFlagSet) {
                               IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
                               &eventData, sizeof(eventData));
 
-    //EXPECT_EQ(g_is_reboot_pending, "true");
+    EXPECT_EQ(plugin_->g_is_reboot_pending, "true");
 }
 /*
 TEST_F(MaintenanceManagerTest, IarmEventHandler_UnknownOwner_Ignored) {
@@ -1655,7 +1655,7 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue)
     bool ok = plugin_->knowWhoAmI(activation);
 
     EXPECT_FALSE(ok);
-    //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
+    EXPECT_TRUE(plugin_->g_subscribed_for_deviceContextUpdate);
 }
 TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue1)
 {
@@ -1673,7 +1673,7 @@ TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue1)
     bool ok = plugin_->knowWhoAmI(activation);
 
     EXPECT_FALSE(ok);
-    //EXPECT_TRUE(g_subscribed_for_deviceContextUpdate);
+    EXPECT_TRUE(plugin_->g_subscribed_for_deviceContextUpdate);
 }
 
 TEST_F(MaintenanceManagerTest, SecManagerActive_AllGood_ReturnsTrue2)
