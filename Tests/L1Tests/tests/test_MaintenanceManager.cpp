@@ -946,6 +946,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
     // Ensure the timer is created first
     WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = true;
     // Attempt to delete the timer
+    plugin_->timerid = reinterpret_cast<timer_t>(0x1);
     bool result = plugin_->maintenance_deleteTimer();
 
     // Should succeed
