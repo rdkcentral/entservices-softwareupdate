@@ -923,7 +923,7 @@ TEST_F(MaintenanceManagerTest, TaskStopTimer_Fail)
     // Should succeed
     EXPECT_FALSE(result);
 }
-
+//new
 TEST_F(MaintenanceManagerTest, TaskStopTimer_TimerSetTimeFails)
 {
     // Manually set timer created flag
@@ -940,7 +940,7 @@ TEST_F(MaintenanceManagerTest, TaskStopTimer_TimerSetTimeFails)
 }
 
 
-
+//change
 TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
 {
     // Ensure the timer is created first
@@ -950,7 +950,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
     bool result = plugin_->maintenance_deleteTimer();
 
     // Should succeed
-    //EXPECT_TRUE(result);
+    EXPECT_TRUE(result);
 }
 TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Fail)
 {
