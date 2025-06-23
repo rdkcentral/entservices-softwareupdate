@@ -924,6 +924,22 @@ TEST_F(MaintenanceManagerTest, TaskStopTimer_Fail)
     EXPECT_FALSE(result);
 }
 
+TEST_F(MaintenanceManagerTest, TaskStopTimer_TimerSetTimeFails)
+{
+    // Manually set timer created flag
+    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = true;
+
+    // Inject an invalid timer ID or mock `timer_settime` to fail
+    plugin_->timerid = -1; // This will cause timer_settime to fail
+
+    // Call stopTimer
+    bool result = plugin_->task_stopTimer();
+
+    // Should fail due to system call failure
+    EXPECT_FALSE(result);
+}
+
+
 
 TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
 {
