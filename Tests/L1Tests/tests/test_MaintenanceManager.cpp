@@ -930,7 +930,7 @@ TEST_F(MaintenanceManagerTest, TaskStopTimer_TimerSetTimeFails)
     WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = true;
 
     // Inject an invalid timer ID or mock `timer_settime` to fail
-    plugin_->timerid = -1; // This will cause timer_settime to fail
+    plugin_->timerid = nullptr; // This will cause timer_settime to fail
 
     // Call stopTimer
     bool result = plugin_->task_stopTimer();
