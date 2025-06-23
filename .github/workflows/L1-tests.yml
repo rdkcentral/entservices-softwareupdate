@@ -654,7 +654,7 @@ jobs:
           &&
           lcov --extract filtered_coverage.info "*/Packager/Packager*" -o Packager_coverage.info
           &&
-          lcov --extract filtered_coverage.info "*/FirmwareUpdate/FirmwareUpdate*" -o Packager_coverage.info
+          lcov --extract filtered_coverage.info "*/FirmwareUpdate/FirmwareUpdate*" -o FirmwareUpdate.info
           &&
           lcov --extract filtered_coverage.info "*/MaintenanceManager/MaintenanceManager*" -o maintenancemanager_coverage.info
 
