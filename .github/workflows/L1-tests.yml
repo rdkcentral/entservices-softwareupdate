@@ -652,10 +652,10 @@ jobs:
           -t "entservices-softwareupdate coverage"
           filtered_coverage.info
           &&
-          lcov --extract filtered_coverage.info "*/MaintenanceManager/MaintenanceManager.cpp" -o maintenancemanager_coverage.info
+          lcov --extract filtered_coverage.info "*/Packager/Packager*" -o Packager_coverage.info
           &&
-          genhtml -o coverage -t "MaintenanceManager coverage" maintenancemanager_coverage.info
-
+          lcov --extract filtered_coverage.info "*/MaintenanceManager/MaintenanceManager.cpp" -o maintenancemanager_coverage.info
+         
       - name: Upload artifacts
         if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v4
