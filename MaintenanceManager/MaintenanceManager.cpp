@@ -350,7 +350,6 @@ namespace WPEFramework
         {
             int i = 0;
             string task = "";
-            bool isMaintenanceSuppressed = false;
             bool internetConnectStatus = false;
             bool delayMaintenanceStarted = false;
             bool exitOnNoNetwork = false;
@@ -379,11 +378,9 @@ namespace WPEFramework
                 tasks.erase(tasks.begin(), tasks.end());
             }
 
-#if defined(SUPPRESS_MAINTENANCE)
-            if (!g_whoami_support_enabled)
+            if (!g_whoami_support_enabled && g_suppress_maintenance_enabled)
             {   
                 MM_LOGINFO("WHOAMI_SUPPORT is disabled\n");
-                isMaintenanceSuppressed = true;
                 bool skipFirmwareCheck = false;
                 bool activationStatus = getActivatedStatus(skipFirmwareCheck); /* Activation check */
                 /* we proceed with network check only if
@@ -396,8 +393,7 @@ namespace WPEFramework
                     internetConnectStatus = isDeviceOnline(); /* Network check */
                 }
             }
-#endif  
-            if (!isMaintenanceSuppressed)
+	    else
             {
                 internetConnectStatus = isDeviceOnline(); /* Network check */
             }
@@ -465,8 +461,7 @@ namespace WPEFramework
             MM_LOGINFO("Reboot_Pending :%s", g_is_reboot_pending.c_str());
             MM_LOGINFO("%s", UNSOLICITED_MAINTENANCE == g_maintenance_type ? "---------------UNSOLICITED_MAINTENANCE--------------" : "=============SOLICITED_MAINTENANCE===============");
             
-#if defined(SUPPRESS_MAINTENANCE)
-            if (!g_whoami_support_enabled && isMaintenanceSuppressed)
+            if (!g_whoami_support_enabled && g_suppress_maintenance_enabled)
             {
                 if (skipFirmwareCheck)
                 {
@@ -484,8 +479,7 @@ namespace WPEFramework
                     tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
                 }
             }
-#endif
-            if (!isMaintenanceSuppressed)
+	    else
             {
                 tasks.push_back(task_names_foreground[TASK_RFC].c_str());
                 tasks.push_back(task_names_foreground[TASK_SWUPDATE].c_str());
@@ -1485,6 +1479,9 @@ namespace WPEFramework
                 MM_LOGINFO("WHOAMI_SUPPORT is enabled\n");
                 subscribeToDeviceInitializationEvent();
             }
+#if defined(SUPPRESS_MAINTENANCE)
+            g_suppress_maintenance_enabled = true;
+#endif
 
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             InitializeIARM();
