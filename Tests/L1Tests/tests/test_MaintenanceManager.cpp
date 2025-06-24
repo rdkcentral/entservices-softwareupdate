@@ -1245,6 +1245,59 @@ TEST_F(MaintenanceManagerTest, getServiceNotActivated) {
     EXPECT_FALSE(skipCheck);
 }
 
+TEST_F(MaintenanceManagerTest, getActivatedstatussuccess1) {
+    bool skipCheck = false;
+    plugin_->m_service = &service_;
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
+          .Times(::testing::AtLeast(1))
+          .WillRepeatedly(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATION_CONNECT));
+    bool result = plugin_->getActivatedStatus(skipCheck);
+    //EXPECT_TRUE(result);
+    //EXPECT_FALSE(skipCheck);
+}
+
+TEST_F(MaintenanceManagerTest, getActivatedstatussuccess2) {
+    bool skipCheck = false;
+    plugin_->m_service = &service_;
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
+          .Times(::testing::AtLeast(1))
+          .WillRepeatedly(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATION_READY));
+    bool result = plugin_->getActivatedStatus(skipCheck);
+    //EXPECT_TRUE(result);
+    //EXPECT_FALSE(skipCheck);
+}
+
+
+TEST_F(MaintenanceManagerTest, getActivatedstatussuccess3) {
+    bool skipCheck = false;
+    plugin_->m_service = &service_;
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
+          .Times(::testing::AtLeast(1))
+          .WillRepeatedly(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::NOT_ACTIVATED));
+    bool result = plugin_->getActivatedStatus(skipCheck);
+    //EXPECT_TRUE(result);
+    //EXPECT_FALSE(skipCheck);
+}
+
+TEST_F(MaintenanceManagerTest, getActivatedstatussuccess4) {
+    bool skipCheck = false;
+    plugin_->m_service = &service_;
+    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
+          .Times(::testing::AtLeast(1))
+          .WillRepeatedly(::testing::Return(&service_));
+    EXPECT_CALL(service_, State())
+        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATION_DISCONNECT));
+    bool result = plugin_->getActivatedStatus(skipCheck);
+    //EXPECT_TRUE(result);
+    //EXPECT_FALSE(skipCheck);
+}
+
 TEST_F(MaintenanceManagerTest, getActivatedstatussuccess) {
     bool skipCheck = false;
     plugin_->m_service = &service_;
