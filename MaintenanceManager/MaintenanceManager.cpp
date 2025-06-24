@@ -378,10 +378,10 @@ namespace WPEFramework
                 tasks.erase(tasks.begin(), tasks.end());
             }
 
+	    bool skipFirmwareCheck = false;
             if (!g_whoami_support_enabled && g_suppress_maintenance_enabled)
             {   
                 MM_LOGINFO("WHOAMI_SUPPORT is disabled\n");
-                bool skipFirmwareCheck = false;
                 bool activationStatus = getActivatedStatus(skipFirmwareCheck); /* Activation check */
                 /* we proceed with network check only if
                 * "activation-connect",
