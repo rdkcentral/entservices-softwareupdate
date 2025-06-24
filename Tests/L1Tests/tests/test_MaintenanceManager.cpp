@@ -879,6 +879,19 @@ TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Fail)
     EXPECT_FALSE(result); 
 } */
 
+//change
+TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
+{
+    // Ensure the timer is created first
+    WPEFramework::Plugin::MaintenanceManager::g_task_timerCreated = true;
+    // Attempt to delete the timer
+    plugin_->timerid = reinterpret_cast<timer_t>(0x1);
+    bool result = plugin_->maintenance_deleteTimer();
+
+    // Should succeed
+    EXPECT_TRUE(result);
+}
+
 TEST_F(MaintenanceManagerTest, TaskStartTimer_Success)
 {
     // Ensure the timer is not already created
@@ -951,7 +964,7 @@ TEST_F(MaintenanceManagerTest, TaskStopTimer_TimerSetTimeFails)
     EXPECT_FALSE(result);
 }
 
-
+/*
 //change
 TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
 {
@@ -963,7 +976,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
 
     // Should succeed
     EXPECT_TRUE(result);
-}
+} */
 TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Fail)
 {
     // Ensure the timer is created first
