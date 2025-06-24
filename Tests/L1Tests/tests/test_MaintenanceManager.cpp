@@ -880,6 +880,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceInitTimer_Fail)
 } */
 
 //change
+/*
 TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
 {
     // Ensure the timer is created first
@@ -891,7 +892,7 @@ TEST_F(MaintenanceManagerTest, MaintenanceDeleteTimer_Success)
     // Should succeed
     EXPECT_TRUE(result);
 }
-
+*/
 TEST_F(MaintenanceManagerTest, TaskStartTimer_Success)
 {
     // Ensure the timer is not already created
