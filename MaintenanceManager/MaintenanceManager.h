@@ -120,7 +120,11 @@ typedef enum
 #define ALL_TASKS_SUCCESS               0x3F
 #define MAINTENANCE_TASK_SKIPPED        0x200
 
+#if defined(GTEST_ENABLE)
+#define MAX_NETWORK_RETRIES             1
+#else
 #define MAX_NETWORK_RETRIES             4
+#endif
 #define INTERNET_CONNECTED_STATE        3
 #define NETWORK_RETRY_INTERVAL          30
 
@@ -170,7 +174,11 @@ namespace WPEFramework
 
         class MaintenanceManager : public PluginHost::IPlugin, public PluginHost::JSONRPC
         {
+#if defined(GTEST_ENABLE)
+        public:
+#else
         private:
+#endif
             typedef Core::JSON::String JString;
             typedef Core::JSON::ArrayType<JString> JStringArray;
             typedef Core::JSON::Boolean JBool;
