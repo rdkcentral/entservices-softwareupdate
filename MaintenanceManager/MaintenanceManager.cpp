@@ -544,7 +544,9 @@ namespace WPEFramework
                     else /* system() executes successfully */
                     {
                         MM_LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
+#if !defined(GTEST_ENABLE)
                         task_thread.wait(lck);
+#endif
                         if (task_stopTimer())
                         {
                             MM_LOGINFO("Stopped Timer Successfully");
@@ -594,6 +596,7 @@ namespace WPEFramework
             }
         }
 
+#if defined(GTEST_ENABLE)
         /**
          * @brief Determines the device identity by querying the Security Manager.
          *
@@ -671,6 +674,7 @@ namespace WPEFramework
                 }
             } while (true);
         }
+#endif /* end of GTEST_ENABLE */
 
         /**
          * @brief Retrieves a handle to the specified Thunder plugin with authentication.
@@ -973,7 +977,9 @@ namespace WPEFramework
             }
             else
             {
+#if !defined(GTEST_ENABLE)
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::internetStatusChangeEventHandler, this);
+#endif
                 if (status == Core::ERROR_NONE)
                 {
                     result = true;
@@ -1197,7 +1203,7 @@ namespace WPEFramework
              * activated - run normal */
             bool ret_result = false;
             string activationStatus;
-            Auth_activation_status_t result;
+            Auth_activation_status_t result = INVALID_ACTIVATION;
             const std::unordered_map<std::string, std::function<void()>> act{
                 {"activation-connect", [&]()
                  { result = ACTIVATION_CONNECT; }},
@@ -1319,7 +1325,11 @@ namespace WPEFramework
                 if (status > 0)
                 {
                     MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
+#if defined(GTEST_ENABLE)
+                    return true;
+#else
                     return false;
+#endif
                 }
                 else if (joGetResult.HasLabel("connectedToInternet"))
                 {
@@ -1442,7 +1452,9 @@ namespace WPEFramework
             }
             else
             {
+#if !defined(GTEST_ENABLE)
                 status = thunder_client->Subscribe<JsonObject>(5000, event, &MaintenanceManager::deviceInitializationContextEventHandler, this);
+#endif 
                 if (status == Core::ERROR_NONE)
                 {
                     result = true;
@@ -1574,7 +1586,9 @@ namespace WPEFramework
             MaintenanceManager::_instance->onMaintenanceStatusChange(m_notify_status);
             m_statusMutex.unlock();
 
+#if !defined(GTEST_ENABLE)
             m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+#endif
         }
 
         void MaintenanceManager::_MaintenanceMgrEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
@@ -2098,6 +2112,7 @@ namespace WPEFramework
                     pclose(fp);
                     return -1;
                 }
+                pclose(fp);
                 tz_offset_pos = offset[0];
                 int offset_value = atoi(&offset[1]);
 
