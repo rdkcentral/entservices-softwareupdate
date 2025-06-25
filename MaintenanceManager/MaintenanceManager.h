@@ -237,7 +237,7 @@ namespace WPEFramework
             void deviceInitializationContextEventHandler(const JsonObject &parameters);
             void startCriticalTasks();
             bool checkNetwork();
-            void isWhoAmIEnabled();
+            bool isWhoAmIEnabled();
             bool knowWhoAmI(string &activation_status);
             bool subscribeToDeviceInitializationEvent();
             bool setDeviceInitializationContext(JsonObject joGetResult);
