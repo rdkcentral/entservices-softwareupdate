@@ -113,6 +113,9 @@ typedef enum
 
 #define BASE_CLOCK CLOCK_BOOTTIME
 
+#define WHOAMI_PROP_KEY "WHOAMI_SUPPORT"
+#define DEVICE_PROP_FILE "/etc/device.properties"
+
 #define FOREGROUND_MODE "FOREGROUND"
 #define BACKGROUND_MODE "BACKGROUND"
 
@@ -200,7 +203,12 @@ namespace WPEFramework
             bool g_subscribed_for_nwevents = false;
             bool g_listen_to_deviceContextUpdate = false;
             bool g_subscribed_for_deviceContextUpdate = false;
-
+            bool g_whoami_support_enabled = false;
+#if defined(SUPPRESS_MAINTENANCE)
+            bool g_suppress_maintenance_enabled = true;
+#else
+            bool g_suppress_maintenance_enabled = false;
+#endif
             std::mutex m_callMutex;
             std::mutex m_waiMutex;
             std::mutex m_statusMutex;
@@ -229,6 +237,7 @@ namespace WPEFramework
             void deviceInitializationContextEventHandler(const JsonObject &parameters);
             void startCriticalTasks();
             bool checkNetwork();
+            bool isWhoAmIEnabled();
             bool knowWhoAmI(string &activation_status);
             bool subscribeToDeviceInitializationEvent();
             bool setDeviceInitializationContext(JsonObject joGetResult);
