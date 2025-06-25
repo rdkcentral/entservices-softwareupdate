@@ -204,8 +204,11 @@ namespace WPEFramework
             bool g_listen_to_deviceContextUpdate = false;
             bool g_subscribed_for_deviceContextUpdate = false;
             bool g_whoami_support_enabled = false;
+#if defined(SUPPRESS_MAINTENANCE)
+            bool g_suppress_maintenance_enabled = true;
+#else
             bool g_suppress_maintenance_enabled = false;
-
+#endif
             std::mutex m_callMutex;
             std::mutex m_waiMutex;
             std::mutex m_statusMutex;
