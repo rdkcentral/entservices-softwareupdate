@@ -381,7 +381,7 @@ namespace WPEFramework
 	    bool skipFirmwareCheck = false;
             if (!g_whoami_support_enabled && g_suppress_maintenance_enabled)
             {   
-                MM_LOGINFO("WHOAMI_SUPPORT is disabled\n");
+                MM_LOGINFO("WhoAmI feature is disabled and suppress maintenance is enabled");
                 bool activationStatus = getActivatedStatus(skipFirmwareCheck); /* Activation check */
                 /* we proceed with network check only if
                 * "activation-connect",
@@ -400,7 +400,7 @@ namespace WPEFramework
 
             if (g_whoami_support_enabled)
             {
-                MM_LOGINFO("WHOAMI_SUPPORT is enabled\n");
+                MM_LOGINFO("WhoAmI feature is enabled");
                 if (UNSOLICITED_MAINTENANCE == g_maintenance_type)
                 {
                     string activation_status = checkActivatedStatus(); /* Device Activation Status Check */
@@ -430,7 +430,7 @@ namespace WPEFramework
             }
             else
             {
-                MM_LOGINFO("WHOAMI_SUPPORT is disabled\n");
+                MM_LOGINFO("WhoAmI feature is disabled");
                 if (!internetConnectStatus)
                 {
                     exitOnNoNetwork = true;
@@ -461,23 +461,14 @@ namespace WPEFramework
             MM_LOGINFO("Reboot_Pending :%s", g_is_reboot_pending.c_str());
             MM_LOGINFO("%s", UNSOLICITED_MAINTENANCE == g_maintenance_type ? "---------------UNSOLICITED_MAINTENANCE--------------" : "=============SOLICITED_MAINTENANCE===============");
             
-            if (!g_whoami_support_enabled && g_suppress_maintenance_enabled)
+            if (!g_whoami_support_enabled && g_suppress_maintenance_enabled && skipFirmwareCheck)
             {
-                if (skipFirmwareCheck)
-                {
-                    /* set the task status of Firmware Download */
-                    SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
-                    SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
-                    /* Skip Firmware Download Task and add other tasks */
-                    tasks.push_back(task_names_foreground[TASK_RFC].c_str());
-                    tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
-                }
-                else
-                {
-                    tasks.push_back(task_names_foreground[TASK_RFC].c_str());
-                    tasks.push_back(task_names_foreground[TASK_SWUPDATE].c_str());
-                    tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
-                }
+                /* set the task status of Firmware Download */
+                SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
+                SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                /* Skip Firmware Download Task and add other tasks */
+                tasks.push_back(task_names_foreground[TASK_RFC].c_str());
+                tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
             }
 	    else
             {
@@ -574,26 +565,17 @@ namespace WPEFramework
             MM_LOGINFO("Worker Thread Completed");
         } /* end of task_execution_thread() */
 
-        void MaintenanceManager::isWhoAmIEnabled()
+        bool MaintenanceManager::isWhoAmIEnabled()
         {
+            bool wai_enabled = false;
             std::string wai_prop_val;
-            if (Utils::readPropertyFromFile(DEVICE_PROP_FILE, WHOAMI_PROP_KEY, wai_prop_val))
-            {
-                if (wai_prop_val == "true")
-                {
-                    g_whoami_support_enabled = true;
-                    MM_LOGINFO("Device is in WhoAmI mode");
-                }
-                else
-                {
-                    g_whoami_support_enabled = false;
-                    MM_LOGINFO("Device is not in WhoAmI mode");
-                }
-            }
-            else
-            {
+            if (!Utils::readPropertyFromFile(DEVICE_PROP_FILE, WHOAMI_PROP_KEY, wai_prop_val)) {
                 MM_LOGERR("Failed to read %s property", WHOAMI_PROP_KEY);
+                return wai_enabled;
             }
+
+            wai_enabled = (wai_prop_val == "true");
+            return wai_enabled;
         }
 
 #if defined(GTEST_ENABLE)
@@ -1480,20 +1462,18 @@ namespace WPEFramework
 
         const string MaintenanceManager::Initialize(PluginHost::IShell *service)
         {
-            isWhoAmIEnabled();
             ASSERT(service != nullptr);
             ASSERT(m_service == nullptr);
             ASSERT(timerid != nullptr);
 
             m_service = service;
             m_service->AddRef();
-            if (g_whoami_support_enabled) {
-                MM_LOGINFO("WHOAMI_SUPPORT is enabled\n");
+            if ((g_whoami_support_enabled = isWhoAmIEnabled())) {
+                MM_LOGINFO("WhoAmI feature is enabled");
                 subscribeToDeviceInitializationEvent();
+            } else {
+                MM_LOGINFO("WhoAmI feature is disabled");
             }
-#if defined(SUPPRESS_MAINTENANCE)
-            g_suppress_maintenance_enabled = true;
-#endif
 
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             InitializeIARM();
