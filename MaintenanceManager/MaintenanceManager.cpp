@@ -578,7 +578,6 @@ namespace WPEFramework
             return wai_enabled;
         }
 
-#if defined(GTEST_ENABLE)
         /**
          * @brief Determines the device identity by querying the Security Manager.
          *
@@ -656,7 +655,6 @@ namespace WPEFramework
                 }
             } while (true);
         }
-#endif /* end of GTEST_ENABLE */
 
         /**
          * @brief Retrieves a handle to the specified Thunder plugin with authentication.
