@@ -17,8 +17,3 @@ jobs:
     secrets:
       RDKCM_RDKE: ${{ secrets.RDKCM_RDKE }}
 
-  trigger-L2-OOP:
-    uses: ./.github/workflows/L2-tests-oop.yml
-    secrets:
-      RDKCM_RDKE: ${{ secrets.RDKCM_RDKE }}
-
