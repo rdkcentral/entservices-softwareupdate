@@ -31,7 +31,7 @@ git clone --branch  R4.4.3 https://github.com/rdkcentral/ThunderTools.git
 
 git clone --branch R4.4.1 https://github.com/rdkcentral/Thunder.git
 
-git clone --branch main https://github.com/rdkcentral/entservices-apis.git
+git clone --branch develop https://github.com/rdkcentral/entservices-apis.git
 
 git clone https://$GITHUB_TOKEN@github.com/rdkcentral/entservices-testframework.git
 
@@ -63,7 +63,6 @@ patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Use_Legact_Alt_B
 patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/error_code_R4_4.patch
 patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/1004-Add-support-for-project-dir.patch
 patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/RDKEMW-733-Add-ENTOS-IDS.patch
-patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/FirmwareUpdate_UptoDate.patch
 cd -
 
 cmake -G Ninja -S Thunder -B build/Thunder \
