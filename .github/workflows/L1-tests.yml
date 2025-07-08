@@ -2,7 +2,7 @@ name: L1-tests
 
 on:
   push:
-    branches: [ main, develop, 'sprint/**', 'release/**' ]
+    branches: [ main, develop, 'sprint/**', 'release/**', RDKEMW-2804_RegressionTesting]
   pull_request:
     branches: [ main, develop, 'sprint/**', 'release/**' ]
 
@@ -113,7 +113,7 @@ jobs:
         with:
           repository: rdkcentral/entservices-testframework
           path: entservices-testframework
-          ref: develop
+          ref: test_2804_pass
           token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Checkout entservices-softwareupdate
