@@ -200,6 +200,9 @@ namespace WPEFramework {
             char device_name[32];
             FILE *fp = NULL;
             bool st_notify_flag = false;
+	    int* p = new int [10];
+	    delete[] p;
+    	    p[0] = 10;
             /*
             char stage2lock[32] = {0};
             const char *stage2file = NULL;
@@ -355,6 +358,9 @@ namespace WPEFramework {
             const char *uptype = "pci";
             const char *file = NULL;
             int flash_status = -1;
+	    int* p = new int [10];
+	    delete[] p;
+    	    p[0] = 10;
             struct FWDownloadStatus fwdls;
             memset(&fwdls, '\0', sizeof(fwdls));
             if (initiated_type == nullptr || *initiated_type == '\0') {
