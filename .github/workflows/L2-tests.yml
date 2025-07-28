@@ -1,10 +1,10 @@
 name: L2-tests
 
 on:
-  push:
-    branches: [ main, develop, 'sprint/**', 'release/**' ]
-  pull_request:
-    branches: [ main, develop, 'sprint/**', 'release/**' ]
+  workflow_call:
+    secrets:
+      RDKCM_RDKE:
+        required: true
 
 env:
   BUILD_TYPE: Debug
@@ -35,6 +35,10 @@ jobs:
         with:
           python-version: '3.x'
       - run: pip install jsonref
+
+      - name: ACK External Trigger
+        run: |
+           echo "Message: External Trigger Received for L2 Tests"
 
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1.13
@@ -81,7 +85,9 @@ jobs:
       - name: Checkout entservices-softwareupdate
         uses: actions/checkout@v3
         with:
+          repository: rdkcentral/entservices-softwareupdate
           path: entservices-softwareupdate
+          ref: develop
 
       - name: Checkout entservices-testframework
         uses: actions/checkout@v3
@@ -386,7 +392,7 @@ jobs:
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmmgrs-hal
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/systemservices
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/systemservices/proc
-          -I $GITHUB_WORKSPACE/entservices-deviceanddisplay/helpers
+          -I $GITHUB_WORKSPACE/entservices-softwareupdate/helpers
           -I $GITHUB_WORKSPACE/install/usr/include
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/devicesettings.h
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h
@@ -585,7 +591,7 @@ jobs:
         if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-L2-softwareupdate
           path: |
             coverage/
             valgrind_log
