@@ -1152,9 +1152,9 @@ int read_RFCProperty(char* type, const char* key, char *out_value, size_t datasi
             snprintf( out_value, datasize, "%s", param.value );
         }
         snprintf(intermediateBuffer, sizeof(intermediateBuffer),"read_RFCProperty() name=%.*s,type=%d,value=%.*s,status=%d\n",
-                256, param.name && param.name[0] ? param.name : "(null)",
+                256, param.name[0] ? param.name : "(null)",
                 param.type,
-                256, param.value && param.value[0] ? param.value : "(null)",
+                256, param.value[0] ? param.value : "(null)",
                 status);
         SWUPDATEINFO("%s", intermediateBuffer);
         ret = READ_RFC_SUCCESS;
