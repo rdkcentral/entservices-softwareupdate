@@ -1,4 +1,4 @@
-name: L2-tests
+name: L2-tests-SU
 
 on:
   workflow_call:
