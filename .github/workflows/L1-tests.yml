@@ -285,6 +285,9 @@ jobs:
           telemetry_busmessage_sender.h
           maintenanceMGR.h
           pkg.h
+          edid-parser.hpp
+          drm.h
+          drm_mode.h
           opkg.h
           opkg_message.h
           opkg_cmd.h
