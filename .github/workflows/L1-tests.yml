@@ -270,6 +270,9 @@ jobs:
           rdk/ds/frontPanelIndicator.hpp
           rdk/ds/frontPanelConfig.hpp
           rdk/ds/frontPanelTextDisplay.hpp
+          rdk/ds/audioOutputPortType.hpp
+          rdk/ds/audioOutputPortConfig.hpp
+          rdk/ds/pixelResolution.hpp
           rdk/iarmbus/libIARM.h
           rdk/iarmbus/libIBus.h
           rdk/iarmbus/libIBusDaemon.h
@@ -286,8 +289,6 @@ jobs:
           maintenanceMGR.h
           pkg.h
           edid-parser.hpp
-          drm.h
-          drm_mode.h
           opkg.h
           opkg_message.h
           opkg_cmd.h
@@ -299,7 +300,7 @@ jobs:
           gdialservice.h
           gdialservicecommon.h
           &&
-          cp -r /usr/include/gstreamer-1.0/gst /usr/include/glib-2.0/* /usr/lib/x86_64-linux-gnu/glib-2.0/include/* /usr/local/include/trower-base64/base64.h .
+          cp -r /usr/include/gstreamer-1.0/gst /usr/include/glib-2.0/* /usr/lib/x86_64-linux-gnu/glib-2.0/include/* /usr/local/include/trower-base64/base64.h  /usr/include/libdrm/drm.h /usr/include/libdrm/drm_mode.h /usr/include/xf86drm.h .
 
       - name: Set clang toolchain
         if: ${{ matrix.compiler == 'clang' }}
@@ -360,6 +361,7 @@ jobs:
           -I $GITHUB_WORKSPACE/Thunder/Source
           -I $GITHUB_WORKSPACE/Thunder/Source/core
           -I $GITHUB_WORKSPACE/install/usr/include
+          -I ./usr/include/libdrm
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/devicesettings.h
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Rfc.h
@@ -497,6 +499,7 @@ jobs:
           -I $GITHUB_WORKSPACE/Thunder/Source/core
           -I $GITHUB_WORKSPACE/install/usr/include
           -I $GITHUB_WORKSPACE/install/usr/include/WPEFramework
+          -I ./usr/include/libdrm
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/devicesettings.h
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Iarm.h
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/Rfc.h
