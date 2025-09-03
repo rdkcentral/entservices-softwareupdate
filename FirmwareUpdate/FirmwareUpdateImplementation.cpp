@@ -715,7 +715,7 @@ namespace WPEFramework {
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareFilepath is empty\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
-                status = Core::ERROR_INVALID_PARAMETER;
+                status = ERROR_INVALID_PARAMETER;
                 return status;
             }
             else if (!(Utils::fileExists(firmwareFilepath.c_str()))) {
@@ -725,7 +725,7 @@ namespace WPEFramework {
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareFile is not present\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
-                status = Core::ERROR_INVALID_PARAMETER;
+                status = ERROR_INVALID_PARAMETER;
                 return status;
             }
 
@@ -736,7 +736,7 @@ namespace WPEFramework {
                     snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                     snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareType must be either 'PCI' or 'DRI'.\n");
                     updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
-                    status = Core::ERROR_INVALID_PARAMETER;
+                    status = ERROR_INVALID_PARAMETER;
                     return status;
                 }
             }
@@ -747,7 +747,7 @@ namespace WPEFramework {
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareType is empty\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
-                status = Core::ERROR_INVALID_PARAMETER;
+                status = ERROR_INVALID_PARAMETER;
                 return status;
             }
 
@@ -775,7 +775,7 @@ namespace WPEFramework {
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|No upgrade needed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|No upgrade needed\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
-                status = Core::ERROR_FIRMWAREUPDATE_UPTODATE;
+                status = ERROR_FIRMWAREUPDATE_UPTODATE;
                 return status;
             }
 
@@ -788,7 +788,7 @@ namespace WPEFramework {
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|Flashing is already in progress\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
-                status = Core::ERROR_FIRMWAREUPDATE_INPROGRESS;
+                status = ERROR_FIRMWAREUPDATE_INPROGRESS;
                 return status;
             }
 
