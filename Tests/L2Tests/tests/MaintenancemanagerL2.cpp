@@ -4,6 +4,7 @@
 #include "L2TestsMock.h"
 #include <fstream>
 #include <iostream>
+#include <condition_variable>
 
 
 using namespace WPEFramework;
