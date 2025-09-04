@@ -350,7 +350,8 @@ namespace WPEFramework {
             const char *failureReason = NULL;
             char cpu_arch[8] = {0};
             char headerinfofile[128] = {0};
-            char difw_path[32] = {0};
+            const uint8_t MAX_FW_PATH =  32;
+            char difw_path[MAX_FW_PATH] = {0};
             const char *rflag = "0";
             const char *uptype = "pci";
             const char *file = NULL;
@@ -407,7 +408,7 @@ namespace WPEFramework {
             {
                 string upgrade_file_str = std::string(upgrade_file);
                 string path = upgrade_file_str.substr(0, upgrade_file_str.find_last_of("/\\") + 1);
-                std::strcpy(difw_path, path.c_str());
+                strncpy(difw_path, path.c_str(), MAX_FW_PATH - 1);
                 SWUPDATEINFO("difw path = %s\n", difw_path);
             }
             else
@@ -1131,7 +1132,7 @@ int updateFWDownloadStatus(struct FWDownloadStatus *fwdls, const char *disableSt
  * @return int 1 READ_RFC_SUCCESS on success and READ_RFC_FAILURE -1 on failure
  * */
 int read_RFCProperty(char* type, const char* key, char *out_value, size_t datasize) {
-    RFC_ParamData_t param;
+    RFC_ParamData_t param = {0};
     int data_len;
     int ret = READ_RFC_FAILURE;
     char intermediateBuffer[1000];
@@ -1151,9 +1152,9 @@ int read_RFCProperty(char* type, const char* key, char *out_value, size_t datasi
             snprintf( out_value, datasize, "%s", param.value );
         }
         snprintf(intermediateBuffer, sizeof(intermediateBuffer),"read_RFCProperty() name=%.*s,type=%d,value=%.*s,status=%d\n",
-                256, param.name ? param.name : "(null)",
+                256, param.name[0] ? param.name : "(null)",
                 param.type,
-                256, param.value ? param.value : "(null)",
+                256, param.value[0] ? param.value : "(null)",
                 status);
         SWUPDATEINFO("%s", intermediateBuffer);
         ret = READ_RFC_SUCCESS;
