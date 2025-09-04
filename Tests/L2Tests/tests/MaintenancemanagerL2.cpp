@@ -43,7 +43,7 @@ MaintenanceManagerTest::~MaintenanceManagerTest() {
 TEST_F(MaintenanceManagerTest, EmptyPartnerId) {
     JsonObject params, result;
     params["partnerId"] = "";
-    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "maintenanceManagerOnBootup", params, result);
+    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params, result);
     EXPECT_NE(status, Core::ERROR_NONE); // Should fail or return error for empty partnerId
 }
 /*
