@@ -42,7 +42,7 @@ MaintenanceManagerTest::~MaintenanceManagerTest() {
 
 // In L2Tests_MaintenanceManager.cpp
 
-TEST_F(L2TestMocks, TestStartMaintenance)
+TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
     JsonObject params;
     JsonObject results;
@@ -53,6 +53,19 @@ TEST_F(L2TestMocks, TestStartMaintenance)
     ASSERT_EQ(results["success"].Boolean(), true);
 }
 
+
+/* something
+TEST_F(L2TestMocks, TestStartMaintenance)
+{
+    JsonObject params;
+    JsonObject results;
+    params["reason"] = "scheduled";
+    uint32_t status = InvokeServiceMethod("MaintenanceManager.1", "startMaintenance", params, results);
+
+    ASSERT_EQ(status, Core::ERROR_NONE);
+    ASSERT_EQ(results["success"].Boolean(), true);
+}
+*/
 
 
 
