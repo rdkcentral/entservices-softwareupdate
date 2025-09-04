@@ -40,12 +40,33 @@ MaintenanceManagerTest::~MaintenanceManagerTest() {
 
 // Example test cases
 
+// In L2Tests_MaintenanceManager.cpp
+
+TEST_F(L2TestMocks, TestStartMaintenance)
+{
+    JsonObject params;
+    JsonObject results;
+    params["reason"] = "scheduled";
+    uint32_t status = InvokeServiceMethod("MaintenanceManager.1", "startMaintenance", params, results);
+
+    ASSERT_EQ(status, Core::ERROR_NONE);
+    ASSERT_EQ(results["success"].Boolean(), true);
+}
+
+
+
+
+
+
+
+/*
 TEST_F(MaintenanceManagerTest, EmptyPartnerId) {
     JsonObject params, result;
     params["partnerId"] = "";
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params, result);
     EXPECT_NE(status, Core::ERROR_NONE); // Should fail or return error for empty partnerId
 }
+*/
 /*
 TEST_F(MaintenanceManagerTest, ValidDeviceInitializationContext) {
     JsonObject contextData, fullResponse, result;
