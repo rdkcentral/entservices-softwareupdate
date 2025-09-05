@@ -107,7 +107,7 @@ jobs:
         with:
           repository: rdkcentral/entservices-testframework
           path: entservices-testframework
-          ref: develop
+          ref: feature/L2
           token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Checkout googletest
