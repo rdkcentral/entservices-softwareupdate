@@ -557,7 +557,8 @@ jobs:
           RdkServicesL2Test &&
           cp -rf $(pwd)/rdkL2TestResults.json $GITHUB_WORKSPACE/rdkL2TestResultsWithoutValgrind.json &&
           rm -rf $(pwd)/rdkL2TestResults.json &&
-          ldd libWPEFrameworkMaintenanceManager.so
+          ldd libWPEFrameworkMaintenanceManager.so > fgh.txt
+          cat fgh.txt
 
       - name: Run unit tests with valgrind
         if: ${{ !env.ACT }}
