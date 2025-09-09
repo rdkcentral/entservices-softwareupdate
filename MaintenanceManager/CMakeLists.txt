@@ -22,7 +22,7 @@ set(PLUGIN_MAINTENANCEMGR_STARTUPORDER "" CACHE STRING "To configure startup ord
 
 find_package(${NAMESPACE}Plugins REQUIRED)
 
-add_executable(${MODULE_NAME} SHARED
+add_executable(${MODULE_NAME}
         MaintenanceManager.cpp
         Module.cpp)
 
