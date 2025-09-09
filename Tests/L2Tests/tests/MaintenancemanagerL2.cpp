@@ -31,6 +31,7 @@ public:
 };
 
 MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
+    IARM_EventHandler_t               controlEventHandler_;
 
     EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_RegisterEventHandler(StrEq(IARM_BUS_MAINTENANCE_MGR_NAME),IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, _))
             .WillOnce(Invoke(
