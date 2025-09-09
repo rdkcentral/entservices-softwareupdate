@@ -557,7 +557,7 @@ jobs:
           RdkServicesL2Test &&
           cp -rf $(pwd)/rdkL2TestResults.json $GITHUB_WORKSPACE/rdkL2TestResultsWithoutValgrind.json &&
           rm -rf $(pwd)/rdkL2TestResults.json && 
-          cd /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/lib/wpeframework/plugins/ && 
+          cd /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/bin && 
           ldd RdkServicesL2Test > fgh.txt &&
           cat fgh.txt &&
           cd -
