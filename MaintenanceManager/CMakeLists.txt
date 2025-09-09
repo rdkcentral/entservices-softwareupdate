@@ -73,6 +73,14 @@ endif()
 target_link_libraries(${MODULE_NAME} PRIVATE pthread rt)
 target_include_directories(${MODULE_NAME} PRIVATE ${RFC_INCLUDE_DIRS})
 target_link_libraries(${MODULE_NAME} PRIVATE ${NAMESPACE}Plugins::${NAMESPACE}Plugins ${RFC_LIBRARIES})
+target_link_libraries(${MODULE_NAME}
+    PRIVATE
+        ${NAMESPACE}Plugins::${NAMESPACE}Plugins
+        ${IARMBUS_LIBRARIES}
+        rfcapi
+        wraps   # <-- required for __wrap_* symbols
+)
+
 install(TARGETS ${MODULE_NAME}
         DESTINATION lib/${STORAGE_DIRECTORY}/plugins)
 
