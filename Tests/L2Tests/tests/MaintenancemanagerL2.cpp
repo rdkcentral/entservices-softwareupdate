@@ -81,8 +81,8 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
     JsonObject params;
     JsonObject results;
-    params["reason"] = "scheduled";
-    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
+    params["maintenanceMode"] = "BACKGROUND";
+    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
 
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
