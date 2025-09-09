@@ -28,6 +28,9 @@ public:
 
 MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     uint32_t status = Core::ERROR_GENERAL;
+    status = ActivateService("org.rdk.AuthService");
+    EXPECT_EQ(Core::ERROR_NONE, status);
+    status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.MaintenanceManager");
     EXPECT_EQ(Core::ERROR_NONE, status);
 }
