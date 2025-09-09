@@ -70,6 +70,7 @@ target_include_directories(
     ../../../entservices-testframework/Tests/mocks/devicesettings
     ../../../entservices-testframework/Tests/mocks/MockPlugin
     ../../../entservices-testframework/Tests/L2Tests/L2TestsPlugin
+    ../../../entservices-softwareupdate/MaintenanceManager
     ${CMAKE_INSTALL_PREFIX}/include
     )
 
