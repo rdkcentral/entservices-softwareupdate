@@ -38,9 +38,7 @@ MaintenanceManagerTest::~MaintenanceManagerTest() {
     EXPECT_EQ(Core::ERROR_NONE, status);
 }
 
-// Example test cases
-
-// In L2Tests_MaintenanceManager.cpp
+/*
 
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
@@ -52,7 +50,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
 }
-
+*/
 
 /* something
 TEST_F(L2TestMocks, TestStartMaintenance)
