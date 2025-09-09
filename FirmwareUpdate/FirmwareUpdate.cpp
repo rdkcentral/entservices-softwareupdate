@@ -49,7 +49,7 @@ namespace WPEFramework
      **/
     SERVICE_REGISTRATION(FirmwareUpdate, API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH);
 
-    FirmwareUpdate::FirmwareUpdate() : : PluginHost::JSONRPCErrorAssessor<PluginHost::JSONRPCErrorAssessorTypes::FunctionCallbackType>(FirmwareUpdate::OnJSONRPCError),
+    FirmwareUpdate::FirmwareUpdate() :PluginHost::JSONRPCErrorAssessor<PluginHost::JSONRPCErrorAssessorTypes::FunctionCallbackType>(FirmwareUpdate::OnJSONRPCError),
     _service(nullptr), _connectionId(0), _firmwareUpdate(nullptr), _FirmwareUpdateNotification(this)
     {
         SYSLOG(Logging::Startup, (_T("FirmwareUpdate Constructor")));
