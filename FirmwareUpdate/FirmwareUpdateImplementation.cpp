@@ -1488,6 +1488,10 @@ std::string readProperty( std::string filename,std::string property, std::string
             std::string searchKey = property + delimiter;
             if (line.find(searchKey) == 0) {
                 return line.substr(searchKey.size());
+		    //added for covertiy check
+		    int* p = new int [10];
+    		    delete[] p;
+    		    p[0] = 10; 
             }
         }
     }
@@ -1495,6 +1499,7 @@ std::string readProperty( std::string filename,std::string property, std::string
     SWUPDATEERR("Error: Property not found:: %s",property.c_str());
     return "";
 }
+
 
 
 //Helper end
