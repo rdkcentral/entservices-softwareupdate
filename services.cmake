@@ -140,6 +140,11 @@ if(NET_DISABLE_NETSRVMGR_CHECK)
     add_definitions (-DNET_DISABLE_NETSRVMGR_CHECK)
 endif()
 
+if (ENABLE_WHOAMI)
+    message("Enable WHOAMI")
+    add_definitions (-DENABLE_WHOAMI=ON)
+endif()
+
 if (ENABLE_RFC_MANAGER)
     message("Using binary for RFC Maintenance task")
     add_definitions (-DENABLE_RFC_MANAGER=ON)
