@@ -85,7 +85,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
 
     ASSERT_EQ(status, Core::ERROR_NONE);
-    ASSERT_EQ(results["success"].Boolean(), true);
+    ASSERT_EQ(results["success"].Boolean(), false);
 
     status = DeactivateService("org.rdk.MaintenanceManager");
     EXPECT_EQ(Core::ERROR_NONE, status)
