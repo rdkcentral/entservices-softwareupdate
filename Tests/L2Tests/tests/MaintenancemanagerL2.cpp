@@ -65,7 +65,7 @@ MaintenanceManagerTest::~MaintenanceManagerTest() {
 }
 
 //worked
-/*
+
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
     JsonObject params;
@@ -79,7 +79,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     status = DeactivateService("org.rdk.MaintenanceManager");
     EXPECT_EQ(Core::ERROR_NONE, status);
 }
-*/
+
 /*
 
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
