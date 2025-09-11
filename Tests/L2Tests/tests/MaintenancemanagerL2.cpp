@@ -76,8 +76,8 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     params["optOut"] = "IGNORE_UPDATE";
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
 
-    //ASSERT_EQ(status, Core::ERROR_NONE);
-    ASSERT_EQ(results["success"].Boolean(), false);
+    ASSERT_EQ(status, Core::ERROR_NONE);
+    ASSERT_EQ(results["success"].Boolean(), true);
 
     status = DeactivateService("org.rdk.MaintenanceManager");
   //  EXPECT_EQ(Core::ERROR_NONE, status);
