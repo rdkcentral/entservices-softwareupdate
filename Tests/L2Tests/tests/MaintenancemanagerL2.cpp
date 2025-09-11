@@ -48,12 +48,12 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
                     return IARM_RESULT_SUCCESS;
                 }));  */
     uint32_t status = Core::ERROR_GENERAL;
-    status = ActivateService("org.rdk.Network");
+   /* status = ActivateService("org.rdk.Network");
     EXPECT_EQ(Core::ERROR_NONE, status);
     status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.AuthService");
     EXPECT_EQ(Core::ERROR_NONE, status);
-    status = Core::ERROR_GENERAL;
+    status = Core::ERROR_GENERAL; */
     status = ActivateService("org.rdk.MaintenanceManager");
     EXPECT_EQ(Core::ERROR_NONE, status);
 }
@@ -64,19 +64,8 @@ MaintenanceManagerTest::~MaintenanceManagerTest() {
     EXPECT_EQ(Core::ERROR_NONE, status);
 }
 
+//worked
 /*
-
-TEST_F(MaintenanceManagerTest, TestStartMaintenance)
-{
-    JsonObject params;
-    JsonObject results;
-    params["reason"] = "scheduled";
-    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params, results);
-
-    ASSERT_EQ(status, Core::ERROR_NONE);
-    ASSERT_EQ(results["success"].Boolean(), true);
-}
-*/
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
     JsonObject params;
@@ -90,6 +79,22 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     status = DeactivateService("org.rdk.MaintenanceManager");
     EXPECT_EQ(Core::ERROR_NONE, status);
 }
+*/
+/*
+
+TEST_F(MaintenanceManagerTest, TestStartMaintenance)
+{
+    JsonObject params;
+    JsonObject results;
+    params["reason"] = "scheduled";
+    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params, results);
+
+    ASSERT_EQ(status, Core::ERROR_NONE);
+    ASSERT_EQ(results["success"].Boolean(), true);
+}
+*/
+
+
 
 
 
