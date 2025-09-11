@@ -73,6 +73,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     JsonObject params;
     JsonObject results;
     params["maintenanceMode"] = "BACKGROUND";
+    params["optOut"] = "IGNORE_UPDATE";
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
 
     //ASSERT_EQ(status, Core::ERROR_NONE);
