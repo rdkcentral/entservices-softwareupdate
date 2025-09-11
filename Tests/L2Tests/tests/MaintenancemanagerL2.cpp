@@ -83,7 +83,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
   //  EXPECT_EQ(Core::ERROR_NONE, status);
 }
 
-/*
+
 
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
@@ -95,7 +95,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
 }
-*/
+
 
 
 
