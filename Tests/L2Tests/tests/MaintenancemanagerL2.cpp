@@ -78,7 +78,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
-
+    sleep(10);
     //status = DeactivateService("org.rdk.MaintenanceManager");
   //  EXPECT_EQ(Core::ERROR_NONE, status);
 }
