@@ -85,7 +85,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 
 
 
-TEST_F(MaintenanceManagerTest, TestStartMaintenance)
+TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 {
     JsonObject params;
     JsonObject results;
