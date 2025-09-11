@@ -48,7 +48,8 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
                     return IARM_RESULT_SUCCESS;
                 }));  */
     uint32_t status = Core::ERROR_GENERAL;
-   /* status = ActivateService("org.rdk.Network");
+    ActivateService("org.rdk.Network");
+   /*status = ActivateService("org.rdk.Network");
     EXPECT_EQ(Core::ERROR_NONE, status);
     status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.AuthService");
