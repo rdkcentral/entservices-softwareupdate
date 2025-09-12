@@ -109,6 +109,14 @@ jobs:
           path: entservices-testframework
           ref: feature/L2
           token: ${{ secrets.RDKCM_RDKE }}
+          
+      - name: Checkout networkmanager
+        uses: actions/checkout@v3
+        with:
+          repository: rdkcentral/networkmanager
+          path: networkmanager
+          ref: develop
+          token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Checkout googletest
         if: steps.cache.outputs.cache-hit != 'true'
@@ -197,6 +205,26 @@ jobs:
           cmake --build build/entservices-apis -j8
           &&
           cmake --install build/entservices-apis
+          
+      - name: Build Network manager
+        run: >
+          cmake
+          -S "${{github.workspace}}/networkmanager"
+          -B build/networkmanager_rdk
+          -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}"
+          -DCMAKE_INSTALL_PREFIX="${{github.workspace}}/install/usr"
+          -DCMAKE_MODULE_PATH="${{github.workspace}}/install/tools/cmake"
+          -DCMAKE_CXX_FLAGS="
+          -I ${{github.workspace}}/networkmanager/tests/headers
+          -I ${{github.workspace}}/networkmanager/tests/headers/rdk/iarmbus
+          --include ${{github.workspace}}/networkmanager/tests/mocks/Iarm.h
+          --include ${{github.workspace}}/networkmanager/tests/mocks/secure_wrappermock.h
+          -Wall --coverage
+          "
+          -DENABLE_UNIT_TESTING=ON
+          -DENABLE_ROUTER_DISCOVERY_TOOL=OFF
+          &&
+          cmake --build build/networkmanager_rdk --target install -j8
 
       - name: Generate external headers
         # Empty headers to mute errors
