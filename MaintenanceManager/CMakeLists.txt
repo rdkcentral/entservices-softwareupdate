@@ -21,7 +21,7 @@ set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 set(PLUGIN_MAINTENANCEMGR_STARTUPORDER "" CACHE STRING "To configure startup order of MaintenanceManager plugin")
 
 find_package(${NAMESPACE}Plugins REQUIRED)
-
+#add_executable(${MODULE_NAME}
 add_library(${MODULE_NAME} SHARED
         MaintenanceManager.cpp
         Module.cpp)
@@ -60,6 +60,17 @@ if (ENABLE_JOURNAL_LOGGING)
     target_compile_definitions(${MODULE_NAME} PRIVATE ENABLE_JOURNAL_LOGGING=ON)
     target_link_libraries(${MODULE_NAME} PRIVATE systemd)
 endif()
+
+if (RDK_SERVICE_L2_TEST)
+   find_library(TESTMOCKLIB_LIBRARIES NAMES TestMocklib)
+   if (TESTMOCKLIB_LIBRARIES)
+       message ("linking mock libraries ${TESTMOCKLIB_LIBRARIES} library")
+       target_link_libraries(${MODULE_NAME} PRIVATE ${TESTMOCKLIB_LIBRARIES})
+       target_link_options(${MODULE_NAME} PRIVATE -Wl,--wrap,open -Wl,--wrap,mkdir -Wl,--wrap,mount -Wl,--wrap,umount -Wl,--wrap,ioctl -Wl,--wrap,statvfs -Wl,--wrap,statfs -Wl,--wrap,stat  -Wl,--wrap,rmdir)
+   else (TESTMOCKLIB_LIBRARIES)
+       message ("Require ${TESTMOCKLIB_LIBRARIES} library")
+   endif (TESTMOCKLIB_LIBRARIES)
+endif (RDK_SERVICES_L2_TEST)
 
 # Add Task Timeout
 if (TASK_TIMEOUT)
