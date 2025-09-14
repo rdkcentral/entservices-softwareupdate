@@ -134,6 +134,7 @@ TEST_F(MaintenanceManagerTest, EmptyPartnerId) {
 */
 /*
 TEST_F(MaintenanceManagerTest, ValidDeviceInitializationContext) {
+
     JsonObject contextData, fullResponse, result;
     contextData["partnerId"] = "Sky";
     contextData["regionalConfigService"] = "region.sky.com";
