@@ -52,12 +52,15 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     //ActivateService("org.rdk.Network");
     //status = ActivateService("org.rdk.MockPlugin");
    // EXPECT_EQ(Core::ERROR_NONE, status);
-   /*status = ActivateService("org.rdk.Network");
+    status = ActivateService("org.rdk.Network");
+    EXPECT_EQ(Core::ERROR_NONE, status);
+   /* status = ActivateService("org.rdk.Network");
     EXPECT_EQ(Core::ERROR_NONE, status);
     status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.AuthService");
     EXPECT_EQ(Core::ERROR_NONE, status);
     status = Core::ERROR_GENERAL; */
+    status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.MaintenanceManager");
     EXPECT_EQ(Core::ERROR_NONE, status);
 }
