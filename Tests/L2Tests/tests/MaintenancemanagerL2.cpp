@@ -132,7 +132,7 @@ TEST_F(MaintenanceManagerTest, EmptyPartnerId) {
     EXPECT_NE(status, Core::ERROR_NONE); // Should fail or return error for empty partnerId
 }
 */
-//hjh
+
 /*
 TEST_F(MaintenanceManagerTest, ValidDeviceInitializationContext) {
 
