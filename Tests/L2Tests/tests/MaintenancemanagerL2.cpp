@@ -142,5 +142,3 @@ TEST_F(MaintenanceManagerTest, ValidDeviceInitializationContext) {
     EXPECT_EQ(status, Core::ERROR_NONE); // Should succeed for valid input
 }
 
-// Add more test cases as needed to cover all service methods and edge cases.
-*/
