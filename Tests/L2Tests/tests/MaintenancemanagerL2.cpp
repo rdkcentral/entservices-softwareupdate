@@ -122,7 +122,7 @@ TEST_F(L2TestMocks, TestStartMaintenance)
 
 
 
-//jh
+
 
 /*
 TEST_F(MaintenanceManagerTest, EmptyPartnerId) {
