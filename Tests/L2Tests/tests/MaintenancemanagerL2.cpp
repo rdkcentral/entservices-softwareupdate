@@ -106,7 +106,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 
 
 
-/* something h
+/* something 
 TEST_F(L2TestMocks, TestStartMaintenance)
 {
     JsonObject params;
