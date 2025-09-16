@@ -121,8 +121,6 @@ TEST_F(L2TestMocks, TestStartMaintenance)
 }
 */
 
-
-//ghhgh
 /*
 TEST_F(MaintenanceManagerTest, EmptyPartnerId) {
     JsonObject params, result;
