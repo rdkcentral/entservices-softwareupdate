@@ -1,3 +1,26 @@
+
+        /*
+         * @brief This function Enable/Disable the AutoReboot Feature (COMRPC).
+         * This will internally set the tr181 AutoReboot.Enable to True/False.
+         * @param[in] enable: Boolean to enable or disable AutoReboot
+         * @param[out] result: Result struct with success status
+         * @return: Core::<StatusCode>
+         */
+        Core::hresult FirmwareUpdateImplementation::SetFirmwareAutoReboot(const bool enable, Exchange::IFirmwareUpdate::Result& result)
+        {
+            result.success = false;
+            const char* set_rfc_val = enable ? "true" : "false";
+            WDMP_STATUS status = setRFCParameter((char*)"thunderapi",
+                    TR181_AUTOREBOOT_ENABLE, set_rfc_val, WDMP_BOOLEAN);
+            if (WDMP_SUCCESS == status) {
+                result.success = true;
+                LOGINFO("Success Setting the setFirmwareAutoReboot value\n");
+                return Core::ERROR_NONE;
+            } else {
+                LOGINFO("Failed Setting the setFirmwareAutoReboot value %s\n", getRFCErrorString(status));
+                return Core::ERROR_GENERAL;
+            }
+        }
 /*
  * If not stated otherwise in this file or this component's LICENSE file the
  * following copyright and licenses apply:
