@@ -85,7 +85,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
     sleep(10);
-    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params, results);
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params, results);
     //status = DeactivateService("org.rdk.MaintenanceManager");
   //  EXPECT_EQ(Core::ERROR_NONE, status);
 }
