@@ -120,7 +120,7 @@ TEST_F(L2TestMocks, TestStartMaintenance)
     ASSERT_EQ(results["success"].Boolean(), true);
 }
 */
-
+//ejnvj
 /*
 TEST_F(MaintenanceManagerTest, EmptyPartnerId) {
     JsonObject params, result;
