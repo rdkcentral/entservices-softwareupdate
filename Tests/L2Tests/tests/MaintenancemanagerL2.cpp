@@ -52,7 +52,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     //ActivateService("org.rdk.Network");
     //status = ActivateService("org.rdk.MockPlugin");
    // EXPECT_EQ(Core::ERROR_NONE, status);
-    status = ActivateService("org.rdk.Network");
+    status = ActivateService("org.rdk.Network.1");
     EXPECT_EQ(Core::ERROR_NONE, status);
    /* status = ActivateService("org.rdk.Network");
     EXPECT_EQ(Core::ERROR_NONE, status);
