@@ -75,17 +75,18 @@ MaintenanceManagerTest::~MaintenanceManagerTest() {
 
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
-    JsonObject params;
-    JsonObject results;
+    JsonObject params, params1;
+    JsonObject results, results1;
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
-    uint32_t status = InvokeServiceMethod("org.rdk.Network", "setMaintenanceMode", params, results);
-    
+    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
+
+    params1["ipversion"] ="IPv4";
 
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
-    sleep(10);
-    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params, results);
+    //sleep(10);
+    status = InvokeServiceMethod("org.rdk.Network", "isConnectedToInternet", params1, results1);
     //status = DeactivateService("org.rdk.MaintenanceManager");
   //  EXPECT_EQ(Core::ERROR_NONE, status);
 }
