@@ -853,7 +853,7 @@ namespace WPEFramework {
                 LOGINFO("Success Setting the setFirmwareAutoReboot value\n");
                 status = Core::ERROR_NONE;
             } else {
-                LOGINFO("Failed Setting the setFirmwareAutoReboot value %s\n", getRFCErrorString(status));
+                LOGINFO("Failed Setting the setFirmwareAutoReboot value %s\n", getRFCErrorString(ret));
             }
             return status;
         }
