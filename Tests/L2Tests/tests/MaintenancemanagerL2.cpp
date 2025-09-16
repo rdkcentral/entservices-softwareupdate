@@ -108,8 +108,6 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 
 
 
-//uhuiguy
-
 /* something 
 TEST_F(L2TestMocks, TestStartMaintenance)
 {
