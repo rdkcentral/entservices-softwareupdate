@@ -138,7 +138,6 @@ TEST_F(MaintenanceManagerTest, ValidDeviceInitializationContext) {
     contextData["regionalConfigService"] = "region.sky.com";
     fullResponse["deviceInitializationContext"] = contextData;
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setDeviceInitializationContext", fullResponse, result);
-    EXPECT_EQ(status, Core::ERROR_NONE); // Should succeed for valid input
-}
+    EXPECT_EQ(status, Core::ERROR_NONE); //hbbh
 */
 
