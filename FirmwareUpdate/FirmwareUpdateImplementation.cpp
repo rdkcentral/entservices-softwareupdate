@@ -846,9 +846,9 @@ namespace WPEFramework {
         {
             Core::hresult status = Core::ERROR_GENERAL;
             const char* set_rfc_val = enable ? "true" : "false";
-            WDMP_STATUS status = setRFCParameter((char*)"thunderapi",
+            WDMP_STATUS ret = setRFCParameter((char*)"thunderapi",
                     TR181_AUTOREBOOT_ENABLE, set_rfc_val, WDMP_BOOLEAN);
-            if (WDMP_SUCCESS == status) {
+            if (WDMP_SUCCESS == ret) {
                 result.success = true;
                 LOGINFO("Success Setting the setFirmwareAutoReboot value\n");
                 status = Core::ERROR_NONE;
