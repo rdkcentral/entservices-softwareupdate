@@ -1248,7 +1248,7 @@ namespace WPEFramework
 
             string token;
 
-            if ((getServiceState(m_service, "org.rdk.Network", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
+            if ((getServiceState(m_service, "org.rdk.Network.1", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
             {
                 MM_LOGINFO("Network plugin is active");
 
