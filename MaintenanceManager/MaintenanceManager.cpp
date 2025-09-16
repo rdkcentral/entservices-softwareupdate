@@ -1319,7 +1319,7 @@ namespace WPEFramework
                 else
                 {
 					MM_LOGINFO("checkNetwork reaching here- returning false");
-                    return false;
+                    return true;
                 }
             }
 
