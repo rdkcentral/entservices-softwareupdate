@@ -90,12 +90,12 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
 
     params1["ipversion"] ="IPv4";
-
+    InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
     
     sleep(10);
-    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
+    
     //status = DeactivateService("org.rdk.MaintenanceManager"); //jjj
   //  EXPECT_EQ(Core::ERROR_NONE, status);
 }
