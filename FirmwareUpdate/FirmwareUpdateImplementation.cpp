@@ -776,7 +776,7 @@ namespace WPEFramework {
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|No upgrade needed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|No upgrade needed\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
-                status = Core::ERROR_FIRMWAREUPDATE_UPTODATE;
+                status = ERROR_FIRMWAREUPDATE_UPTODATE;
                 return status;
             }
 
@@ -789,7 +789,7 @@ namespace WPEFramework {
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|Flashing is already in progress\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
-                status = Core::ERROR_FIRMWAREUPDATE_INPROGRESS;
+                status = ERROR_FIRMWAREUPDATE_INPROGRESS;
                 return status;
             }
 
