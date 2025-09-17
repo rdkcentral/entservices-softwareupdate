@@ -95,7 +95,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
   //  EXPECT_EQ(Core::ERROR_NONE, status);
 }
 
-//hfhgf
+
 
 TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 {
