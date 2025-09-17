@@ -2679,6 +2679,17 @@ namespace WPEFramework
             MM_SEND_NOTIFY(EVT_ONMAINTENANCSTATUSCHANGE, params);
 #endif
         }
+        uint32_t MaintenanceManager::isConnectedToInternet(const JsonObject& parameters, JsonObject& response)
+        {
+           TEST_LOG("Entry - Inside isConnectedToInternet");
+           uint32_t rc = Core::ERROR_NONE;
+           response["connectedToInternet"] = "true";
+           response["success"] = "true"; 
+           return rc;           
+        }
+
+
+
 
     } /* namespace Plugin */
 } /* namespace WPEFramework */
