@@ -415,8 +415,8 @@ jobs:
           "
           -DENABLE_UNIT_TESTING=ON
           -DENABLE_ROUTER_DISCOVERY_TOOL=OFF
-          &&
-          cmake --build build/networkmanager_rdk --target install -j8
+          #&&
+          #cmake --build build/networkmanager_rdk --target install -j8
 
       - name: Build entservices-testframework
         run: >
