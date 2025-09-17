@@ -91,7 +91,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 
     params1["ipversion"] ="IPv4";
     //InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
-    InvokeServiceMethod("org.rdk.Network1", "isConnectedToInternet", params1, result1);
+    InvokeServiceMethod("org.rdk.Network1", "isConnectedToInternet", params1, results1);
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
     
