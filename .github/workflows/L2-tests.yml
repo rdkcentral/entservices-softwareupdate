@@ -115,7 +115,7 @@ jobs:
         with:
           repository: rdkcentral/networkmanager
           path: networkmanager
-          ref: develop
+          ref: feature/L2mock
           token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Checkout googletest
