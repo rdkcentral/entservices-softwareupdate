@@ -332,7 +332,7 @@ namespace WPEFramework
             Register("startMaintenance", &MaintenanceManager::startMaintenance, this);
             Register("stopMaintenance", &MaintenanceManager::stopMaintenance, this);
             Register("getMaintenanceMode", &MaintenanceManager::getMaintenanceMode, this);
-			Register("isConnectedToInternet", &MockNetworkPlugin::isConnectedToInternet, this);
+			Register("isConnectedToInternet", &MaintenanceManager::isConnectedToInternet, this);
 
             MaintenanceManager::m_task_map[task_names_foreground[TASK_RFC].c_str()] = false;
             MaintenanceManager::m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
@@ -2682,7 +2682,6 @@ namespace WPEFramework
         }
         uint32_t MaintenanceManager::isConnectedToInternet(const JsonObject& parameters, JsonObject& response)
         {
-           TEST_LOG("Entry - Inside isConnectedToInternet");
            uint32_t rc = Core::ERROR_NONE;
            response["connectedToInternet"] = "true";
            response["success"] = "true"; 
