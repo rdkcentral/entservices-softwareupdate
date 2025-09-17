@@ -63,7 +63,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     EXPECT_EQ(Core::ERROR_NONE, status);
     status = Core::ERROR_GENERAL; */
     status = Core::ERROR_GENERAL;
-    status = ActivateService("org.rdk.SecManager");
+    status = ActivateService("org.rdk.Network.1");
     status = ActivateService("org.rdk.MaintenanceManager");
     EXPECT_EQ(Core::ERROR_NONE, status);
 }
