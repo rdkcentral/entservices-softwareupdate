@@ -399,6 +399,7 @@ jobs:
             touch rdk/iarmbus/libIARM.h rdk/iarmbus/libIBus.h
       - name: Build Network manager
         run: >
+          rm -rf /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/include/WPEFramework/core/Portability.h
           cmake
           -S "${{github.workspace}}/networkmanager"
           -B build/networkmanager_rdk
