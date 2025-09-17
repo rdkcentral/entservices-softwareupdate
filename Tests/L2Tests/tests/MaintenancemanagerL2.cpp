@@ -50,7 +50,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
                     return IARM_RESULT_SUCCESS;
                 }));  */
     uint32_t status = Core::ERROR_GENERAL;
-   // PluginHost::IShell::state state = PluginHost::IShell::state::ACTIVATED;
+   // PluginHost::IShell::state state = PluginHost::IShell::state::ACTIVATED; //ghg
     //ActivateService("org.rdk.Network");
     //status = ActivateService("org.rdk.MockPlugin");
    // EXPECT_EQ(Core::ERROR_NONE, status);
