@@ -66,6 +66,11 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     status = ActivateService("org.rdk.Network.1");
     status = ActivateService("org.rdk.MaintenanceManager");
     EXPECT_EQ(Core::ERROR_NONE, status);
+    JsonObject params, params1;
+    JsonObject results, results1;
+    params1["ipversion"] ="IPv4";
+    
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
 }
 
 MaintenanceManagerTest::~MaintenanceManagerTest() {
