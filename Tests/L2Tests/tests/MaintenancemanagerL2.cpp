@@ -91,7 +91,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     
     sleep(10);
     status = InvokeServiceMethod("org.rdk.Network.1", "isConnectedToInternet", params1, results1);
-    //status = DeactivateService("org.rdk.MaintenanceManager");
+    //status = DeactivateService("org.rdk.MaintenanceManager"); //jjj
   //  EXPECT_EQ(Core::ERROR_NONE, status);
 }
 
