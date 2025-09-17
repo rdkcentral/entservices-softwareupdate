@@ -332,6 +332,7 @@ namespace WPEFramework
             Register("startMaintenance", &MaintenanceManager::startMaintenance, this);
             Register("stopMaintenance", &MaintenanceManager::stopMaintenance, this);
             Register("getMaintenanceMode", &MaintenanceManager::getMaintenanceMode, this);
+			Register("isConnectedToInternet", &MockNetworkPlugin::isConnectedToInternet, this);
 
             MaintenanceManager::m_task_map[task_names_foreground[TASK_RFC].c_str()] = false;
             MaintenanceManager::m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
