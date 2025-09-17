@@ -6,7 +6,7 @@
 #include <iostream>
 #include <condition_variable>
 #include "MockNetworkPlugin.h"
-#include "MockNetworkPlugin.cpp"
+//#include "MockNetworkPlugin.cpp"
 
 
 using ::testing::_;
