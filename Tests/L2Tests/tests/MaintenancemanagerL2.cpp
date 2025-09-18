@@ -36,6 +36,7 @@ public:
 MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     IARM_EventHandler_t               controlEventHandler_;
     ActivateService("org.rdk.MaintenanceManager");
+    ActivateService("org.rdk.Network");
     /*
     EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_RegisterEventHandler(StrEq(IARM_BUS_MAINTENANCE_MGR_NAME),IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, _))
             .WillOnce(Invoke(
@@ -98,7 +99,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     JsonObject results, results1;
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
-    ActivateService("org.rdk.Network");
+    
     InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
 
     EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent)
