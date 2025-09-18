@@ -96,6 +96,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
     ActivateService("org.rdk.MaintenanceManager");
+    ActivateService("org.rdk.Network");
     InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
 
     EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent)
