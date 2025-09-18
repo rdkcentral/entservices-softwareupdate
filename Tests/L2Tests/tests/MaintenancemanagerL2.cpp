@@ -71,7 +71,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     params1["ipversion"] ="IPv4";
     
     status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
-    status = InvokeServiceMethod("org.rdk.Network", "isConnectedToInternet", params1, results1);
+    //status = InvokeServiceMethod("org.rdk.Network", "isConnectedToInternet", params1, results1);
 }
 
 MaintenanceManagerTest::~MaintenanceManagerTest() {
