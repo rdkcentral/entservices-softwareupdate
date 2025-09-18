@@ -114,7 +114,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     //InvokeServiceMethod("org.rdk.Network.1", "isConnectedToInternet", params1, results1);
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
-    
+    DeactivateService("org.rdk.MaintenanceManager");
     sleep(10);
     
     //status = DeactivateService("org.rdk.MaintenanceManager"); //jjj
