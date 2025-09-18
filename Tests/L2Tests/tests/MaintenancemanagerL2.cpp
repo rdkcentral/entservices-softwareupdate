@@ -88,6 +88,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     JsonObject results, results1;
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
+    InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
 
     params1["ipversion"] ="IPv4";
