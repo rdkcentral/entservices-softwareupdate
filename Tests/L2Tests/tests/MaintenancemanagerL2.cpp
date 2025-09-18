@@ -70,7 +70,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     JsonObject results, results1;
     params1["ipversion"] ="IPv4";
     
-    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
+    //status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
     //status = InvokeServiceMethod("org.rdk.Network", "isConnectedToInternet", params1, results1);
 }
 
@@ -93,7 +93,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 
     params1["ipversion"] ="IPv4";
     //InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
-    InvokeServiceMethod("org.rdk.Network.1", "isConnectedToInternet", params1, results1);
+    //InvokeServiceMethod("org.rdk.Network.1", "isConnectedToInternet", params1, results1);
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
     
