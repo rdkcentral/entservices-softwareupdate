@@ -97,6 +97,13 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     params["optOut"] = "IGNORE_UPDATE";
     ActivateService("org.rdk.MaintenanceManager");
     InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
+
+    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent)
+            .Times(::testing::AnyNumber())
+            .WillRepeatedly(
+                    [](const char* ownerName, int eventId, void* arg, size_t argLen) {
+                    return IARM_RESULT_SUCCESS;
+                    });
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
 
     params1["ipversion"] ="IPv4";
