@@ -95,6 +95,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     JsonObject results, results1;
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
+    ActivateService("org.rdk.MaintenanceManager");
     InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
 
