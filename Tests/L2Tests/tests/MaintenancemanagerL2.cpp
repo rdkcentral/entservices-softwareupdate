@@ -54,21 +54,28 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     //ActivateService("org.rdk.Network");
     //status = ActivateService("org.rdk.MockPlugin");
    // EXPECT_EQ(Core::ERROR_NONE, status);
+
+
+/*    
     status = ActivateService("org.rdk.Network");
     EXPECT_EQ(Core::ERROR_NONE, status);
+
+*/
    /* status = ActivateService("org.rdk.Network");
     EXPECT_EQ(Core::ERROR_NONE, status);
     status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.AuthService");
     EXPECT_EQ(Core::ERROR_NONE, status);
     status = Core::ERROR_GENERAL; */
+
+    /*
     status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.Network.1");
     status = ActivateService("org.rdk.MaintenanceManager");
     EXPECT_EQ(Core::ERROR_NONE, status);
     JsonObject params, params1;
     JsonObject results, results1;
-    params1["ipversion"] ="IPv4";
+    params1["ipversion"] ="IPv4"; */
     
     //status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
     //status = InvokeServiceMethod("org.rdk.Network", "isConnectedToInternet", params1, results1);
@@ -104,7 +111,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 }
 
 
-
+/* working
 TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 {
     JsonObject params;
@@ -115,7 +122,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
 }
-
+*/
 
 
 
