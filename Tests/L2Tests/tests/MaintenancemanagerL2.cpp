@@ -36,12 +36,15 @@ public:
 MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     IARM_EventHandler_t               controlEventHandler_;
     ActivateService("org.rdk.MaintenanceManager");
+    /*
     EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_RegisterEventHandler(StrEq(IARM_BUS_MAINTENANCE_MGR_NAME),IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, _))
             .WillOnce(Invoke(
                 [&](const char* ownerName, IARM_EventId_t eventId, IARM_EventHandler_t handler) {
                     controlEventHandler_ = handler;
                     return IARM_RESULT_SUCCESS;
-                }));
+                })); */
+
+    
 /*        EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_RegisterEventHandler(StrEq(IARM_BUS_MAINTENANCE_MGR_NAME), IARM_BUS_DCM_NEW_START_TIME_EVENT, _))
             .WillRepeatedly(Invoke(
                 [&](const char* ownerName, IARM_EventId_t eventId, IARM_EventHandler_t handler) {
