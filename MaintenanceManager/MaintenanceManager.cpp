@@ -1303,6 +1303,7 @@ namespace WPEFramework
             auto thunder_client = make_shared<WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>>(callsign.c_str(), "", false, query);
             if (thunder_client != nullptr)
             {
+                uint32_t status = 0;
                 //uint32_t status = thunder_client->Invoke<JsonObject, JsonObject>(5000, "isConnectedToInternet", joGetParams, joGetResult);
                 MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
 				if (status > 0)
