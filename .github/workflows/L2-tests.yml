@@ -107,7 +107,15 @@ jobs:
         with:
           repository: rdkcentral/entservices-testframework
           path: entservices-testframework
-          ref: develop
+          ref: feature/L2mock
+          token: ${{ secrets.RDKCM_RDKE }}
+          
+      - name: Checkout networkmanager
+        uses: actions/checkout@v3
+        with:
+          repository: rdkcentral/networkmanager
+          path: networkmanager
+          ref: feature/L2mock
           token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Checkout googletest
@@ -197,7 +205,7 @@ jobs:
           cmake --build build/entservices-apis -j8
           &&
           cmake --install build/entservices-apis
-
+          
       - name: Generate external headers
         # Empty headers to mute errors
         run: >
@@ -373,6 +381,7 @@ jobs:
           -DCMAKE_DISABLE_FIND_PACKAGE_RFC=ON
           -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
           -DPLUGIN_FIRMWAREUPDATE=ON
+          -DPLUGIN_MAINTENANCEMANAGER=ON
           -DUSE_THUNDER_R4=ON
           -DPLUGIN_L2Tests=ON
           -DRDK_SERVICE_L2_TEST=ON
@@ -382,6 +391,17 @@ jobs:
           cmake --build build/entservices-softwareupdate -j8
           &&
           cmake --install build/entservices-softwareupdate
+          
+      - name: Generate IARM headers
+        run: |
+            touch install/usr/lib/libIARMBus.so 
+            mkdir -p install/usr/include/rdk/iarmbus
+            touch install/usr/include/rdk/iarmbus/libIARM.h
+            cd "${{github.workspace}}/networkmanager/tests/"
+            mkdir -p headers/rdk/iarmbus
+            cd headers
+            touch rdk/iarmbus/libIARM.h rdk/iarmbus/libIBus.h
+      
 
       - name: Build entservices-testframework
         run: >
@@ -392,6 +412,8 @@ jobs:
           -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
           -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
           -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
+          -DRDK_SERVICE_L2_TEST=ON
+          -DL2_TEST_OOP_RPC=ON
           -DCMAKE_CXX_FLAGS="
           -DEXCEPTIONS_ENABLE=ON
           -fprofile-arcs
@@ -401,6 +423,7 @@ jobs:
           -DTHUNDER_VERSION_MAJOR=4
           -DTHUNDER_VERSION_MINOR=4
           -DDEVICE_TYPE=AVOutputTV
+          -DMOCKACCESSOR_LIBRARIES=ON
           -DPLUGIN_PERSISTENTSTORE_PATH="/tmp/secure/persistent/rdkservicestore"
           -DPLUGIN_PERSISTENTSTORE_LEGACYPATH="/tmp/persistent/rdkservicestore"
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers
@@ -445,6 +468,7 @@ jobs:
           -DCMAKE_DISABLE_FIND_PACKAGE_RFC=ON
           -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
           -DPLUGIN_FIRMWAREUPDATE=ON
+          -DPLUGIN_MAINTENANCEMANAGER=ON
           -DUSE_THUNDER_R4=ON
           -DPLUGIN_L2Tests=ON
           -DRDK_SERVICE_L2_TEST=ON
@@ -559,8 +583,7 @@ jobs:
           LD_LIBRARY_PATH=$GITHUB_WORKSPACE/install/usr/lib:$GITHUB_WORKSPACE/install/usr/lib/wpeframework/plugins:${LD_LIBRARY_PATH}
           RdkServicesL2Test &&
           cp -rf $(pwd)/rdkL2TestResults.json $GITHUB_WORKSPACE/rdkL2TestResultsWithoutValgrind.json &&
-          rm -rf $(pwd)/rdkL2TestResults.json
-
+          rm -rf $(pwd)/rdkL2TestResults.json 
       - name: Run unit tests with valgrind
         if: ${{ !env.ACT }}
         run: >

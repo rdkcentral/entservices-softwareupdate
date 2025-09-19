@@ -26,6 +26,10 @@ if(PLUGIN_FIRMWAREUPDATE)
     set(SRC_FILES ${SRC_FILES} tests/FirmwareUpdate_L2Test.cpp)
 endif()
 
+if(PLUGIN_MAINTENANCEMANAGER)
+set(SRC_FILES ${SRC_FILES} tests/MaintenancemanagerL2.cpp)
+endif()
+
 add_library(${MODULE_NAME} SHARED ${SRC_FILES})
 
 set_target_properties(${MODULE_NAME} PROPERTIES
@@ -65,6 +69,7 @@ target_include_directories(
     ../../../entservices-testframework/Tests/mocks/thunder
     ../../../entservices-testframework/Tests/mocks/devicesettings
     ../../../entservices-testframework/Tests/mocks/MockPlugin
+    ../../../entservices-testframework/Tests/mocks/MockNetwork
     ../../../entservices-testframework/Tests/L2Tests/L2TestsPlugin
     ${CMAKE_INSTALL_PREFIX}/include
     )

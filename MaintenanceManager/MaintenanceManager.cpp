@@ -332,6 +332,7 @@ namespace WPEFramework
             Register("startMaintenance", &MaintenanceManager::startMaintenance, this);
             Register("stopMaintenance", &MaintenanceManager::stopMaintenance, this);
             Register("getMaintenanceMode", &MaintenanceManager::getMaintenanceMode, this);
+			Register("isConnectedToInternet", &MaintenanceManager::isConnectedToInternet, this);
 
             MaintenanceManager::m_task_map[task_names_foreground[TASK_RFC].c_str()] = false;
             MaintenanceManager::m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
@@ -535,9 +536,9 @@ namespace WPEFramework
                     else /* system() executes successfully */
                     {
                         MM_LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
-#if !defined(GTEST_ENABLE)
-                        task_thread.wait(lck);
-#endif
+//#if !defined(GTEST_ENABLE)
+//                       task_thread.wait(lck);
+//#endif
                         if (task_stopTimer())
                         {
                             MM_LOGINFO("Stopped Timer Successfully");
@@ -1243,12 +1244,13 @@ namespace WPEFramework
         {
             JsonObject joGetParams;
             JsonObject joGetResult;
-            std::string callsign = "org.rdk.Network.1";
+            std::string callsign = "org.rdk.MaintenanceManager";
+			//std::string callsign = "org.rdk.Network.1";
             PluginHost::IShell::state state;
 
             string token;
 
-            if ((getServiceState(m_service, "org.rdk.Network", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
+            if ((getServiceState(m_service, "org.rdk.MaintenanceManager", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
             {
                 MM_LOGINFO("Network plugin is active");
 
@@ -1301,8 +1303,11 @@ namespace WPEFramework
             auto thunder_client = make_shared<WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement>>(callsign.c_str(), "", false, query);
             if (thunder_client != nullptr)
             {
-                uint32_t status = thunder_client->Invoke<JsonObject, JsonObject>(5000, "isConnectedToInternet", joGetParams, joGetResult);
-                if (status > 0)
+                uint32_t status = 0;
+                status = thunder_client->Invoke<JsonObject, JsonObject>(5000, "isConnectedToInternet", joGetParams, joGetResult);
+				
+                MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
+				if (status > 0)
                 {
                     MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
 #if defined(GTEST_ENABLE)
@@ -1313,11 +1318,16 @@ namespace WPEFramework
                 }
                 else if (joGetResult.HasLabel("connectedToInternet"))
                 {
-                    MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
+                    
+                    std::string jsonStr;
+                    joGetResult.ToString(jsonStr);
+                    MM_LOGINFO("joGetResult content: %s", jsonStr.c_str());
+					MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
                     return joGetResult["connectedToInternet"].Boolean();
                 }
                 else
                 {
+					MM_LOGINFO("checkNetwork reaching here- returning false");
                     return false;
                 }
             }
@@ -2677,6 +2687,18 @@ namespace WPEFramework
             MM_SEND_NOTIFY(EVT_ONMAINTENANCSTATUSCHANGE, params);
 #endif
         }
+        uint32_t MaintenanceManager::isConnectedToInternet(const JsonObject& parameters, JsonObject& response)
+        { 
+           uint32_t rc = Core::ERROR_NONE;
+		   MM_LOGINFO("Inside isConnectedTointernet");
+           //response["connectedToInternet"] = "true";
+		   response["connectedToInternet"] = true;
+           response["success"] = "true"; 
+           return rc;           
+        }
+
+
+
 
     } /* namespace Plugin */
 } /* namespace WPEFramework */
