@@ -96,7 +96,7 @@ MaintenanceManagerTest::~MaintenanceManagerTest() {
 
 //worked
 // commented background
-/*
+
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
     JsonObject params, params1;
@@ -112,6 +112,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
                     [](const char* ownerName, int eventId, void* arg, size_t argLen) {
                     return IARM_RESULT_SUCCESS;
                     });
+    sleep(10);
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
 
     params1["ipversion"] ="IPv4";
@@ -120,12 +121,12 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
     DeactivateService("org.rdk.MaintenanceManager");
-    sleep(10);
+    
     
     //status = DeactivateService("org.rdk.MaintenanceManager"); //jjj
   //  EXPECT_EQ(Core::ERROR_NONE, status);
 }
-*/
+
 
 /* working
 TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
