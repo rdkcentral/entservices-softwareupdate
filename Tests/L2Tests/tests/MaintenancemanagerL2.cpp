@@ -112,7 +112,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
                     [](const char* ownerName, int eventId, void* arg, size_t argLen) {
                     return IARM_RESULT_SUCCESS;
                     });
-    sleep(10);
+    sleep(15);
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
 
     params1["ipversion"] ="IPv4";
