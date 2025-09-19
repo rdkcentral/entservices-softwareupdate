@@ -536,9 +536,9 @@ namespace WPEFramework
                     else /* system() executes successfully */
                     {
                         MM_LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
-#if !defined(GTEST_ENABLE)
-                        task_thread.wait(lck);
-#endif
+//#if !defined(GTEST_ENABLE)
+//                       task_thread.wait(lck);
+//#endif
                         if (task_stopTimer())
                         {
                             MM_LOGINFO("Stopped Timer Successfully");
