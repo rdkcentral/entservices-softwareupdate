@@ -103,7 +103,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
     
-    InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
+    //InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
 
     EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent)
             .Times(::testing::AnyNumber())
