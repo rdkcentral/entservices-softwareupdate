@@ -1244,13 +1244,13 @@ namespace WPEFramework
         {
             JsonObject joGetParams;
             JsonObject joGetResult;
-            //std::string callsign = "org.rdk.MaintenanceManager";
-			std::string callsign = "org.rdk.Network.1";
+            std::string callsign = "org.rdk.MaintenanceManager";
+			//std::string callsign = "org.rdk.Network.1";
             PluginHost::IShell::state state;
 
             string token;
 
-            if ((getServiceState(m_service, "org.rdk.Network", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
+            if ((getServiceState(m_service, "org.rdk.MaintenanceManager", state) == Core::ERROR_NONE) && (state == PluginHost::IShell::state::ACTIVATED))
             {
                 MM_LOGINFO("Network plugin is active");
 
@@ -1304,7 +1304,7 @@ namespace WPEFramework
             if (thunder_client != nullptr)
             {
                 uint32_t status = 0;
-                //status = thunder_client->Invoke<JsonObject, JsonObject>(5000, "isConnectedToInternet", joGetParams, joGetResult);
+                status = thunder_client->Invoke<JsonObject, JsonObject>(5000, "isConnectedToInternet", joGetParams, joGetResult);
                 MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
 				if (status > 0)
                 {
