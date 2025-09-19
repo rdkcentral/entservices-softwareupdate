@@ -1,5 +1,5 @@
 #pragma once
-
+#include "../MaintenanceManager.h"
 
 namespace WPEFramework {
 namespace Plugin {
