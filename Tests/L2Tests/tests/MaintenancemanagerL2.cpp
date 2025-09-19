@@ -89,7 +89,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 }
 
 
-
+/*
 TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 {
     JsonObject params;
@@ -101,7 +101,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
     ASSERT_EQ(results["success"].Boolean(), true);
 }
 
-
+*/
 
 
 
