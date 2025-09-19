@@ -1244,8 +1244,8 @@ namespace WPEFramework
         {
             JsonObject joGetParams;
             JsonObject joGetResult;
-            std::string callsign = "org.rdk.MaintenanceManager";
-			//std::string callsign = "org.rdk.Network.1";
+            //std::string callsign = "org.rdk.MaintenanceManager";
+			std::string callsign = "org.rdk.Network";
             PluginHost::IShell::state state;
 
             string token;
