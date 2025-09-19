@@ -1305,6 +1305,7 @@ namespace WPEFramework
             {
                 uint32_t status = 0;
                 status = thunder_client->Invoke<JsonObject, JsonObject>(5000, "isConnectedToInternet", joGetParams, joGetResult);
+				
                 MM_LOGINFO("%s call failed %d", callsign.c_str(), status);
 				if (status > 0)
                 {
@@ -1317,7 +1318,11 @@ namespace WPEFramework
                 }
                 else if (joGetResult.HasLabel("connectedToInternet"))
                 {
-                    MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
+                    
+                    std::string jsonStr;
+                    joGetResult.ToString(jsonStr);
+                    MM_LOGINFO("joGetResult content: %s", jsonStr.c_str());
+					MM_LOGINFO("connectedToInternet status %s", (joGetResult["connectedToInternet"].Boolean()) ? "true" : "false");
                     return joGetResult["connectedToInternet"].Boolean();
                 }
                 else
