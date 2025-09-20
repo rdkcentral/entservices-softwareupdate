@@ -330,11 +330,7 @@ jobs:
           -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
           -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/install/usr" \
           -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake" \
-          -DCMAKE_CXX_FLAGS="
-          -I $GITHUB_WORKSPACE/networkmanager/tests/headers
-          -I $GITHUB_WORKSPACE/networkmanager/tests/headers/rdk/iarmbus
-          --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/Iarm.h
-          --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/secure_wrappermock.h
+          -DCMAKE_CXX_FLAGS="-I$GITHUB_WORKSPACE/networkmanager/tests/headers -I$GITHUB_WORKSPACE/networkmanager/tests/headers/rdk/iarmbus --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/Iarm.h --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/secure_wrappermock.h -Wall --coverage" \
           -Wall --coverage
           " \
           -DENABLE_UNIT_TESTING=ON \
