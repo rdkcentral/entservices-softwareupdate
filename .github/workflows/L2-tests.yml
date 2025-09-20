@@ -341,32 +341,6 @@ jobs:
           # Install
           cmake --install build/networkmanager_rdk
  
-        
-          
-      - name: Build networkmanager with RDK Proxy
-        run: >
-          cmake
-          -S "$GITHUB_WORKSPACE/networkmanager/legacy"
-          -B build/networkmanager_rdk
-          -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}"
-          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
-          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
-          -DCMAKE_CXX_FLAGS="
-          -I $GITHUB_WORKSPACE/networkmanager/tests/headers
-          -I $GITHUB_WORKSPACE/networkmanager/tests/headers/rdk/iarmbus
-          --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/Iarm.h
-          --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/secure_wrappermock.h
-          -Wall --coverage
-          "
-          -DENABLE_UNIT_TESTING=ON
-          -DENABLE_ROUTER_DISCOVERY_TOOL=OFF
-          &&
-          cmake --build build/networkmanager_rdk -j8
-          &&
-          cmake --install build/networkmanager_rdk
-          
-          
-
       - name: Build entservices-softwareupdate
         run: >
           cmake
