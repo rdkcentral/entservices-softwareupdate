@@ -134,6 +134,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
     JsonObject params;
     JsonObject results;
     params["reason"] = "scheduled";
+    sleep(10);
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params, results);
 
     ASSERT_EQ(status, Core::ERROR_NONE);
