@@ -93,7 +93,7 @@ jobs:
         with:
           repository: rdkcentral/networkmanager
           path: networkmanager
-          ref: feature/L2mock
+          ref: feature/nwbuild
           token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Checkout entservices-softwareupdate
