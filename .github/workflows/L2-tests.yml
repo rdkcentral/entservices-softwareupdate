@@ -324,7 +324,7 @@ jobs:
         run: |
           # Configure networkmanager
           cmake \
-          -S "$GITHUB_WORKSPACE/networkmanager/legacy" \
+          -S "$GITHUB_WORKSPACE/networkmanager" \
           -B build/networkmanager_rdk \
           -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" \
           -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
