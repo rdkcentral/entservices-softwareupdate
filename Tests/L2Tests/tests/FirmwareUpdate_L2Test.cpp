@@ -67,6 +67,9 @@ FirmwareUpdateTest:: FirmwareUpdateTest():L2TestMocks()
          status = ActivateService("org.rdk.FirmwareUpdate");
          EXPECT_EQ(Core::ERROR_NONE, status);
          status = Core::ERROR_GENERAL;
+         status = ActivateService(org.rdk.NetworkManager.1);
+         EXPECT_EQ(Core::ERROR_NONE, status);
+         status = Core::ERROR_GENERAL;
          status = ActivateService("org.rdk.Network.1");
          EXPECT_EQ(Core::ERROR_NONE, status);
 }
