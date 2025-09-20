@@ -321,6 +321,16 @@ jobs:
           cmake --build build/mocks -j8
           &&
           cmake --install build/mocks
+          
+      - name: Generate IARM headers
+        run: |
+            touch install/usr/lib/libIARMBus.so 
+            mkdir -p install/usr/include/rdk/iarmbus
+            touch install/usr/include/rdk/iarmbus/libIARM.h
+            cd "${{github.workspace}}/networkmanager/tests/"
+            mkdir -p headers/rdk/iarmbus
+            cd headers
+            touch rdk/iarmbus/libIARM.h rdk/iarmbus/libIBus.h
       
       - name: Build networkmanager legacy 111
         run: |
