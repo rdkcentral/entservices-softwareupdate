@@ -87,6 +87,14 @@ jobs:
           repository: rdkcentral/ThunderTools
           path: ThunderTools
           ref: R4.4.3
+          
+      - name: Checkout networkmanager
+        uses: actions/checkout@v3
+        with:
+          repository: rdkcentral/networkmanager
+          path: networkmanager
+          ref: feature/L2mock
+          token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Checkout entservices-softwareupdate
         if: ${{ inputs.caller_source == 'local' }}
@@ -311,6 +319,18 @@ jobs:
           cmake --build build/mocks -j8
           &&
           cmake --install build/mocks
+          
+      - name: Build networkmanager with RDK Proxy
+        run: >
+          cmake
+          -S "$GITHUB_WORKSPACE/networkmanager/legacy"
+          -B build/networkmanager_rdk
+          &&
+          cmake --build build/networkmanager_rdk -j8
+          &&
+          cmake --install build/networkmanager_rdk
+          
+          
 
       - name: Build entservices-softwareupdate
         run: >
