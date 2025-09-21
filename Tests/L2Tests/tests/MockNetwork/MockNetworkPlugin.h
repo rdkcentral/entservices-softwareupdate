@@ -29,8 +29,8 @@
 //#include "JSONRPC.h"
 
 #include <mutex>
-#include "../PowerManagerAPI.h"
-#include "../mfr.h"
+#include "PowerManagerAPI.h"
+#include "mfr.h"
 
 namespace WPEFramework
 {
