@@ -42,7 +42,7 @@ namespace WPEFramework
         // Register the MockNetworkPlugin 
         SERVICE_REGISTRATION(Network, 1, 0);
         Network *Network::_instance = nullptr;
-        Network::MockNetworkPlugin()
+        Network::Network()
             : PluginHost::JSONRPC(), _connectionId(0), _service(nullptr)
         {
             TEST_LOG("Inside Mock Network plugin constructor");
