@@ -76,7 +76,7 @@ FirmwareUpdateTest:: FirmwareUpdateTest():L2TestMocks()
 
     JsonObject params, params1;
     JsonObject results, results1;
-    params1["ipversion"] ="IPv4"; */
+    params1["ipversion"] ="IPv4"; 
     status = InvokeServiceMethod("org.rdk.Network", "isConnectedToInternet", params1, results1);
 }
 
