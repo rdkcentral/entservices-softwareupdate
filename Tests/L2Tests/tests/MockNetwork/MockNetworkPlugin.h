@@ -36,7 +36,7 @@ namespace WPEFramework
 {
     namespace Plugin
     {
-        class MockNetworkPlugin : public PluginHost::IPlugin,
+        class Network : public PluginHost::IPlugin,
                                         public Exchange::IIarm,
                                         public Exchange::IProc,
                                         public Exchange::IRBus,
@@ -46,15 +46,15 @@ namespace WPEFramework
                                         public PluginHost::JSONRPC
                                         {
         public:
-            MockNetworkPlugin();
-            ~MockNetworkPlugin() override;
-            static MockNetworkPlugin *_instance;
+            Network();
+            ~Network() override;
+            static Network *_instance;
 
-            MockNetworkPlugin(const MockNetworkPlugin &) = delete;
-            MockNetworkPlugin &operator=(const MockNetworkPlugin &) = delete;
+            Network(const Network &) = delete;
+            Network &operator=(const Network &) = delete;
 
             //all the supported interfaces are to be added here
-            BEGIN_INTERFACE_MAP(MockNetworkPlugin)
+            BEGIN_INTERFACE_MAP(Network)
             INTERFACE_ENTRY(PluginHost::IPlugin)
             INTERFACE_ENTRY(Exchange::IIarm)
             INTERFACE_ENTRY(Exchange::IProc)
