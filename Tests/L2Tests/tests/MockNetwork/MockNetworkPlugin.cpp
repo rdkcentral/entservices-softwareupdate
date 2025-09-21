@@ -125,7 +125,7 @@ namespace WPEFramework
             return (uint32_t)_iarmImpl-> IARM_Bus_RemoveEventHandler(ownerName.c_str(),eventId,reinterpret_cast<IARM_EventHandler_t>(&sendNotificationIarm));
         }
 
-        uint32_t NetworkPlugin::IARM_Bus_Call(const string& ownerName, const string& methodName, uint8_t* arg, uint32_t argLen)
+        uint32_t Network::IARM_Bus_Call(const string& ownerName, const string& methodName, uint8_t* arg, uint32_t argLen)
         {
             TEST_LOG("Inside Mock plugin IARM_Bus_Call IarmBusImpl = %p", _iarmImpl);
             TEST_LOG("Calling IARM_Bus_Call, argLen: %u",argLen);
