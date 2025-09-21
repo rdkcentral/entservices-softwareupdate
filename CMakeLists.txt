@@ -39,6 +39,7 @@ include(CmakeHelperFunctions)
 
 if(RDK_SERVICE_L2_TEST)
     add_subdirectory(Tests/L2Tests)
+    add_subdirectory(Tests/L2Tests/tests/MockNetwork)
 endif()
 
 option(DISABLE_SECURITY_TOKEN "Disable security token" OFF)
