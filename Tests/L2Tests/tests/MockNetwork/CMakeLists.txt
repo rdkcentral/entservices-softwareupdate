@@ -54,7 +54,7 @@ endif (MOCKACCESSOR_LIBRARIES)
 find_library(TESTMOCKLIB_LIBRARIES NAMES TestMocklib)
 message ("linking mock libraries ${TESTMOCKLIB_LIBRARIES} library")
 target_link_libraries(${MODULE_NAME} PRIVATE ${TESTMOCKLIB_LIBRARIES})
-target_link_options(${MODULE_NAME} PRIVATE -Wl,--wrap,open -Wl,--wrap,mkdir -Wl,--wrap,mount -Wl,--wrap,umount -Wl,--wrap,ioctl -Wl,--wrap,statvfs -Wl,--wrap,statfs -Wl,--wrap,stat  -Wl,--wrap,rmdir)
+target_link_options(${MODULE_NAME} PRIVATE -Wl,--wrap,mount -Wl,--wrap,umount -Wl,--wrap,ioctl -Wl,--wrap,statvfs -Wl,--wrap,statfs -Wl,--wrap,stat  -Wl,--wrap,rmdir)
 
 install(TARGETS
     ${MODULE_NAME}
