@@ -28,7 +28,7 @@ find_package(${NAMESPACE}Definitions REQUIRED)
 
 # Build the main plugin that runs inside the WPEFramework daemon
 #add_library(${MODULE_NAME} SHARED
-add_executable(${MODULE_NAME})
+add_executable(${MODULE_NAME}
     MockNetworkPlugin.cpp
     Module.cpp
 )
