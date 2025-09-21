@@ -18,9 +18,9 @@
 */
 
 #include "MockNetworkPlugin.h"
-#include "../MockAccessor.h"
-#include "../Rfc.h"
-#include "../MockUtils/RfcUtils.h"
+#include "MockAccessor.h"
+#include "Rfc.h"
+#include "MockUtils/RfcUtils.h"
 
 #define returnJson(rc) \
     { \
