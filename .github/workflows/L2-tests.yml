@@ -1,6 +1,5 @@
 name: L2-tests
 
-
 on:
   workflow_call:
     inputs:
@@ -18,7 +17,6 @@ env:
   INTERFACES_REF: "develop"
   AUTOMATICS_UNAME: ${{ secrets.AUTOMATICS_UNAME}}
   AUTOMATICS_PASSCODE: ${{ secrets. AUTOMATICS_PASSCODE}}
-
 
 jobs:
   L2-tests:
@@ -90,13 +88,6 @@ jobs:
           path: ThunderTools
           ref: R4.4.3
           
-      - name: Checkout networkmanager
-        uses: actions/checkout@v3
-        with:
-          repository: rdkcentral/networkmanager
-          path: networkmanager
-          ref: feature/nwbuild
-          token: ${{ secrets.RDKCM_RDKE }}
 
       - name: Checkout entservices-softwareupdate
         if: ${{ inputs.caller_source == 'local' }}
@@ -322,37 +313,6 @@ jobs:
           &&
           cmake --install build/mocks
           
-      - name: Generate IARM headers
-        run: |
-            touch install/usr/lib/libIARMBus.so 
-            mkdir -p install/usr/include/rdk/iarmbus
-            touch install/usr/include/rdk/iarmbus/libIARM.h
-            cd "${{github.workspace}}/networkmanager/tests/"
-            mkdir -p headers/rdk/iarmbus
-            cd headers
-            touch rdk/iarmbus/libIARM.h rdk/iarmbus/libIBus.h
-      
-      - name: Build networkmanager legacy 111
-        run: |
-          # Configure networkmanager
-          cmake \
-          -S "$GITHUB_WORKSPACE/networkmanager" \
-          -B build/networkmanager_rdk \
-          -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" \
-          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
-          -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/install/usr" \
-          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake" \
-          -DCMAKE_CXX_FLAGS="-I$GITHUB_WORKSPACE/networkmanager/tests/headers -I$GITHUB_WORKSPACE/networkmanager/tests/headers/rdk/iarmbus --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/Iarm.h --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/secure_wrappermock.h -Wall --coverage" \
-          -DENABLE_UNIT_TESTING=ON \
-          -DENABLE_ROUTER_DISCOVERY_TOOL=OFF
-
-          # Build
-          cmake --build build/networkmanager_rdk -j8
-
-          # Install
-          cmake --install build/networkmanager_rdk
-          cat /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins/LegacyNetworkAPIs.json
- 
       - name: Build entservices-softwareupdate
         run: >
           cmake
