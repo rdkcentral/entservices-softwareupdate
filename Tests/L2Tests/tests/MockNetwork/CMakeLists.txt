@@ -15,12 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(PLUGIN_NAME MockNetworkPlugin)
+set(PLUGIN_NAME Network)
 #set(MODULE_NAME ${PLUGIN_NAME})
 set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 
-set(PLUGIN_MOCKNETWORKPLUGIN_AUTOSTART "false" CACHE STRING "Automatically start MockNetwork plugin")
-set(PLUGIN_MOCKNETWORKPLUGIN_STARTUPORDER "50" CACHE STRING "To configure startup order of Mock Network plugin")
+set(PLUGIN_NETWORK_AUTOSTART "false" CACHE STRING "Automatically start Network plugin")
+set(PLUGIN_NETWORK_STARTUPORDER "50" CACHE STRING "To configure startup order of Network plugin")
 
 # Find required packages
 find_package(${NAMESPACE}Plugins REQUIRED)
