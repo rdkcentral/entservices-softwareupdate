@@ -1,7 +1,7 @@
-autostart = "@PLUGIN_MOCKNETWORKPLUGIN_AUTOSTART@"
+autostart = "@PLUGIN_NETWORK_AUTOSTART@"
 precondition = ["Platform"]
 callsign = "org.rdk.Network"
-startuporder = "@PLUGIN_MOCKNETWORKPLUGIN_STARTUPORDER@"
+startuporder = "@PLUGIN_NETWORK_STARTUPORDER@"
 
 configuration = JSON()
 rootobject = JSON()
