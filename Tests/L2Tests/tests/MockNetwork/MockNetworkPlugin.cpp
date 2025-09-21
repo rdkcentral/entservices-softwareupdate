@@ -40,38 +40,38 @@ namespace WPEFramework
     namespace Plugin
     {
         // Register the MockNetworkPlugin 
-        SERVICE_REGISTRATION(MockNetworkPlugin, 1, 0);
-        MockNetworkPlugin *MockNetworkPlugin::_instance = nullptr;
-        MockNetworkPlugin::MockNetworkPlugin()
+        SERVICE_REGISTRATION(Network, 1, 0);
+        Network *Network::_instance = nullptr;
+        Network::MockNetworkPlugin()
             : PluginHost::JSONRPC(), _connectionId(0), _service(nullptr)
         {
             TEST_LOG("Inside Mock Network plugin constructor");
-            MockNetworkPlugin::_instance = this;
-            PluginHost::JSONRPC::Register("isConnectedToInternet", &MockNetworkPlugin::isConnectedToInternet, this);
+            Network::_instance = this;
+            PluginHost::JSONRPC::Register("isConnectedToInternet", &Network::isConnectedToInternet, this);
         }
 
-        MockNetworkPlugin::~MockNetworkPlugin()
+        Network::~Network()
         {
             TEST_LOG("Inside Mock Network plugin destructor");
         }
 
-        IarmBusImpl* MockNetworkPlugin::_iarmImpl = nullptr;
-        readprocImpl* MockNetworkPlugin::_procImpl = nullptr;
-        RBusApiImpl* MockNetworkPlugin::_rbusImpl = nullptr;
-        RfcApiImpl* MockNetworkPlugin::_rfcImpl = nullptr;
-        PowerManagerImpl* MockNetworkPlugin::_powerManagerHalMock = nullptr;
-        mfrImpl* MockNetworkPlugin::_mfrImpl = nullptr;
+        IarmBusImpl* Network::_iarmImpl = nullptr;
+        readprocImpl* Network::_procImpl = nullptr;
+        RBusApiImpl* Network::_rbusImpl = nullptr;
+        RfcApiImpl* Network::_rfcImpl = nullptr;
+        PowerManagerImpl* Network::_powerManagerHalMock = nullptr;
+        mfrImpl* Network::_mfrImpl = nullptr;
 
-        std::list<Exchange::IIarm::INotification*> MockNetworkPlugin::_iarmNotificationCallbacks;
+        std::list<Exchange::IIarm::INotification*> Network::_iarmNotificationCallbacks;
 
-        const std::string MockNetworkPlugin::Initialize(PluginHost::IShell *service)
+        const std::string Network::Initialize(PluginHost::IShell *service)
         {
             TEST_LOG("Inside Mock Network plugin Initialize");
             _service = service;
             return "";
         }
 
-        void MockNetworkPlugin::Deinitialize(PluginHost::IShell *service)
+        void Network::Deinitialize(PluginHost::IShell *service)
         {
             TEST_LOG("Inside Mock plugin Deinitialize Entry _iarmNotificationCallbacks size = %ld", _iarmNotificationCallbacks.size());
             std::lock_guard<std::mutex> lock(_notificationMutex);
@@ -84,16 +84,16 @@ namespace WPEFramework
             TEST_LOG("Inside Mock plugin Deinitialize Exit _iarmNotificationCallbacks size = %ld", _iarmNotificationCallbacks.size());
         }
 
-        std::string MockNetworkPlugin::Information() const
+        std::string Network::Information() const
         {
             TEST_LOG("Inside Mock plugin Information");
-            return "MockNetworkPlugin Information";
+            return "NetworkPlugin Information";
         }
 
 //
 /* ********************************     IARM related mocks starts. *********************************/
 //
-        uint32_t MockNetworkPlugin::IARM_Bus_Init(const string& message)
+        uint32_t Network::IARM_Bus_Init(const string& message)
         {
             TEST_LOG("Inside Mock plugin IARM_Bus_Init IarmBusImpl = %p", _iarmImpl);
             TEST_LOG("Calling IARM_Bus_Init");
@@ -101,7 +101,7 @@ namespace WPEFramework
             return (uint32_t)_iarmImpl-> IARM_Bus_Init("Thunder_Plugins");
         }
 
-        uint32_t MockNetworkPlugin::IARM_Bus_Connect()
+        uint32_t Network::IARM_Bus_Connect()
         {
             TEST_LOG("Inside Mock plugin IARM_Bus_Connect IarmBusImpl = %p", _iarmImpl);
             TEST_LOG("Calling IARM_Bus_Connect");
@@ -109,7 +109,7 @@ namespace WPEFramework
             return (uint32_t)_iarmImpl-> IARM_Bus_Connect();
         }
 
-        uint32_t MockNetworkPlugin::IARM_Bus_RegisterEventHandler(const string& ownerName, int eventId)
+        uint32_t Network::IARM_Bus_RegisterEventHandler(const string& ownerName, int eventId)
         {
             TEST_LOG("Inside Mock plugin IARM_Bus_RegisterEventHandler IarmBusImpl = %p", _iarmImpl);
             TEST_LOG("Calling IARM_Bus_RegisterEventHandler");
@@ -117,7 +117,7 @@ namespace WPEFramework
             return (uint32_t)_iarmImpl-> IARM_Bus_RegisterEventHandler(ownerName.c_str(),eventId,reinterpret_cast<IARM_EventHandler_t>(&sendNotificationIarm));
         }
 
-        uint32_t MockNetworkPlugin::IARM_Bus_RemoveEventHandler(const string& ownerName, int eventId)
+        uint32_t Network::IARM_Bus_RemoveEventHandler(const string& ownerName, int eventId)
         {
             TEST_LOG("Inside Mock plugin IARM_Bus_RemoveEventHandler IarmBusImpl = %p", _iarmImpl);
             TEST_LOG("Calling IARM_Bus_RemoveEventHandler");
@@ -125,7 +125,7 @@ namespace WPEFramework
             return (uint32_t)_iarmImpl-> IARM_Bus_RemoveEventHandler(ownerName.c_str(),eventId,reinterpret_cast<IARM_EventHandler_t>(&sendNotificationIarm));
         }
 
-        uint32_t MockNetworkPlugin::IARM_Bus_Call(const string& ownerName, const string& methodName, uint8_t* arg, uint32_t argLen)
+        uint32_t NetworkPlugin::IARM_Bus_Call(const string& ownerName, const string& methodName, uint8_t* arg, uint32_t argLen)
         {
             TEST_LOG("Inside Mock plugin IARM_Bus_Call IarmBusImpl = %p", _iarmImpl);
             TEST_LOG("Calling IARM_Bus_Call, argLen: %u",argLen);
@@ -133,7 +133,7 @@ namespace WPEFramework
             return (uint32_t)_iarmImpl-> IARM_Bus_Call(ownerName.c_str(), methodName.c_str(), reinterpret_cast<void*>(arg), argLen);
         }
 
-        uint32_t MockNetworkPlugin::IARM_Bus_BroadcastEvent(const string& ownerName, int eventId, uint8_t *arg, uint32_t argLen)
+        uint32_t Network::IARM_Bus_BroadcastEvent(const string& ownerName, int eventId, uint8_t *arg, uint32_t argLen)
         {
             TEST_LOG("Inside Mock plugin IARM_Bus_BroadcastEvent IarmBusImpl = %p", _iarmImpl);
             TEST_LOG("Calling IARM_Bus_BroadcastEvent");
@@ -141,7 +141,7 @@ namespace WPEFramework
             return (uint32_t)_iarmImpl-> IARM_Bus_BroadcastEvent(ownerName.c_str(), eventId, reinterpret_cast<void*>(arg), argLen);
         }
 
-        uint32_t MockNetworkPlugin::IARM_Bus_RegisterCall(const string& methodName, const uint8_t* handler)
+        uint32_t Network::IARM_Bus_RegisterCall(const string& methodName, const uint8_t* handler)
         {
             TEST_LOG("Inside Mock plugin IARM_Bus_RegisterCall IarmBusImpl = %p", _iarmImpl);
             TEST_LOG("Calling IARM_Bus_RegisterCall");
@@ -149,7 +149,7 @@ namespace WPEFramework
             return (uint32_t)_iarmImpl-> IARM_Bus_RegisterCall(methodName.c_str(), reinterpret_cast<IARM_BusCall_t>(handler));
         }
 
-        uint32_t MockNetworkPlugin::IARM_Bus_CallWithIPCTimeout(const string& ownerName, const string& methodName, uint8_t *arg, uint32_t argLen, int timeout)
+        uint32_t Network::IARM_Bus_CallWithIPCTimeout(const string& ownerName, const string& methodName, uint8_t *arg, uint32_t argLen, int timeout)
         {
             TEST_LOG("Inside Mock plugin IARM_Bus_CallWithIPCTimeout IarmBusImpl = %p", _iarmImpl);
             TEST_LOG("Calling IARM_Bus_CallWithIPCTimeout");
@@ -157,7 +157,7 @@ namespace WPEFramework
             return (uint32_t)_iarmImpl-> IARM_Bus_Call_with_IPCTimeout(ownerName.c_str(), methodName.c_str(), reinterpret_cast<void*>(arg), argLen, timeout);
         }
 
-        uint32_t MockNetworkPlugin::IARM_Bus_IsConnected(const string& message, int& result)
+        uint32_t Network::IARM_Bus_IsConnected(const string& message, int& result)
         {
             TEST_LOG("Inside Mock plugin IARM_Bus_IsConnected IarmBusImpl = %p", _iarmImpl);
             int isRegistered = 0;
@@ -169,7 +169,7 @@ namespace WPEFramework
             return (uint32_t)returnValue;
         }
 
-        void MockNetworkPlugin::sendNotificationIarm(const char* ownerName,IARM_EventId_t eventId,void* data,size_t len)
+        void Network::sendNotificationIarm(const char* ownerName,IARM_EventId_t eventId,void* data,size_t len)
         {
             TEST_LOG("sendNotificationIarm called from gtest mock");
             for (const auto& notifyCb : _iarmNotificationCallbacks) 
@@ -180,7 +180,7 @@ namespace WPEFramework
             }
         }
 
-        uint32_t MockNetworkPlugin::Register(Exchange::IIarm::INotification *notification)
+        uint32_t Network::Register(Exchange::IIarm::INotification *notification)
         {
             TEST_LOG("MockNetworkPlugin::Register Entry");
             if (nullptr == notification)
@@ -202,10 +202,10 @@ namespace WPEFramework
             }
 
             return Core::ERROR_NONE;
-            TEST_LOG("MockNetworkPlugin::Register Exit");
+            TEST_LOG("Network::Register Exit");
         }
 
-        uint32_t MockNetworkPlugin::Unregister(IIarm::INotification *notification)
+        uint32_t Network::Unregister(IIarm::INotification *notification)
         {
             std::lock_guard<std::mutex> locker(_notificationMutex);
 
@@ -229,7 +229,7 @@ namespace WPEFramework
 //
 /* ********************************     Proc related mocks starts. *********************************/
 //
-        uint32_t MockNetworkPlugin::openproc(int flags , uint32_t &PT)
+        uint32_t Network::openproc(int flags , uint32_t &PT)
         {
             PROCTAB *pTab = NULL;
             if ((pTab = _procImpl->openproc(flags)) == NULL)
@@ -243,7 +243,7 @@ namespace WPEFramework
             return Core::ERROR_NONE;
         }
 
-        uint32_t MockNetworkPlugin::closeproc(const uint32_t PT )
+        uint32_t Network::closeproc(const uint32_t PT )
         {
             PROCTAB pTab = {};
             pTab.procfs = reinterpret_cast<DIR*>(PT);
@@ -251,7 +251,7 @@ namespace WPEFramework
             return Core::ERROR_NONE;
         }
 
-        uint32_t MockNetworkPlugin::readproc(const uint32_t PT, int &tid , int &ppid , string &cmd )
+        uint32_t Network::readproc(const uint32_t PT, int &tid , int &ppid , string &cmd )
         {
             PROCTAB pTab = {};
             proc_t p = {};
@@ -276,7 +276,7 @@ namespace WPEFramework
 //
 /* ********************************     Rbus related mocks starts. *********************************/
 //
-        uint32_t MockNetworkPlugin::rbus_close(const std::string& handle)
+        uint32_t Network::rbus_close(const std::string& handle)
         {
             TEST_LOG("Inside Mock plugin rbus_close, rbusImpl = %p", _rbusImpl);
             TEST_LOG("Calling rbus_close with handle: %s", handle.c_str());
@@ -295,7 +295,7 @@ namespace WPEFramework
 //
 /* ********************************     Rfc related mocks starts. *********************************/
 //
-        uint32_t MockNetworkPlugin::getRFCParameter(const string& pcCallerID, const string& pcParameterName, RFC_ParamData& pstParamData)
+        uint32_t Network::getRFCParameter(const string& pcCallerID, const string& pcParameterName, RFC_ParamData& pstParamData)
         {
             TEST_LOG("Inside Mock plugin getRFCParameter pcCallerID = %s pcParameterName = %s", pcCallerID.c_str(), pcParameterName.c_str());
 
@@ -320,14 +320,14 @@ namespace WPEFramework
             return Core::ERROR_NONE;
         }
 
-        uint32_t MockNetworkPlugin::setRFCParameter(const string& pcCallerID, const string& pcParameterName, const string& pcParameterValue, uint32_t eDataType)
+        uint32_t Network::setRFCParameter(const string& pcCallerID, const string& pcParameterName, const string& pcParameterValue, uint32_t eDataType)
         {
             TEST_LOG("Inside Mock plugin setRFCParameter _rfcImpl = %p pcParameterName = %s", _rfcImpl, pcParameterName);
             return Core::ERROR_NONE;
         }
 
         string rfcError;
-        string& MockNetworkPlugin::getRFCErrorString(uint32_t code)
+        string& Network::getRFCErrorString(uint32_t code)
         {
             TEST_LOG("Inside Mock plugin getRFCErrorString _rfcImpl = %p", _rfcImpl);
             return rfcError;
@@ -340,7 +340,7 @@ namespace WPEFramework
 /* ********************************     PowerManager HAL related mocks starts. *********************************/
 //
 
-        uint32_t MockNetworkPlugin::PLAT_INIT()
+        uint32_t Network::PLAT_INIT()
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_powerManagerHalMock->PLAT_INIT());
@@ -348,14 +348,14 @@ namespace WPEFramework
             return result;
         }
 
-        uint32_t MockNetworkPlugin::PLAT_API_SetPowerState(uint32_t newState)
+        uint32_t Network::PLAT_API_SetPowerState(uint32_t newState)
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_powerManagerHalMock->PLAT_API_SetPowerState(static_cast<PWRMgr_PowerState_t>(newState)));
             return result;
         }
 
-        uint32_t MockNetworkPlugin::PLAT_API_GetPowerState(uint32_t& curState) const
+        uint32_t Network::PLAT_API_GetPowerState(uint32_t& curState) const
         {
             PWRMgr_PowerState_t _curState;
             TEST_LOG("Entry");
@@ -364,20 +364,20 @@ namespace WPEFramework
             return result;
         }
 
-        uint32_t MockNetworkPlugin::PLAT_API_SetWakeupSrc(uint32_t srcType, bool enable)
+        uint32_t Network::PLAT_API_SetWakeupSrc(uint32_t srcType, bool enable)
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_powerManagerHalMock->PLAT_API_SetWakeupSrc(static_cast<PWRMGR_WakeupSrcType_t>(srcType), enable));
             return result;
         }
 
-        uint32_t MockNetworkPlugin::PLAT_API_GetWakeupSrc(uint32_t srcType, bool& enable)
+        uint32_t Network::PLAT_API_GetWakeupSrc(uint32_t srcType, bool& enable)
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_powerManagerHalMock->PLAT_API_GetWakeupSrc(static_cast<PWRMGR_WakeupSrcType_t>(srcType), &enable));
             return result;
         }
-        uint32_t MockNetworkPlugin::isConnectedToInternet(const JsonObject& parameters, JsonObject& response)
+        uint32_t Network::isConnectedToInternet(const JsonObject& parameters, JsonObject& response)
         {
            TEST_LOG("Entry - Inside isConnectedToInternet");
            uint32_t rc = Core::ERROR_NONE;
@@ -386,42 +386,42 @@ namespace WPEFramework
            return rc;           
         }
 
-        uint32_t MockNetworkPlugin::PLAT_Reset(uint32_t newState)
+        uint32_t Network::PLAT_Reset(uint32_t newState)
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_powerManagerHalMock->PLAT_Reset(static_cast<PWRMgr_PowerState_t>(newState)));
             return result;
         }
 
-        uint32_t MockNetworkPlugin::PLAT_TERM(void)
+        uint32_t Network::PLAT_TERM(void)
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_powerManagerHalMock->PLAT_TERM());
             return result;
         }
 
-        uint32_t MockNetworkPlugin::PLAT_DS_INIT(void)
+        uint32_t Network::PLAT_DS_INIT(void)
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_powerManagerHalMock->PLAT_DS_INIT());
             return result;
         }
 
-        uint32_t MockNetworkPlugin::PLAT_DS_SetDeepSleep(uint32_t deep_sleep_timeout, bool& isGPIOWakeup, bool networkStandby)
+        uint32_t Network::PLAT_DS_SetDeepSleep(uint32_t deep_sleep_timeout, bool& isGPIOWakeup, bool networkStandby)
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_powerManagerHalMock->PLAT_DS_SetDeepSleep(deep_sleep_timeout, &isGPIOWakeup, networkStandby));
             return result;
         }
 
-        uint32_t MockNetworkPlugin::PLAT_DS_DeepSleepWakeup(void)
+        uint32_t Network::PLAT_DS_DeepSleepWakeup(void)
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_powerManagerHalMock->PLAT_DS_DeepSleepWakeup());
             return result;
         }
 
-        uint32_t MockNetworkPlugin::PLAT_DS_GetLastWakeupReason(uint32_t &wakeupReason) const
+        uint32_t Network::PLAT_DS_GetLastWakeupReason(uint32_t &wakeupReason) const
         {
             DeepSleep_WakeupReason_t _wakeupReason;
             TEST_LOG("Entry");
@@ -430,7 +430,7 @@ namespace WPEFramework
             return result;
         }
 
-        uint32_t MockNetworkPlugin::PLAT_DS_GetLastWakeupKeyCode(uint32_t &KeyCode) const
+        uint32_t Network::PLAT_DS_GetLastWakeupKeyCode(uint32_t &KeyCode) const
         {
             DeepSleepMgr_WakeupKeyCode_Param_t st_wakeupKeyCode;
             TEST_LOG("Entry");
@@ -439,7 +439,7 @@ namespace WPEFramework
             return result;
         }
 
-        uint32_t MockNetworkPlugin::PLAT_DS_TERM(void)
+        uint32_t Network::PLAT_DS_TERM(void)
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_powerManagerHalMock->PLAT_DS_TERM());
@@ -454,21 +454,21 @@ namespace WPEFramework
 /* ********************************     MFR related mocks starts. *********************************/
 //
 
-        uint32_t MockNetworkPlugin::mfrGetTempThresholds(int &high /* @out  */, int &critical /* @out  */) const
+        uint32_t Network::mfrGetTempThresholds(int &high /* @out  */, int &critical /* @out  */) const
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_mfrImpl->mfrGetTempThresholds(&high,&critical));
             return result;
         }
 
-        uint32_t MockNetworkPlugin::mfrSetTempThresholds(int tempHigh /* @in  */, int tempCritical /* @in  */)
+        uint32_t Network::mfrSetTempThresholds(int tempHigh /* @in  */, int tempCritical /* @in  */)
         {
             TEST_LOG("Entry");
             uint32_t result = static_cast<uint32_t>(_mfrImpl->mfrSetTempThresholds(tempHigh,tempCritical));
             return result;
         }
 
-        uint32_t MockNetworkPlugin::mfrGetTemperature(uint32_t &curState /* @out  */, int &curTemperature /* @out  */, int &wifiTemperature /* @out  */) const
+        uint32_t Network::mfrGetTemperature(uint32_t &curState /* @out  */, int &curTemperature /* @out  */, int &wifiTemperature /* @out  */) const
         {
             TEST_LOG("Entry");
             mfrTemperatureState_t _curState;
