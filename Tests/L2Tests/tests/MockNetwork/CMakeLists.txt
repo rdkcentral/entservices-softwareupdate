@@ -20,7 +20,7 @@ set(PLUGIN_NAME Network)
 set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 
 set(PLUGIN_NETWORK_AUTOSTART "false" CACHE STRING "Automatically start Network plugin")
-set(PLUGIN_NETWORK_STARTUPORDER "50" CACHE STRING "To configure startup order of Network plugin")
+set(PLUGIN_LEGACY_NW_STARTUPORDER "35" CACHE STRING "To configure startup order of Legacy Network plugin")
 
 # Find required packages
 find_package(${NAMESPACE}Plugins REQUIRED)
