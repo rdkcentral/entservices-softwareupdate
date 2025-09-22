@@ -383,6 +383,10 @@ jobs:
           cmake --build build/entservices-softwareupdate -j8
           &&
           cmake --install build/entservices-softwareupdate
+          &&
+          cat /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins/Network.json
+
+        
 
       - name: Build entservices-testframework
         run: >
