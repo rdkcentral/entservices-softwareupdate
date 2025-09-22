@@ -61,7 +61,10 @@ install(TARGETS
     DESTINATION
     lib/${STORAGE_DIRECTORY}/plugins
 )
-
+install(
+    FILES Network.json
+    DESTINATION /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins
+)
 set_target_properties(${MODULE_NAME} PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
