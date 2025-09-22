@@ -384,7 +384,7 @@ jobs:
           &&
           cmake --install build/entservices-softwareupdate
           &&
-          cat /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins/Network.json
+          cat /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins/LegacyWiFiManagerAPIs.json
 
         
 
