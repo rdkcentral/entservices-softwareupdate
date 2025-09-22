@@ -326,6 +326,7 @@ namespace WPEFramework
             uint32_t startMaintenance(const JsonObject &parameters, JsonObject &response);
             uint32_t stopMaintenance(const JsonObject &parameters, JsonObject &response);
             uint32_t getMaintenanceMode(const JsonObject &parameters, JsonObject &response);
+            uint32_t getDeviceInitializationContext(const JsonObject &parameters, JsonObject &response);
         }; /* end of MaintenanceManager service class */
     } /* end of plugin */
 } /* end of wpeframework */
