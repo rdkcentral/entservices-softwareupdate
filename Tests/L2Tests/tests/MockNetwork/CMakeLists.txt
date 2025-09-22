@@ -63,7 +63,8 @@ install(TARGETS
 )
 install(
     FILES Network.json
-    DESTINATION /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins
+    DESTINATION 
+    /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins
 )
 set_target_properties(${MODULE_NAME} PROPERTIES
     CXX_STANDARD 11
