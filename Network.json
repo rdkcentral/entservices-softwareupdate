@@ -1,0 +1,10 @@
+{
+  "locator": "libWPEFrameworkNetwork.so",
+  "classname": "Network",
+  "precondition": [
+    "Platform"
+  ],
+  "callsign": "org.rdk.Network",
+  "autostart": true,
+  "startuporder": 35
+}
