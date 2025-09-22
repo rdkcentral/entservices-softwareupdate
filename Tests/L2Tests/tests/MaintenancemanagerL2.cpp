@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <condition_variable>
-#include "MockNetworkPlugin.h"
+
 //#include "MockNetworkPlugin.cpp"
 
 //gv
