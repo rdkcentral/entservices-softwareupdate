@@ -49,7 +49,8 @@ namespace WPEFramework
      **/
     SERVICE_REGISTRATION(FirmwareUpdate, API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH);
 
-    FirmwareUpdate::FirmwareUpdate() : _service(nullptr), _connectionId(0), _firmwareUpdate(nullptr), _FirmwareUpdateNotification(this)
+    FirmwareUpdate::FirmwareUpdate() :PluginHost::JSONRPCErrorAssessor<PluginHost::JSONRPCErrorAssessorTypes::FunctionCallbackType>(FirmwareUpdate::OnJSONRPCError),
+    _service(nullptr), _connectionId(0), _firmwareUpdate(nullptr), _FirmwareUpdateNotification(this)
     {
         SYSLOG(Logging::Startup, (_T("FirmwareUpdate Constructor")));
     }
@@ -154,6 +155,12 @@ namespace WPEFramework
     {
        // No additional info to report
        return (string());
+    }
+
+    uint32_t FirmwareUpdate::OnJSONRPCError(const Core::JSONRPC::Context&, const string& method, const string& parameters, const uint32_t errorcode, string& errormessage) {
+            if(IS_ENTSERVICES_ERRORCODE(errorcode))
+               errormessage = ERROR_MESSAGE(errorcode);
+           return errorcode;
     }
 
     void FirmwareUpdate::Deactivated(RPC::IRemoteConnection* connection)
