@@ -392,8 +392,8 @@ jobs:
           &&
           cmake --install build/entservices-softwareupdate
           
-      - name: Generate IARM headers
-        run: |
+          - name: Generate IARM headers
+            run: |
             touch install/usr/lib/libIARMBus.so 
             mkdir -p install/usr/include/rdk/iarmbus
             touch install/usr/include/rdk/iarmbus/libIARM.h
@@ -401,6 +401,27 @@ jobs:
             mkdir -p headers/rdk/iarmbus
             cd headers
             touch rdk/iarmbus/libIARM.h rdk/iarmbus/libIBus.h
+      
+      - name: Build networkmanager 
+        run: |
+          # Configure networkmanager
+          cmake \
+          -S "$GITHUB_WORKSPACE/networkmanager" \
+          -B build/networkmanager_rdk \
+          -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" \
+          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
+          -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/install/usr" \
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake" \
+          -DCMAKE_CXX_FLAGS="-I$GITHUB_WORKSPACE/networkmanager/tests/headers -I$GITHUB_WORKSPACE/networkmanager/tests/headers/rdk/iarmbus --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/Iarm.h --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/secure_wrappermock.h -Wall --coverage" \
+          -DENABLE_UNIT_TESTING=ON \
+          -DENABLE_ROUTER_DISCOVERY_TOOL=OFF
+
+          # Build
+          cmake --build build/networkmanager_rdk -j8
+
+          # Install
+          cmake --install build/networkmanager_rdk
+          cat /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins/LegacyNetworkAPIs.json
       
 
       - name: Build entservices-testframework
