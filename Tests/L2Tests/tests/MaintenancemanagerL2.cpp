@@ -32,6 +32,7 @@ public:
     MaintenanceManagerTest();
 };
 
+
 MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     IARM_EventHandler_t               controlEventHandler_;
     uint32_t status = Core::ERROR_GENERAL;
@@ -39,52 +40,6 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     EXPECT_EQ(Core::ERROR_NONE, status);
     status =ActivateService("org.rdk.Network");
     EXPECT_EQ(Core::ERROR_NONE, status);
-    /*
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_RegisterEventHandler(StrEq(IARM_BUS_MAINTENANCE_MGR_NAME),IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE, _))
-            .WillOnce(Invoke(
-                [&](const char* ownerName, IARM_EventId_t eventId, IARM_EventHandler_t handler) {
-                    controlEventHandler_ = handler;
-                    return IARM_RESULT_SUCCESS;
-                })); */
-
-    
-/*        EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_RegisterEventHandler(StrEq(IARM_BUS_MAINTENANCE_MGR_NAME), IARM_BUS_DCM_NEW_START_TIME_EVENT, _))
-            .WillRepeatedly(Invoke(
-                [&](const char* ownerName, IARM_EventId_t eventId, IARM_EventHandler_t handler) {
-                    EXPECT_TRUE(isValidCtrlmRcuIarmEvent(eventId));
-                    controlEventHandler_ = handler;
-                    return IARM_RESULT_SUCCESS;
-                }));  */
-    
-   // PluginHost::IShell::state state = PluginHost::IShell::state::ACTIVATED; //ghg
-    //ActivateService("org.rdk.Network");
-    //status = ActivateService("org.rdk.MockPlugin");
-   // EXPECT_EQ(Core::ERROR_NONE, status);
-
-
-/*    
-    status = ActivateService("org.rdk.Network");
-    EXPECT_EQ(Core::ERROR_NONE, status);
-
-*/
-   /* status = ActivateService("org.rdk.Network");
-    EXPECT_EQ(Core::ERROR_NONE, status);
-    status = Core::ERROR_GENERAL;
-    status = ActivateService("org.rdk.AuthService");
-    EXPECT_EQ(Core::ERROR_NONE, status);
-    status = Core::ERROR_GENERAL; */
-
-    /*
-    status = Core::ERROR_GENERAL;
-    status = ActivateService("org.rdk.Network.1");
-    status = ActivateService("org.rdk.MaintenanceManager");
-    EXPECT_EQ(Core::ERROR_NONE, status);
-    JsonObject params, params1;
-    JsonObject results, results1;
-    params1["ipversion"] ="IPv4"; */
-    
-    //status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
-    //status = InvokeServiceMethod("org.rdk.Network", "isConnectedToInternet", params1, results1);
 }
 
 MaintenanceManagerTest::~MaintenanceManagerTest() {
@@ -125,54 +80,3 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     //status = DeactivateService("org.rdk.MaintenanceManager"); //jjj
   //  EXPECT_EQ(Core::ERROR_NONE, status);
 }
-
-
-/* working
-TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
-{
-    JsonObject params;
-    JsonObject results;
-    params["reason"] = "scheduled";
-    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params, results);
-
-    ASSERT_EQ(status, Core::ERROR_NONE);
-    ASSERT_EQ(results["success"].Boolean(), true);
-}
-*/
-
-//h
-
-/* 
-TEST_F(L2TestMocks, TestStartMaintenance)
-{
-    JsonObject params;
-    JsonObject results;
-    params["reason"] = "scheduled";
-    uint32_t status = InvokeServiceMethod("MaintenanceManager.1", "startMaintenance", params, results);
-
-    ASSERT_EQ(status, Core::ERROR_NONE);
-    ASSERT_EQ(results["success"].Boolean(), true);
-}
-*/
-
-/*
-TEST_F(MaintenanceManagerTest, EmptyPartnerId) {
-    JsonObject params, result;
-    params["partnerId"] = "";
-    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params, result);
-    EXPECT_NE(status, Core::ERROR_NONE); // Should fail or return error for empty partnerId
-}
-*/
-
-//
-/*
-TEST_F(MaintenanceManagerTest, ValidDeviceInitializationContext) {
-
-    JsonObject contextData, fullResponse, result;
-    contextData["partnerId"] = "Sky";
-    contextData["regionalConfigService"] = "region.sky.com";
-    fullResponse["deviceInitializationContext"] = contextData;
-    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setDeviceInitializationContext", fullResponse, result);
-    EXPECT_EQ(status, Core::ERROR_NONE); //hbbhkm
-*/
-
