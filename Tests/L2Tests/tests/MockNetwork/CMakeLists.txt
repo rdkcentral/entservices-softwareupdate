@@ -62,7 +62,7 @@ install(TARGETS
     lib/${STORAGE_DIRECTORY}/plugins
 )
 install(
-    FILES Network.json
+    FILES Network1.json
     DESTINATION 
     /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins
 )
