@@ -2678,7 +2678,7 @@ namespace WPEFramework
             MM_SEND_NOTIFY(EVT_ONMAINTENANCSTATUSCHANGE, params);
 #endif
         }
-        uint32_t MaintenanceManager::isConnectedToInternet(const JsonObject& parameters, JsonObject& response)
+        uint32_t MaintenanceManager::getDeviceInitializationContext(const JsonObject& parameters, JsonObject& response)
         { 
            uint32_t rc = Core::ERROR_NONE;
 		   MM_LOGINFO("Inside isConnectedTointernet");
