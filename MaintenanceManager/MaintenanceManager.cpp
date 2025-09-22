@@ -332,7 +332,6 @@ namespace WPEFramework
             Register("startMaintenance", &MaintenanceManager::startMaintenance, this);
             Register("stopMaintenance", &MaintenanceManager::stopMaintenance, this);
             Register("getMaintenanceMode", &MaintenanceManager::getMaintenanceMode, this);
-			Register("getDeviceInitializationContext", &MaintenanceManager::getDeviceInitializationContext, this);
 
             MaintenanceManager::m_task_map[task_names_foreground[TASK_RFC].c_str()] = false;
             MaintenanceManager::m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
@@ -594,8 +593,8 @@ namespace WPEFramework
         bool MaintenanceManager::knowWhoAmI(string &activation_status)
         {
             bool success = false;
-            const char *secMgr_callsign = "org.rdk.MaintenanceManager";
-            const char *secMgr_callsign_ver = "org.rdk.MaintenanceManager";
+            const char *secMgr_callsign = "org.rdk.SecManager";
+            const char *secMgr_callsign_ver = "org.rdk.SecManager.1";
             PluginHost::IShell::state state;
             WPEFramework::JSONRPC::LinkType<WPEFramework::Core::JSON::IElement> *thunder_client = nullptr;
 
@@ -2678,13 +2677,6 @@ namespace WPEFramework
             MM_SEND_NOTIFY(EVT_ONMAINTENANCSTATUSCHANGE, params);
 #endif
         }
-        uint32_t MaintenanceManager::getDeviceInitializationContext(const JsonObject& parameters, JsonObject& response)
-        { 
-           uint32_t rc = Core::ERROR_NONE;
-		   MM_LOGINFO("Inside isConnectedTointernet");
-		   response["connectedToInternet"] = true;
-           response["success"] = true; 
-           return rc;           
-        }
+
     } /* namespace Plugin */
 } /* namespace WPEFramework */
