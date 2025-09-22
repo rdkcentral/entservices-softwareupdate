@@ -68,6 +68,8 @@ namespace WPEFramework
         {
             TEST_LOG("Inside Mock Network plugin Initialize");
             _service = service;
+            _service->AddRef();
+		    LOGINFO("Inside Init");
             return "";
         }
 
