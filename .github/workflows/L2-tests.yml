@@ -211,7 +211,7 @@ jobs:
           cmake --build build/entservices-apis -j8
           &&
           cmake --install build/entservices-apis
-          
+
       - name: Generate external headers
         # Empty headers to mute errors
         run: >
