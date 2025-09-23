@@ -21,6 +21,9 @@
 #include "MockAccessor.h"
 #include "Rfc.h"
 #include "MockUtils/RfcUtils.h"
+#define API_VERSION_NUMBER_MAJOR 2
+#define API_VERSION_NUMBER_MINOR 0
+#define API_VERSION_NUMBER_PATCH 0
 
 #define returnJson(rc) \
     { \
@@ -37,6 +40,16 @@
 
 namespace WPEFramework
 {
+    static Plugin::Metadata<Plugin::Network> metadata(
+            // Version (Major, Minor, Patch)
+            API_VERSION_NUMBER_MAJOR, API_VERSION_NUMBER_MINOR, API_VERSION_NUMBER_PATCH,
+            // Preconditions
+            {},
+            // Terminations
+            {},
+            // Controls
+            {}
+    );
     namespace Plugin
     {
         // Register the MockNetworkPlugin 
