@@ -49,11 +49,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
 MaintenanceManagerTest::~MaintenanceManagerTest() {
     uint32_t status = Core::ERROR_GENERAL;
     status = DeactivateService("org.rdk.MaintenanceManager");
-   // EXPECT_EQ(Core::ERROR_NONE, status); //hbhj
 }
-
-//worked
-// commented background
 
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
@@ -61,9 +57,6 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     JsonObject results, results1;
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
-    
-    //InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
-
     EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent)
             .Times(::testing::AnyNumber())
             .WillRepeatedly(
@@ -74,13 +67,8 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
 
     params1["ipversion"] ="IPv4";
-    //InvokeServiceMethod("org.rdk.MaintenanceManager", "isConnectedToInternet", params1, results1);
-    //InvokeServiceMethod("org.rdk.Network.1", "isConnectedToInternet", params1, results1);
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results["success"].Boolean(), true);
     DeactivateService("org.rdk.MaintenanceManager");
     
-    
-    //status = DeactivateService("org.rdk.MaintenanceManager"); //jjj
-  //  EXPECT_EQ(Core::ERROR_NONE, status);
 }
