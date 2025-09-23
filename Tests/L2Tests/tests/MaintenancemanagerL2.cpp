@@ -69,3 +69,22 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     DeactivateService("org.rdk.MaintenanceManager");
     
 }
+
+TEST_F(MaintenanceManagerTest,knowWhoamI)
+{
+    std::ofstream devicePropertiesFile("/etc/device.properties");
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params;
+    JsonObject result;
+    params["maintenanceMode"] = "BACKGROUND";
+    params["optOut"] = "IGNORE_UPDATE";
+
+    if (devicePropertiesFile.is_open()) {
+
+        devicePropertiesFile << "WHOAMI_SUPPORT=true";
+
+        uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
+        sleep(5);
+        EXPECT_EQ(Core::ERROR_NONE, status);
+    }
+}
