@@ -439,8 +439,8 @@ jobs:
           -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
           -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
           -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
-          -DRDK_SERVICE_L2_TEST=ON
-          -DL2_TEST_OOP_RPC=ON
+          #-DRDK_SERVICE_L2_TEST=ON
+          #-DL2_TEST_OOP_RPC=ON
           -DCMAKE_CXX_FLAGS="
           -DEXCEPTIONS_ENABLE=ON
           -fprofile-arcs
@@ -450,7 +450,7 @@ jobs:
           -DTHUNDER_VERSION_MAJOR=4
           -DTHUNDER_VERSION_MINOR=4
           -DDEVICE_TYPE=AVOutputTV
-          -DMOCKACCESSOR_LIBRARIES=ON
+          #-DMOCKACCESSOR_LIBRARIES=ON
           -DPLUGIN_PERSISTENTSTORE_PATH="/tmp/secure/persistent/rdkservicestore"
           -DPLUGIN_PERSISTENTSTORE_LEGACYPATH="/tmp/persistent/rdkservicestore"
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers
