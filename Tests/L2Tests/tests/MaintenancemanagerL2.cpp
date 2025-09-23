@@ -6,7 +6,6 @@
 #include <iostream>
 #include <condition_variable>
 
-
 using ::testing::_;
 using ::testing::Invoke;
 using ::testing::Test;
