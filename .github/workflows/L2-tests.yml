@@ -137,12 +137,13 @@ jobs:
             cd $GITHUB_WORKSPACE/entservices-softwareupdate
             patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Firmware_postFlash.patch
             patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Maintenancemanager.patch
+            cd -
 
       - name: Apply patches Network manager
         run: |  
             cd $GITHUB_WORKSPACE/networkmanager
             patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Networkmanager.patch
-
+            cd -
 
       - name: Build ThunderTools
         run: >
