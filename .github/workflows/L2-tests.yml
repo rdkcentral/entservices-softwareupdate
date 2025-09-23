@@ -326,7 +326,8 @@ jobs:
           cmake --build build/mocks -j8
           &&
           cmake --install build/mocks
-                
+
+
       - name: Generate IARM headers
         run: |
             touch install/usr/lib/libIARMBus.so 
