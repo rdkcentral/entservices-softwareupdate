@@ -75,7 +75,7 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     std::ofstream devicePropertiesFile("/etc/device.properties");
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params;
-    JsonObject result;
+    JsonObject results;
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
 
