@@ -21,6 +21,7 @@ set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 set(PLUGIN_MAINTENANCEMGR_STARTUPORDER "" CACHE STRING "To configure startup order of MaintenanceManager plugin")
 
 find_package(${NAMESPACE}Plugins REQUIRED)
+
 add_library(${MODULE_NAME} SHARED
         MaintenanceManager.cpp
         Module.cpp)
