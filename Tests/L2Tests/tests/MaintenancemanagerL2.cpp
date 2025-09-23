@@ -82,7 +82,7 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     if (devicePropertiesFile.is_open()) {
 
         devicePropertiesFile << "WHOAMI_SUPPORT=true";
-
+        devicePropertiesFile.close();
         uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
         sleep(5);
         EXPECT_EQ(Core::ERROR_NONE, status);
