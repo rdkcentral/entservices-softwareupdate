@@ -6,7 +6,6 @@
 #include <iostream>
 #include <condition_variable>
 
-//#include "MockNetworkPlugin.cpp"
 
 using ::testing::_;
 using ::testing::Invoke;
