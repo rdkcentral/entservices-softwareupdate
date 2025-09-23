@@ -72,12 +72,18 @@ FirmwareUpdateTest:: FirmwareUpdateTest():L2TestMocks()
          status = Core::ERROR_GENERAL;
          status = ActivateService("org.rdk.Network");
          EXPECT_EQ(Core::ERROR_NONE, status);
+         status = ActivateService("org.rdk.Network.1");
+         EXPECT_EQ(Core::ERROR_NONE, status);
+         status = ActivateService("org.rdk.Network.2");
+         EXPECT_EQ(Core::ERROR_NONE, status);
 
 
     JsonObject params, params1;
     JsonObject results, results1;
     params1["ipversion"] ="IPv4"; 
     status = InvokeServiceMethod("org.rdk.Network.1", "isConnectedToInternet", params1, results1);
+    InvokeServiceMethod("org.rdk.Network", "isConnectedToInternet", params1, results1);
+    InvokeServiceMethod("org.rdk.Network.2", "isConnectedToInternet", params1, results1);
 }
 
 /**
