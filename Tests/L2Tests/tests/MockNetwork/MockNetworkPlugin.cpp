@@ -395,8 +395,8 @@ namespace WPEFramework
         {
            TEST_LOG("Entry - Inside isConnectedToInternet");
            uint32_t rc = Core::ERROR_NONE;
-           response["connectedToInternet"] = "true";
-           response["success"] = "true"; 
+           response["connectedToInternet"] = true;
+           response["success"] = true; 
            return rc;           
         }
 
