@@ -107,7 +107,7 @@ jobs:
         with:
           repository: rdkcentral/entservices-testframework
           path: entservices-testframework
-          ref: feature/L2mm_test_setup
+          ref: feature/L2mm_test_setup_refined
           token: ${{ secrets.RDKCM_RDKE }}
           
       - name: Checkout networkmanager
