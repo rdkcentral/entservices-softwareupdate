@@ -427,7 +427,7 @@ jobs:
           &&
           cmake --build build/entservices-softwareupdate -j8
           &&
-          cmake --install build/entservices-softwareupdate          
+          cmake --install build/entservices-softwareupdate
 
       - name: Build entservices-testframework
         run: >
