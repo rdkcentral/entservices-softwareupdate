@@ -32,6 +32,23 @@ public:
 
 
 MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
+
+    std::ofstream devicePropertiesFile("/etc/device.properties");
+    if (devicePropertiesFile.is_open()) {
+
+        devicePropertiesFile << "WHOAMI_SUPPORT=true";
+        devicePropertiesFile.close();
+        
+    std::ifstream devicePropertiesFile("/etc/device.properties");
+    if (!devicePropertiesFile) {
+        std::cerr << "Failed to open /etc/device.properties for reading." << std::endl;
+    }
+
+    std::string line;
+    while (std::getline(devicePropertiesFile, line)) {
+        std::cout << line << std::endl;
+    }
+    
     IARM_EventHandler_t               controlEventHandler_;
     uint32_t status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.MaintenanceManager");
@@ -73,13 +90,13 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 TEST_F(MaintenanceManagerTest,knowWhoamI)
 {
     
-    std::ofstream devicePropertiesFile("/etc/device.properties");
+    //std::ofstream devicePropertiesFile("/etc/device.properties");
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params;
     JsonObject results;
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
-
+/*
     if (devicePropertiesFile.is_open()) {
 
         devicePropertiesFile << "WHOAMI_SUPPORT=true";
@@ -94,6 +111,7 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     while (std::getline(devicePropertiesFile, line)) {
         std::cout << line << std::endl;
     }
+    */
         sleep(60);
         uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
         sleep(5);
