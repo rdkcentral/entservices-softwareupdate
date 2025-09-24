@@ -72,7 +72,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 */
 TEST_F(MaintenanceManagerTest,knowWhoamI)
 {
-    sleep(30);
+    
     std::ofstream devicePropertiesFile("/etc/device.properties");
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params;
@@ -94,7 +94,7 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     while (std::getline(devicePropertiesFile, line)) {
         std::cout << line << std::endl;
     }
-
+        sleep(30);
         uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
         sleep(5);
         EXPECT_EQ(Core::ERROR_NONE, status);
