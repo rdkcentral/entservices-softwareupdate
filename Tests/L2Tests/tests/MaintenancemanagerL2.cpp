@@ -72,6 +72,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 
 TEST_F(MaintenanceManagerTest,knowWhoamI)
 {
+    sleep(30);
     std::ofstream devicePropertiesFile("/etc/device.properties");
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params;
