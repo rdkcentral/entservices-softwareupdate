@@ -94,7 +94,7 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     while (std::getline(devicePropertiesFile, line)) {
         std::cout << line << std::endl;
     }
-        sleep(30);
+        sleep(60);
         uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
         sleep(5);
         EXPECT_EQ(Core::ERROR_NONE, status);
