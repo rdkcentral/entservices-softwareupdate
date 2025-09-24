@@ -88,7 +88,6 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     std::ifstream devicePropertiesFile("/etc/device.properties");
     if (!devicePropertiesFile) {
         std::cerr << "Failed to open /etc/device.properties for reading." << std::endl;
-        return 1;
     }
 
     std::string line;
