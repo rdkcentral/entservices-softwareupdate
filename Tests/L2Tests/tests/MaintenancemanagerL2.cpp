@@ -84,6 +84,18 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
 
         devicePropertiesFile << "WHOAMI_SUPPORT=true";
         devicePropertiesFile.close();
+        
+    std::ifstream devicePropertiesFile("/etc/device.properties");
+    if (!devicePropertiesFile) {
+        std::cerr << "Failed to open /etc/device.properties for reading." << std::endl;
+        return 1;
+    }
+
+    std::string line;
+    while (std::getline(devicePropertiesFile, line)) {
+        std::cout << line << std::endl;
+    }
+
         uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
         sleep(5);
         EXPECT_EQ(Core::ERROR_NONE, status);
