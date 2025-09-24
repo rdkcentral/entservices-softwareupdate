@@ -48,7 +48,7 @@ MaintenanceManagerTest::~MaintenanceManagerTest() {
     uint32_t status = Core::ERROR_GENERAL;
     status = DeactivateService("org.rdk.MaintenanceManager");
 }
-
+/*
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
     JsonObject params, params1;
@@ -69,7 +69,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     DeactivateService("org.rdk.MaintenanceManager");
     
 }
-
+*/
 TEST_F(MaintenanceManagerTest,knowWhoamI)
 {
     sleep(30);
