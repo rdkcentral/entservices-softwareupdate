@@ -48,7 +48,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     while (std::getline(devicePropertiesFile, line)) {
         std::cout << line << std::endl;
     }
-    
+    }
     IARM_EventHandler_t               controlEventHandler_;
     uint32_t status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.MaintenanceManager");
@@ -116,5 +116,5 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
         uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
         sleep(5);
         EXPECT_EQ(Core::ERROR_NONE, status);
-    }
+   // }
 }
