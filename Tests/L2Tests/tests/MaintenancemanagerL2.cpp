@@ -92,8 +92,8 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     
     //std::ofstream devicePropertiesFile("/etc/device.properties");
     uint32_t status = Core::ERROR_GENERAL;
-    JsonObject params;
-    JsonObject results;
+    JsonObject params,params1;
+    JsonObject results,results1;
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
 /*
@@ -115,6 +115,8 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
         sleep(60);
         //uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
         status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
+        InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params1, results1);
+        InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
         sleep(5);
         EXPECT_EQ(Core::ERROR_NONE, status);
    // }
