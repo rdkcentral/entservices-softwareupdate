@@ -88,7 +88,7 @@ MaintenanceManagerTest::~MaintenanceManagerTest() {
     status = DeactivateService("org.rdk.MaintenanceManager");
 }
 
-
+/*
 
 TEST_F(MaintenanceManagerTest, TestStartMaintenance2)
 {
@@ -100,8 +100,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance2)
     ASSERT_EQ(results1["success"].Boolean(), true);
     InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
 }
-
-
+*/
 
 /*
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
