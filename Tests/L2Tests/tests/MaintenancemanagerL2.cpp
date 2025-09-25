@@ -123,3 +123,14 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
         EXPECT_EQ(Core::ERROR_NONE, status);
    // }
 }
+TEST_F(MaintenanceManagerTest, TestStartMaintenance)
+{
+    JsonObject  params1;
+    JsonObject  results1;
+    
+    sleep(30);
+    uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params1, results1);
+    ASSERT_EQ(status, Core::ERROR_NONE);
+    ASSERT_EQ(results["success"].Boolean(), true);
+    
+}
