@@ -49,6 +49,28 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
         std::cout << line << std::endl;
     }
     }
+
+    std::ofstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
+    
+        if (MaintenanceManagerConfFile.is_open()) {
+
+        MaintenanceManagerConfFile << "start_hr="2"";
+        MaintenanceManagerConfFile << "start_min="39"";
+        MaintenanceManagerConfFile << "tz_mode="UTC"";
+        MaintenanceManagerConfFile.close();
+        
+    std::ifstream MaintenanceManagerConfFile("/etc/device.properties");
+    if (!MaintenanceManagerConfFile) {
+        std::cerr << "Failed to open /opt/rdk_maintenance.conf for reading." << std::endl;
+    }
+
+    std::string line;
+    while (std::getline(MaintenanceManagerConfFile, line)) {
+        std::cout << line << std::endl;
+    }
+    }
+
+    
     IARM_EventHandler_t               controlEventHandler_;
     uint32_t status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.MaintenanceManager");
@@ -134,7 +156,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     ASSERT_EQ(results1["success"].Boolean(), false);
     
 }
-TEST_F(MaintenanceManagerTest, TestStartMaintenance)
+TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 {
     JsonObject  params1;
     JsonObject  results1;
