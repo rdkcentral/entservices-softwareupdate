@@ -54,9 +54,9 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     
         if (MaintenanceManagerConfFile.is_open()) {
 
-        MaintenanceManagerConfFile << "start_hr="2"";
-        MaintenanceManagerConfFile << "start_min="39"";
-        MaintenanceManagerConfFile << "tz_mode="UTC"";
+        MaintenanceManagerConfFile << "start_hr=2";
+        MaintenanceManagerConfFile << "start_min=39";
+        MaintenanceManagerConfFile << "tz_mode=UTC";
         MaintenanceManagerConfFile.close();
         
     std::ifstream MaintenanceManagerConfFile("/etc/device.properties");
