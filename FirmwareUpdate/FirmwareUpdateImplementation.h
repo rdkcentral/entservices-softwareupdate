@@ -105,7 +105,7 @@ namespace Plugin {
         Core::hresult Unregister(Exchange::IFirmwareUpdate::INotification *notification ) ;
         Core::hresult UpdateFirmware(const string& firmwareFilepath , const string& firmwareType , Result &result ) override ;
         Core::hresult GetUpdateState(GetUpdateStateResult& getUpdateStateResult )  override;
-        Core::hresult SetFirmwareAutoReboot(const bool enable, Exchange::IFirmwareUpdate::Result& result) override;
+        Core::hresult SetAutoReboot(const bool enable, Result& result) override;
         void startProgressTimer() ;
         int flashImage(const char *server_url, const char *upgrade_file, const char *reboot_flag, const char *proto, int upgrade_type, const char *maint ,const char *initiated_type ,const char * codebig) ;
         void flashImageThread(std::string firmwareFilepath,std::string firmwareType) ;

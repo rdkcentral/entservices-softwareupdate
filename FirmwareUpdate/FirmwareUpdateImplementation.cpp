@@ -843,7 +843,7 @@ namespace WPEFramework {
          * @param[out] result: Result struct with success status
          * @return: Core::<StatusCode>
          */
-        Core::hresult FirmwareUpdateImplementation::SetFirmwareAutoReboot(const bool enable, Exchange::IFirmwareUpdate::Result& result)
+        Core::hresult FirmwareUpdateImplementation::SetAutoReboot(const bool enable, Result& result)
         {
             Core::hresult status = Core::ERROR_GENERAL;
             const char* set_rfc_val = enable ? "true" : "false";
@@ -851,10 +851,10 @@ namespace WPEFramework {
                     TR181_AUTOREBOOT_ENABLE, set_rfc_val, WDMP_BOOLEAN);
             if (WDMP_SUCCESS == ret) {
                 result.success = true;
-                LOGINFO("Success Setting the setFirmwareAutoReboot value\n");
+                LOGINFO("Success Setting the SetAutoReboot value\n");
                 status = Core::ERROR_NONE;
             } else {
-                LOGINFO("Failed Setting the setFirmwareAutoReboot value %s\n", getRFCErrorString(ret));
+                LOGINFO("Failed Setting the SetAutoReboot value %s\n", getRFCErrorString(ret));
             }
             return status;
         }
