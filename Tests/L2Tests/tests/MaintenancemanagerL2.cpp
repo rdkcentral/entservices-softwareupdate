@@ -161,7 +161,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
     JsonObject  params1;
     JsonObject  results1;
     
-    sleep(100);
+    sleep(200);
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params1, results1);
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results1["success"].Boolean(), true);
