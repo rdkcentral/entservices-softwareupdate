@@ -285,3 +285,52 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 }
 */
 
+TEST_F(MaintenanceManagerTest,Test1)
+{
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params,params1;
+    JsonObject results,results1;
+    params["maintenanceMode"] = "BACKGROUND";
+    params["optOut"] = "IGNORE_UPDATE";
+    sleep(60);
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
+    ASSERT_EQ(results1["maintenanceStatus"].String(), "MAINTENANCE_STARTED");
+    ASSERT_EQ(status, Core::ERROR_NONE);
+}
+
+TEST_F(MaintenanceManagerTest,Test2)
+{
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params,params1;
+    JsonObject results,results1;
+    params["maintenanceMode"] = "BACKGROUND";
+    params["optOut"] = "IGNORE_UPDATE";
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
+    ASSERT_EQ(status, Core::ERROR_NONE);
+}
+TEST_F(MaintenanceManagerTest,Test3)
+{
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params,params1;
+    JsonObject results,results1;
+    params["maintenanceMode"] = "BACKGROUND";
+    params["optOut"] = "IGNORE_UPDATE";
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
+    ASSERT_EQ(status, Core::ERROR_NONE);
+}
+
+TEST_F(MaintenanceManagerTest,Test4)
+{
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params,params1;
+    JsonObject results,results1;
+    params["maintenanceMode"] = "BACKGROUND";
+    params["optOut"] = "IGNORE_UPDATE";
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
+    ASSERT_EQ(results1["success"].Boolean(), true);
+    ASSERT_EQ(status, Core::ERROR_NONE);
+    sleep(5);
+}
+
+
+
