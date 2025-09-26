@@ -366,14 +366,25 @@ TEST_F(MaintenanceManagerTest,Test7)
     JsonObject results,results1;
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
-    const char* filepath = "/etc/device.properties";
+
     
     
     InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
-    if (remove(filepath) == 0) {
+    
+    const char* filepath = "/etc/device.properties";
+
+    std::ofstream file(filepath, std::ofstream::out | std::ofstream::trunc);
+    if (file.is_open()) {
+        std::cout << "File content cleared successfully.\n";
+        file.close();
+    } else {
+        std::cerr << "Failed to open file for clearing.\n";
+    }
+
+  /*  if (remove(filepath) == 0) {
         std::cout << "File deleted successfully.\n";
     } else {
         std::perror("Error deleting file");
-    }
+    }*/
 
 }
