@@ -2,7 +2,7 @@
 #include <gmock/gmock.h>
 #include "L2Tests.h"
 #include "L2TestsMock.h"
-#include "MaintenanceManager.h"
+#include "../../MaintenanceManager/MaintenanceManager.h"
 #include <fstream>
 #include <iostream>
 #include <condition_variable>
