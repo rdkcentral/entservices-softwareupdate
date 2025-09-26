@@ -125,7 +125,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     
 }
 */
-
+/*
 TEST_F(MaintenanceManagerTest,Test1)
 {
     uint32_t status = Core::ERROR_GENERAL;
@@ -206,8 +206,8 @@ TEST_F(MaintenanceManagerTest,Test7)
     ASSERT_EQ(results1["success"].Boolean(), false);
     ASSERT_EQ(status, Core::ERROR_GENERAL);
 }
+*/
 
-/*
 TEST_F(MaintenanceManagerTest,knowWhoamI)
 {
     
@@ -222,13 +222,17 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
         //uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
         ASSERT_EQ(results1["maintenanceStatus"].String(), "MAINTENANCE_STARTED");
+    
         ASSERT_EQ(status, Core::ERROR_NONE);
         status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
         ASSERT_EQ(status, Core::ERROR_NONE);
+    
         status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
         ASSERT_EQ(status, Core::ERROR_NONE);
+    
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
         ASSERT_EQ(status, Core::ERROR_NONE);
+    
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
         ASSERT_EQ(results1["success"].Boolean(), true);
         ASSERT_EQ(status, Core::ERROR_NONE);
@@ -236,12 +240,13 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
         sleep(5);
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
         ASSERT_EQ(status, Core::ERROR_NONE);
+    
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
         ASSERT_EQ(results1["success"].Boolean(), false);
         ASSERT_EQ(status, Core::ERROR_GENERAL);
    // }
 }
-*/
+
 /*
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
