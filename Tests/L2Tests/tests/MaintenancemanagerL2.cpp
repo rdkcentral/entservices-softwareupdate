@@ -60,7 +60,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
         MaintenanceManagerConfFile << "tz_mode=UTC";
         MaintenanceManagerConfFile.close();
         
-    std::ifstream MaintenanceManagerConfFile("/etc/device.properties");
+    std::ifstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
     if (!MaintenanceManagerConfFile) {
         std::cerr << "Failed to open /opt/rdk_maintenance.conf for reading." << std::endl;
     }
