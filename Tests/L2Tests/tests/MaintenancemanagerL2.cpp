@@ -176,7 +176,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 {
     JsonObject  params1;
     JsonObject  results1;
-    MaintenanceManager::g_unsolicited_complete = true;
+    WPEFramework::Plugin::MaintenanceManager::g_unsolicited_complete = true;
     DeactivateService("org.rdk.MaintenanceManager");
     
     sleep(200);
