@@ -359,7 +359,7 @@ TEST_F(MaintenanceManagerTest,Test6)
     
 }
 
-TEST_F(MaintenanceManagerTest,Test6)
+TEST_F(MaintenanceManagerTest,Test7)
 {
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params,params1;
