@@ -175,6 +175,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 {
     JsonObject  params1;
     JsonObject  results1;
+    DeactivateService("org.rdk.MaintenanceManager");
     
     sleep(200);
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params1, results1);
