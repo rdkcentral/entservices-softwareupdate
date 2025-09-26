@@ -246,7 +246,10 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
         ASSERT_EQ(status, Core::ERROR_GENERAL);
    // }
 }
-
+TEST_F(MaintenanceManagerTest, TestStartMaintenance)
+{
+       DeactivateService("org.rdk.Network");  
+}
 /*
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
