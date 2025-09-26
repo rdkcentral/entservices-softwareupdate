@@ -219,18 +219,18 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     params["optOut"] = "IGNORE_UPDATE";
 
         sleep(60);
-        //uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
         ASSERT_EQ(results1["maintenanceStatus"].String(), "MAINTENANCE_STARTED");
+        ASSERT_EQ(results1["isRebootPending"].Boolean(), false);
+        ASSERT_EQ(results1["success"].Boolean(), true);
+        
     
         ASSERT_EQ(status, Core::ERROR_NONE);
         status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
+        SSERT_EQ(results1["maintenanceStatus"].Int(), -1);
         ASSERT_EQ(status, Core::ERROR_NONE);
     
         status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
-        ASSERT_EQ(status, Core::ERROR_NONE);
-    
-        status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
         ASSERT_EQ(status, Core::ERROR_NONE);
     
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
@@ -239,7 +239,10 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     
         sleep(5);
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
+        ASSERT_EQ(results1["maintenanceStatus"].String(), "MAINTENANCE_ERROR");
+        ASSERT_EQ(results1["isRebootPending"].Boolean(), false);
         ASSERT_EQ(status, Core::ERROR_NONE);
+        ASSERT_EQ(results1["success"].Boolean(), true);
     
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
         ASSERT_EQ(results1["success"].Boolean(), false);
