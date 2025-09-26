@@ -198,9 +198,7 @@ namespace WPEFramework
             static cSettings m_setting;
             bool m_abort_flag;
             uint16_t g_task_status;
-public:
-            static bool g_unsolicited_complete;
-private:
+            bool g_unsolicited_complete;
             bool g_listen_to_nwevents = false;
             bool g_subscribed_for_nwevents = false;
             bool g_listen_to_deviceContextUpdate = false;
