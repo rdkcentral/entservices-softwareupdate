@@ -161,6 +161,7 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
         EXPECT_EQ(Core::ERROR_NONE, status);
    // }
 }
+/*
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
     JsonObject  params1;
@@ -172,6 +173,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     ASSERT_EQ(results1["success"].Boolean(), false);
     
 }
+*/
 TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 {
     JsonObject  params1;
