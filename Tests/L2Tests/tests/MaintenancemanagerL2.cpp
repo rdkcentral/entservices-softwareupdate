@@ -359,4 +359,21 @@ TEST_F(MaintenanceManagerTest,Test6)
     
 }
 
+TEST_F(MaintenanceManagerTest,Test6)
+{
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params,params1;
+    JsonObject results,results1;
+    params["maintenanceMode"] = "BACKGROUND";
+    params["optOut"] = "IGNORE_UPDATE";
+    const char* filepath = "/etc/device.properties";
+    
+    
+    InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
+    if (remove(filepath) == 0) {
+        std::cout << "File deleted successfully.\n";
+    } else {
+        std::perror("Error deleting file");
+    }
 
+}
