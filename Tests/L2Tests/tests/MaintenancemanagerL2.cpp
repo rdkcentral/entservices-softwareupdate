@@ -227,7 +227,7 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     
         ASSERT_EQ(status, Core::ERROR_NONE);
         status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
-        SSERT_EQ(results1["maintenanceStatus"].Int(), -1);
+        ASSERT_EQ(results1["maintenanceStatus"].Int(), -1);
         ASSERT_EQ(status, Core::ERROR_NONE);
     
         status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
