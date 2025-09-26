@@ -332,7 +332,7 @@ TEST_F(MaintenanceManagerTest,Test4)
     sleep(5);
 }
 
-TEST_F(MaintenanceManagerTest, TestStartMaintenance2)
+TEST_F(MaintenanceManagerTest, Test5)
 {
     JsonObject  params1;
     JsonObject  results1;
