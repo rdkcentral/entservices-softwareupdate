@@ -2,7 +2,7 @@
 #include <gmock/gmock.h>
 #include "L2Tests.h"
 #include "L2TestsMock.h"
-#include "../../MaintenanceManager/MaintenanceManager.h"
+//#include "../../MaintenanceManager/MaintenanceManager.h"
 #include <fstream>
 #include <iostream>
 #include <condition_variable>
@@ -176,7 +176,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance1)
 {
     JsonObject  params1;
     JsonObject  results1;
-    WPEFramework::Plugin::MaintenanceManager::g_unsolicited_complete = true;
+    //WPEFramework::Plugin::MaintenanceManager::g_unsolicited_complete = true;
     DeactivateService("org.rdk.MaintenanceManager");
     
     sleep(200);
