@@ -125,6 +125,31 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     
 }
 */
+
+TEST_F(MaintenanceManagerTest,Test1)
+{
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params,params1;
+    JsonObject results,results1;
+    params["maintenanceMode"] = "BACKGROUND";
+    params["optOut"] = "IGNORE_UPDATE";
+    sleep(60);
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
+    ASSERT_EQ(results1["maintenanceStatus"].String(), "MAINTENANCE_STARTED");
+    ASSERT_EQ(status, Core::ERROR_NONE);
+}
+
+TEST_F(MaintenanceManagerTest,Test2)
+{
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params,params1;
+    JsonObject results,results1;
+    params["maintenanceMode"] = "BACKGROUND";
+    params["optOut"] = "IGNORE_UPDATE";
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
+    ASSERT_EQ(status, Core::ERROR_NONE);
+}
+/*
 TEST_F(MaintenanceManagerTest,knowWhoamI)
 {
     
@@ -134,22 +159,7 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     JsonObject results,results1;
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
-/*
-    if (devicePropertiesFile.is_open()) {
 
-        devicePropertiesFile << "WHOAMI_SUPPORT=true";
-        devicePropertiesFile.close();
-        
-    std::ifstream devicePropertiesFile("/etc/device.properties");
-    if (!devicePropertiesFile) {
-        std::cerr << "Failed to open /etc/device.properties for reading." << std::endl;
-    }
-
-    std::string line;
-    while (std::getline(devicePropertiesFile, line)) {
-        std::cout << line << std::endl;
-    }
-    */
         sleep(60);
         //uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
@@ -173,6 +183,7 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
         ASSERT_EQ(status, Core::ERROR_GENERAL);
    // }
 }
+*/
 /*
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
