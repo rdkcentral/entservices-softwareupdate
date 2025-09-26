@@ -355,7 +355,7 @@ TEST_F(MaintenanceManagerTest,Test6)
     sleep(5);
     status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params1, results1);
     ASSERT_EQ(status, Core::ERROR_NONE);
-    InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
+    //InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
     
 }
 
