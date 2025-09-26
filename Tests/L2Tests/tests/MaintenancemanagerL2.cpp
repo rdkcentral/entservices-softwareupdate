@@ -342,6 +342,19 @@ TEST_F(MaintenanceManagerTest, Test5)
     ASSERT_EQ(results1["success"].Boolean(), false);
     //InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
 }
-
+TEST_F(MaintenanceManagerTest,Test6)
+{
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params,params1;
+    JsonObject results,results1;
+    params["maintenanceMode"] = "BACKGROUND";
+    params["optOut"] = "IGNORE_UPDATE";
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
+    ASSERT_EQ(results1["success"].Boolean(), true);
+    ASSERT_EQ(status, Core::ERROR_NONE);
+    sleep(5);
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params1, results1);
+    ASSERT_EQ(status, Core::ERROR_GENERAL);
+}
 
 
