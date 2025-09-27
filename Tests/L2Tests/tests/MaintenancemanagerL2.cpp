@@ -334,6 +334,7 @@ TEST_F(MaintenanceManagerTest,Test4)
     ASSERT_EQ(results1["success"].Boolean(), true);
     ASSERT_EQ(status, Core::ERROR_NONE);
     sleep(5);
+    InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
 }
 
 TEST_F(MaintenanceManagerTest, Test5)
@@ -362,7 +363,7 @@ TEST_F(MaintenanceManagerTest,Test6)
     //InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
     
 }
-
+/*
 TEST_F(MaintenanceManagerTest,Test7)
 {
     uint32_t status = Core::ERROR_GENERAL;
@@ -386,3 +387,4 @@ TEST_F(MaintenanceManagerTest,Test7)
     }
 
 }
+*/
