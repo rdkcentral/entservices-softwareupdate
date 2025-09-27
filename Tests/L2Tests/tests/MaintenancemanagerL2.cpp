@@ -392,6 +392,6 @@ TEST_F(MaintenanceManagerTest,Test7)
     } else {
         std::cerr << "Failed to open file for clearing.\n";
     }
-
+    InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params1, results1);
 }
 
