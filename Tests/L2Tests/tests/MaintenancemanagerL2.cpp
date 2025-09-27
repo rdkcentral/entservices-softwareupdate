@@ -54,10 +54,14 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     std::ofstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
     
         if (MaintenanceManagerConfFile.is_open()) {
+        
+        //file << "start_hr=\"8\"\n";
+        //file << "start_min=\"30\"\n";
+        //file << "tz_mode=\"Asia/Kolkata\"\n"
 
-        MaintenanceManagerConfFile << "start_hr=2";
-        MaintenanceManagerConfFile << "start_min=39";
-        MaintenanceManagerConfFile << "tz_mode=UTC";
+        MaintenanceManagerConfFile << "start_hr=\"8\"\n";
+        MaintenanceManagerConfFile << "start_min=\"30\"\n";
+        MaintenanceManagerConfFile << "tz_mode=\UTC\"\n"; 
         MaintenanceManagerConfFile.close();
         
     std::ifstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
