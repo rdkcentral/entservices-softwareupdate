@@ -369,14 +369,9 @@ TEST_F(MaintenanceManagerTest,Test7)
     JsonObject params,params1;
     JsonObject results,results1;
     params["maintenanceMode"] = "BACKGROUND";
-    params["optOut"] = "IGNORE_UPDATE";
-
-    
-    
+    params["optOut"] = "IGNORE_UPDATE";  
     InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
-    
     const char* filepath = "/etc/device.properties";
-
     std::ofstream file(filepath, std::ofstream::out | std::ofstream::trunc);
     if (file.is_open()) {
         std::cout << "File content cleared successfully.\n";
@@ -384,12 +379,6 @@ TEST_F(MaintenanceManagerTest,Test7)
     } else {
         std::cerr << "Failed to open file for clearing.\n";
     }
-
-  /*  if (remove(filepath) == 0) {
-        std::cout << "File deleted successfully.\n";
-    } else {
-        std::perror("Error deleting file");
-    }*/
 
 }
 */
