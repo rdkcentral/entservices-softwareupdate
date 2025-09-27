@@ -74,12 +74,18 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
         std::cout << line << std::endl;
     }
     }
-
+    string getCurrentTestName()
+    {
+        const testing::TestInfo *const test_info = testing::UnitTest::GetInstance()->current_test_info();
+        return test_info->name();
+    }
+    string test_name = getCurrentTestName();
     
     IARM_EventHandler_t               controlEventHandler_;
     uint32_t status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.MaintenanceManager");
     EXPECT_EQ(Core::ERROR_NONE, status);
+    if (test_name != "Test7")
     status =ActivateService("org.rdk.Network");
     EXPECT_EQ(Core::ERROR_NONE, status);
     status =ActivateService("org.rdk.SecManager");
