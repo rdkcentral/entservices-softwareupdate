@@ -332,7 +332,7 @@ TEST_F(MaintenanceManagerTest,Test4)
     params["optOut"] = "IGNORE_UPDATE";
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     ASSERT_EQ(results1["success"].Boolean(), false);
-    ASSERT_EQ(status, Core::ERROR_NONE);
+    ASSERT_EQ(status, Core::ERROR_GENERAL);
     sleep(5);
 }
 
