@@ -29,6 +29,11 @@ protected:
 
 public:
     MaintenanceManagerTest();
+    string getCurrentTestName()
+    {
+        const testing::TestInfo *const test_info = testing::UnitTest::GetInstance()->current_test_info();
+        return test_info->name();
+    }
 };
 
 
@@ -74,11 +79,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
         std::cout << line << std::endl;
     }
     }
-    string getCurrentTestName()
-    {
-        const testing::TestInfo *const test_info = testing::UnitTest::GetInstance()->current_test_info();
-        return test_info->name();
-    }
+
     string test_name = getCurrentTestName();
     
     IARM_EventHandler_t               controlEventHandler_;
