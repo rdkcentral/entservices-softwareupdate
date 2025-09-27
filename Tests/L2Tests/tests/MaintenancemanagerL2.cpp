@@ -371,11 +371,12 @@ TEST_F(MaintenanceManagerTest,Test7)
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE"; 
     sleep(10);
+    DeactivateService("org.rdk.Network");
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     ASSERT_EQ(results1["success"].Boolean(), true);
     ASSERT_EQ(status, Core::ERROR_NONE);
     sleep(10);
-    InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
+    //InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
     const char* filepath = "/etc/device.properties";
     std::ofstream file(filepath, std::ofstream::out | std::ofstream::trunc);
     if (file.is_open()) {
