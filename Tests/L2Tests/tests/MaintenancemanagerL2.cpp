@@ -333,8 +333,6 @@ TEST_F(MaintenanceManagerTest,Test4)
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     ASSERT_EQ(results1["success"].Boolean(), true);
     ASSERT_EQ(status, Core::ERROR_NONE);
-    sleep(5);
-    InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
 }
 
 TEST_F(MaintenanceManagerTest, Test5)
