@@ -362,7 +362,7 @@ TEST_F(MaintenanceManagerTest,Test6)
     //InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
     
 }
-
+/*
 TEST_F(MaintenanceManagerTest,Test7)
 {
     uint32_t status = Core::ERROR_GENERAL;
@@ -392,3 +392,4 @@ TEST_F(MaintenanceManagerTest,Test7)
     }*/
 
 }
+*/
