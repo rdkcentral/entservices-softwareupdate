@@ -374,7 +374,7 @@ TEST_F(MaintenanceManagerTest,Test7)
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     ASSERT_EQ(results1["success"].Boolean(), true);
     ASSERT_EQ(status, Core::ERROR_NONE);
-    
+    sleep(10);
     InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
     const char* filepath = "/etc/device.properties";
     std::ofstream file(filepath, std::ofstream::out | std::ofstream::trunc);
