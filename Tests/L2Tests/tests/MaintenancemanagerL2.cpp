@@ -123,6 +123,8 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
 
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params, results1;
     DeactivateService("org.rdk.Network");  
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     sleep(5);
