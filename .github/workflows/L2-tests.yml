@@ -87,6 +87,7 @@ jobs:
           repository: rdkcentral/ThunderTools
           path: ThunderTools
           ref: R4.4.3
+          
 
       - name: Checkout entservices-softwareupdate
         if: ${{ inputs.caller_source == 'local' }}
@@ -100,7 +101,7 @@ jobs:
         with:
           repository: rdkcentral/entservices-softwareupdate
           path: entservices-softwareupdate
-          ref: develop
+          ref: feature/nwbuild
 
       - name: Checkout entservices-testframework
         uses: actions/checkout@v3
@@ -311,7 +312,7 @@ jobs:
           cmake --build build/mocks -j8
           &&
           cmake --install build/mocks
-
+          
       - name: Build entservices-softwareupdate
         run: >
           cmake
@@ -382,6 +383,12 @@ jobs:
           cmake --build build/entservices-softwareupdate -j8
           &&
           cmake --install build/entservices-softwareupdate
+          &&
+          cat /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins/LegacyWiFiManagerAPIs.json
+          &&
+          cp /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins/LegacyWiFiManagerAPIs.json /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins/Network.json
+          &&
+          cat /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins/Network.json
 
       - name: Build entservices-testframework
         run: >

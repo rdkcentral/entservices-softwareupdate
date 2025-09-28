@@ -8,6 +8,7 @@
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
 *
+*
 * http://www.apache.org/licenses/LICENSE-2.0
 *
 * Unless required by applicable law or agreed to in writing, software
@@ -16,7 +17,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "L2Tests.h"
@@ -66,6 +66,24 @@ FirmwareUpdateTest:: FirmwareUpdateTest():L2TestMocks()
          /* Activate plugin in constructor */
          status = ActivateService("org.rdk.FirmwareUpdate");
          EXPECT_EQ(Core::ERROR_NONE, status);
+         status = Core::ERROR_GENERAL;
+         status = ActivateService("org.rdk.NetworkManager.1");
+         EXPECT_EQ(Core::ERROR_NONE, status);
+         status = Core::ERROR_GENERAL;
+         status = ActivateService("org.rdk.Network");
+         EXPECT_EQ(Core::ERROR_NONE, status);
+         status = ActivateService("org.rdk.Network.1");
+         EXPECT_EQ(Core::ERROR_NONE, status);
+         status = ActivateService("org.rdk.Network.2");
+         EXPECT_EQ(Core::ERROR_NONE, status);
+
+
+    JsonObject params, params1;
+    JsonObject results, results1;
+    params1["ipversion"] ="IPv4"; 
+    status = InvokeServiceMethod("org.rdk.Network.1", "isConnectedToInternet", params1, results1);
+    InvokeServiceMethod("org.rdk.Network", "isConnectedToInternet", params1, results1);
+    InvokeServiceMethod("org.rdk.Network.2", "isConnectedToInternet", params1, results1);
 }
 
 /**
