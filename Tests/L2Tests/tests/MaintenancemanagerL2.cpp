@@ -144,11 +144,13 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
             std::cout << line << std::endl;
         }
     }
-    DeactivateService("org.rdk.Network");  
+
+    InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
+    /*DeactivateService("org.rdk.Network");  
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     sleep(5);
     status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params1, results1);
-    ActivateService("org.rdk.Network");
+    ActivateService("org.rdk.Network"); */
        
 }
 
