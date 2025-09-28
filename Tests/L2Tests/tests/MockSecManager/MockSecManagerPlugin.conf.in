@@ -1,0 +1,11 @@
+autostart = "@PLUGIN_MOCKSECMANAGERPLUGIN_AUTOSTART@"
+precondition = ["Platform"]
+callsign = "org.rdk.SecManager"
+startuporder = "@PLUGIN_MOCKSECMANAGERPLUGIN_STARTUPORDER@"
+
+configuration = JSON()
+rootobject = JSON()
+
+rootobject.add("mode", "@PLUGIN_DUMMYPLUGIN_MODE@")
+rootobject.add("locator", "lib@PLUGIN_IMPLEMENTATION@.so")
+configuration.add("root", rootobject)
