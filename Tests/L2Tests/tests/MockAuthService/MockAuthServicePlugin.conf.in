@@ -1,0 +1,11 @@
+autostart = "@PLUGIN_MOCKAUTHSERVICEPLUGIN_AUTOSTART@"
+precondition = ["Platform"]
+callsign = "org.rdk.AuthService"
+startuporder = "@PLUGIN_MOCKAUTHSERVICEKPLUGIN_STARTUPORDER@"
+
+configuration = JSON()
+rootobject = JSON()
+
+rootobject.add("mode", "@PLUGIN_DUMMYPLUGIN_MODE@")
+rootobject.add("locator", "lib@PLUGIN_IMPLEMENTATION@.so")
+configuration.add("root", rootobject)
