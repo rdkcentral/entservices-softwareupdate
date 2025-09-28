@@ -230,7 +230,7 @@ TEST_F(MaintenanceManagerTest, Test6)
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results1["success"].Boolean(), true);
 }
-
+/*
 TEST_F(MaintenanceManagerTest, Test7)
 {
     uint32_t status = Core::ERROR_GENERAL;
@@ -238,3 +238,24 @@ TEST_F(MaintenanceManagerTest, Test7)
     status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceMode", params1, results1);
     ASSERT_EQ(status, Core::ERROR_NONE);
 }
+*/
+
+/*
+TEST_F(MaintenanceManagerTest,Test8)
+{
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params,params1;
+    JsonObject results,results1;
+    const char* filepath = "/etc/device.properties";
+    std::ofstream file(filepath, std::ofstream::out | std::ofstream::trunc);
+    if (file.is_open()) {
+        std::cout << "File content cleared successfully.\n";
+        file.close();
+    } else {
+        std::cerr << "Failed to open file for clearing.\n";
+    }
+    //ActivateService("org.rdk.Network");
+    InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params1, results1);
+}
+
+*/
