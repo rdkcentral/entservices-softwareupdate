@@ -125,7 +125,7 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
     uint32_t status = Core::ERROR_GENERAL;
-    JsonObject params, results1;
+    JsonObject params1, results1;
         std::ofstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
     
     if (MaintenanceManagerConfFile.is_open()) {
