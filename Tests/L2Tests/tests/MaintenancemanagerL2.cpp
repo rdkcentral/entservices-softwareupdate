@@ -145,7 +145,7 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
         }
     }
 
-    InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
+    InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params1, results1);
     /*DeactivateService("org.rdk.Network");  
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     sleep(5);
