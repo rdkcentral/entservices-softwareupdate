@@ -1557,7 +1557,7 @@ namespace WPEFramework
             MaintenanceManager::g_lastSuccessful_maint_time = "";
             MaintenanceManager::g_task_status = 0;
             MaintenanceManager::m_abort_flag = false;
-            MaintenanceManager::g_unsolicited_complete = false;
+			MaintenanceManager::g_unsolicited_complete = false;
 
             /* we post just to tell that we are in idle at this moment */
             m_statusMutex.lock();
