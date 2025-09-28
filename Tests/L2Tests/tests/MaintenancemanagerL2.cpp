@@ -170,6 +170,12 @@ TEST_F(MaintenanceManagerTest, Test5)
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params1, results1);
     ASSERT_EQ(status, Core::ERROR_GENERAL);
     ASSERT_EQ(results1["success"].Boolean(), false);
+    
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
+    ASSERT_EQ(results1["maintenanceStatus"].String(), "MAINTENANCE_ERROR");
+    ASSERT_EQ(results1["isRebootPending"].Boolean(), true);
+    ASSERT_EQ(status, Core::ERROR_NONE);
+    ASSERT_EQ(results1["success"].Boolean(), true);
 }
 TEST_F(MaintenanceManagerTest, Test6)
 {
