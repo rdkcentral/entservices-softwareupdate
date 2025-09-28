@@ -48,7 +48,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
         std::cout << line << std::endl;
     }
     }
-
+/*
     std::ofstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
     
     if (MaintenanceManagerConfFile.is_open()) {
@@ -66,7 +66,8 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
         while (std::getline(MaintenanceManagerConfFile, line)) {
             std::cout << line << std::endl;
         }
-    }
+    }  
+    */
     IARM_EventHandler_t               controlEventHandler_;
     uint32_t status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.MaintenanceManager");
@@ -125,6 +126,24 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params, results1;
+        std::ofstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
+    
+    if (MaintenanceManagerConfFile.is_open()) {
+        MaintenanceManagerConfFile << "start_hr=\"8\"\n";
+        MaintenanceManagerConfFile << "start_min=\"30\"\n";
+        MaintenanceManagerConfFile << "tz_mode=\"UTC\"\n"; 
+        MaintenanceManagerConfFile.close();
+        
+        std::ifstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
+        if (!MaintenanceManagerConfFile) {
+            std::cerr << "Failed to open /opt/rdk_maintenance.conf for reading." << std::endl;
+        }
+
+        std::string line;
+        while (std::getline(MaintenanceManagerConfFile, line)) {
+            std::cout << line << std::endl;
+        }
+    }
     DeactivateService("org.rdk.Network");  
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     sleep(5);
