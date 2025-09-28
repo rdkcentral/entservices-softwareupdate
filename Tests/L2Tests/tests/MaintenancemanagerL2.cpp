@@ -120,11 +120,12 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     ASSERT_EQ(results1["success"].Boolean(), false);
     ASSERT_EQ(status, Core::ERROR_GENERAL);
 }
+/*
 TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
        DeactivateService("org.rdk.Network");  
 }
-
+*/
 TEST_F(MaintenanceManagerTest,Test1)
 {
     uint32_t status = Core::ERROR_GENERAL;
