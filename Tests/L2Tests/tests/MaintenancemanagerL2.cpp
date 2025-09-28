@@ -126,7 +126,10 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
 {
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params1, results1;
-        std::ofstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params1, results1);
+    ASSERT_EQ(results1["success"].Boolean(), true);
+    ASSERT_EQ(status, Core::ERROR_NONE);
+    std::ofstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
     
     if (MaintenanceManagerConfFile.is_open()) {
         MaintenanceManagerConfFile << "start_hr=\"8\"\n";
@@ -145,7 +148,6 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
         }
     }
 
-    InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params1, results1);
     /*DeactivateService("org.rdk.Network");  
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     sleep(5);
@@ -227,4 +229,12 @@ TEST_F(MaintenanceManagerTest, Test6)
     ASSERT_EQ(results1["isRebootPending"].Boolean(), true);
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results1["success"].Boolean(), true);
+}
+
+TEST_F(MaintenanceManagerTest, Test7)
+{
+    uint32_t status = Core::ERROR_GENERAL;
+    JsonObject params1, results1;
+    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceMode", params1, results1);
+    ASSERT_EQ(status, Core::ERROR_NONE);
 }
