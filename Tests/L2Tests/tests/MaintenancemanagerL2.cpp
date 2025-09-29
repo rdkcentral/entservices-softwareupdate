@@ -145,16 +145,7 @@ TEST_F(MaintenanceManagerTest,getMaintenanceActivityStatus)
     ASSERT_EQ(results1["maintenanceStatus"].String(), "MAINTENANCE_STARTED");
     ASSERT_EQ(status, Core::ERROR_NONE);
 }
-/*
-TEST_F(MaintenanceManagerTest,Test2)
-{
-    uint32_t status = Core::ERROR_GENERAL;
-    JsonObject params1;
-    JsonObject results1;
-    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params1, results1);
-    ASSERT_EQ(status, Core::ERROR_NONE);
-}
-*/
+
 //setMaintenanceMode json RPC
 TEST_F(MaintenanceManagerTest,setMaintenanceMode_json_rpc)
 {
