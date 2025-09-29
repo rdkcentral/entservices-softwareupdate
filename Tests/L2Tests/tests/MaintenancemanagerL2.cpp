@@ -48,26 +48,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
         std::cout << line << std::endl;
     }
     }
-/*
-    std::ofstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
-    
-    if (MaintenanceManagerConfFile.is_open()) {
-        MaintenanceManagerConfFile << "start_hr=\"8\"\n";
-        MaintenanceManagerConfFile << "start_min=\"30\"\n";
-        MaintenanceManagerConfFile << "tz_mode=\"UTC\"\n"; 
-        MaintenanceManagerConfFile.close();
-        
-        std::ifstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
-        if (!MaintenanceManagerConfFile) {
-            std::cerr << "Failed to open /opt/rdk_maintenance.conf for reading." << std::endl;
-        }
 
-        std::string line;
-        while (std::getline(MaintenanceManagerConfFile, line)) {
-            std::cout << line << std::endl;
-        }
-    }  
-    */
     IARM_EventHandler_t               controlEventHandler_;
     uint32_t status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.MaintenanceManager");
