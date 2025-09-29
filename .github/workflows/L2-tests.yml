@@ -107,6 +107,14 @@ jobs:
         with:
           repository: rdkcentral/entservices-testframework
           path: entservices-testframework
+          ref: feature/L2mm_test_setup_refined_test
+          token: ${{ secrets.RDKCM_RDKE }}
+          
+      - name: Checkout networkmanager
+        uses: actions/checkout@v3
+        with:
+          repository: rdkcentral/networkmanager
+          path: networkmanager
           ref: develop
           token: ${{ secrets.RDKCM_RDKE }}
 
@@ -128,6 +136,13 @@ jobs:
         run: |  
             cd $GITHUB_WORKSPACE/entservices-softwareupdate
             patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Firmware_postFlash.patch
+            patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Maintenancemanager.patch
+            cd -
+
+      - name: Apply patches Network manager
+        run: |  
+            cd $GITHUB_WORKSPACE/networkmanager
+            patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Networkmanager.patch
             cd -
 
       - name: Build ThunderTools
@@ -312,6 +327,38 @@ jobs:
           &&
           cmake --install build/mocks
 
+
+      - name: Generate IARM headers
+        run: |
+            touch install/usr/lib/libIARMBus.so 
+            mkdir -p install/usr/include/rdk/iarmbus
+            touch install/usr/include/rdk/iarmbus/libIARM.h
+            cd "${{github.workspace}}/networkmanager/tests/"
+            mkdir -p headers/rdk/iarmbus
+            cd headers
+            touch rdk/iarmbus/libIARM.h rdk/iarmbus/libIBus.h
+      
+      - name: Build networkmanager 
+        run: |
+          # Configure networkmanager
+          cmake \
+          -S "$GITHUB_WORKSPACE/networkmanager" \
+          -B build/networkmanager_rdk \
+          -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" \
+          -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr" \
+          -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/install/usr" \
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake" \
+          -DCMAKE_CXX_FLAGS="-I$GITHUB_WORKSPACE/networkmanager/tests/headers -I$GITHUB_WORKSPACE/networkmanager/tests/headers/rdk/iarmbus --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/Iarm.h --include $GITHUB_WORKSPACE/networkmanager/tests/mocks/secure_wrappermock.h -Wall --coverage" \
+          -DENABLE_UNIT_TESTING=ON \
+          -DENABLE_ROUTER_DISCOVERY_TOOL=OFF
+
+          # Build
+          cmake --build build/networkmanager_rdk -j8
+
+          # Install
+          cmake --install build/networkmanager_rdk
+          cat /home/runner/work/entservices-softwareupdate/entservices-softwareupdate/install/usr/../etc/WPEFramework/plugins/LegacyNetworkAPIs.json
+      
       - name: Build entservices-softwareupdate
         run: >
           cmake
@@ -373,6 +420,7 @@ jobs:
           -DCMAKE_DISABLE_FIND_PACKAGE_RFC=ON
           -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
           -DPLUGIN_FIRMWAREUPDATE=ON
+          -DPLUGIN_MAINTENANCEMANAGER=ON
           -DUSE_THUNDER_R4=ON
           -DPLUGIN_L2Tests=ON
           -DRDK_SERVICE_L2_TEST=ON
@@ -445,6 +493,7 @@ jobs:
           -DCMAKE_DISABLE_FIND_PACKAGE_RFC=ON
           -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
           -DPLUGIN_FIRMWAREUPDATE=ON
+          -DPLUGIN_MAINTENANCEMANAGER=ON
           -DUSE_THUNDER_R4=ON
           -DPLUGIN_L2Tests=ON
           -DRDK_SERVICE_L2_TEST=ON
@@ -488,6 +537,7 @@ jobs:
           if [ ! -f mknod /dev/sdb2 c 240 0 ]; then mknod /dev/sdb2 c 240 0; fi
           &&
           sudo touch
+          /opt/persistent/timeZoneDST
           /opt/standbyReason.txt
           /opt/tmtryoptout
           /opt/fwdnldstatus.txt
@@ -604,6 +654,8 @@ jobs:
           -o coverage
           -t "entservices-softwareupdate coverage"
           filtered_coverage.info
+          &&
+          lcov --extract filtered_coverage.info "*/MaintenanceManager/MaintenanceManager.cpp" -o maintenancemanager_coverage.info
 
       - name: Upload artifacts
         if: ${{ !env.ACT }}
