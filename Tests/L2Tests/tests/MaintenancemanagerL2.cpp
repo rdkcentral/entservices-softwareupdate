@@ -32,9 +32,9 @@ public:
 
 
 MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
+    
     std::ofstream devicePropertiesFile("/etc/device.properties");
     if (devicePropertiesFile.is_open()) {
-
         devicePropertiesFile << "WHOAMI_SUPPORT=true";
         devicePropertiesFile.close();
         
@@ -85,7 +85,7 @@ MaintenanceManagerTest::~MaintenanceManagerTest() {
     status = DeactivateService("org.rdk.MaintenanceManager");
 }
 
-TEST_F(MaintenanceManagerTest,knowWhoamI)
+TEST_F(MaintenanceManagerTest,Unsolicited_Maintenance)
 {
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params,params1;
@@ -93,19 +93,21 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     params["maintenanceMode"] = "BACKGROUND";
     params["optOut"] = "IGNORE_UPDATE";
     sleep(60);
-        
+    
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
     ASSERT_EQ(results1["maintenanceStatus"].String(), "MAINTENANCE_STARTED");
     ASSERT_EQ(results1["isRebootPending"].Boolean(), false);
     ASSERT_EQ(results1["success"].Boolean(), true);
-        
+
+    // getMaintenanceStartTime - does not return Start Time
     ASSERT_EQ(status, Core::ERROR_NONE);
     status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params, results);
     ASSERT_EQ(status, Core::ERROR_NONE);
     
     status = InvokeServiceMethod("org.rdk.MaintenanceManager", "setMaintenanceMode", params, results);
     ASSERT_EQ(status, Core::ERROR_NONE);
-    
+
+    //stopMaintenance on an active Maintenance Cycle
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     ASSERT_EQ(results1["success"].Boolean(), true);
     ASSERT_EQ(status, Core::ERROR_NONE);
@@ -116,13 +118,14 @@ TEST_F(MaintenanceManagerTest,knowWhoamI)
     ASSERT_EQ(results1["isRebootPending"].Boolean(), false);
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results1["success"].Boolean(), true);
-    
+
+    // stopMaintenance on an inactive Maintenance
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     ASSERT_EQ(results1["success"].Boolean(), false);
     ASSERT_EQ(status, Core::ERROR_GENERAL);
 }
-
-TEST_F(MaintenanceManagerTest, TestStartMaintenance)
+// getMaintenanceStartTime jsonRPC returns Start Time
+TEST_F(MaintenanceManagerTest, getMaintenanceStartTime_json_rpc)
 {
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params1, results1;
@@ -149,15 +152,9 @@ TEST_F(MaintenanceManagerTest, TestStartMaintenance)
     ASSERT_EQ(status, Core::ERROR_NONE);
     }
 
-    /*DeactivateService("org.rdk.Network");  
-    status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
-    sleep(5);
-    status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params1, results1);
-    ActivateService("org.rdk.Network"); */
-       
 }
-
-TEST_F(MaintenanceManagerTest,Test1)
+//getMaintenanceActivityStatus jsonRPC
+TEST_F(MaintenanceManagerTest,getMaintenanceActivityStatus)
 {
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params1;
@@ -177,8 +174,8 @@ TEST_F(MaintenanceManagerTest,Test2)
     ASSERT_EQ(status, Core::ERROR_NONE);
 }
 */
-
-TEST_F(MaintenanceManagerTest,Test3)
+//setMaintenanceMode json RPC
+TEST_F(MaintenanceManagerTest,setMaintenanceMode_json_rpc)
 {
     uint32_t status = Core::ERROR_GENERAL;
      JsonObject params;
@@ -189,7 +186,8 @@ TEST_F(MaintenanceManagerTest,Test3)
     ASSERT_EQ(status, Core::ERROR_NONE);
 }
 
-TEST_F(MaintenanceManagerTest,Test4)
+//stopMaintenance on an active Maintenance Cycle
+TEST_F(MaintenanceManagerTest,stopMaintenance)
 {
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params1, results1;
@@ -198,7 +196,8 @@ TEST_F(MaintenanceManagerTest,Test4)
     ASSERT_EQ(status, Core::ERROR_NONE);
 }
 
-TEST_F(MaintenanceManagerTest, Test5)
+//startMaintenance jsonPRC Test on an active Maintenance Cycle
+TEST_F(MaintenanceManagerTest, startMaintenance_active_maintenance)
 {
     JsonObject  params1, results1;
     uint32_t status = InvokeServiceMethod("org.rdk.MaintenanceManager", "startMaintenance", params1, results1);
