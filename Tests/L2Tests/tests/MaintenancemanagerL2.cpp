@@ -231,7 +231,7 @@ TEST_F(MaintenanceManagerTest, Test6)
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results1["success"].Boolean(), true);
 }
-/*
+
 TEST_F(MaintenanceManagerTest, Test7)
 {
     uint32_t status = Core::ERROR_GENERAL;
@@ -239,7 +239,7 @@ TEST_F(MaintenanceManagerTest, Test7)
     status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceMode", params1, results1);
     ASSERT_EQ(status, Core::ERROR_NONE);
 }
-*/
+
 
 /*
 TEST_F(MaintenanceManagerTest,Test8)
