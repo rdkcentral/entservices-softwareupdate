@@ -836,6 +836,28 @@ namespace WPEFramework {
             return status;
         }
 
+        /*
+         * @brief This function Enable/Disable the AutoReboot Feature (COMRPC).
+         * This will internally set the tr181 AutoReboot.Enable to True/False.
+         * @param[in] enable: Boolean to enable or disable AutoReboot
+         * @param[out] result: Result struct with success status
+         * @return: Core::<StatusCode>
+         */
+        Core::hresult FirmwareUpdateImplementation::SetAutoReboot(const bool enable, Result& result)
+        {
+            Core::hresult status = Core::ERROR_GENERAL;
+            const char* set_rfc_val = enable ? "true" : "false";
+            WDMP_STATUS ret = setRFCParameter((char*)"thunderapi",
+                    TR181_AUTOREBOOT_ENABLE, set_rfc_val, WDMP_BOOLEAN);
+            if (WDMP_SUCCESS == ret) {
+                result.success = true;
+                LOGINFO("Success Setting the SetAutoReboot value\n");
+                status = Core::ERROR_NONE;
+            } else {
+                LOGINFO("Failed Setting the SetAutoReboot value %s\n", getRFCErrorString(ret));
+            }
+            return status;
+        }
 
     } // namespace Plugin
 } // namespace WPEFramework
