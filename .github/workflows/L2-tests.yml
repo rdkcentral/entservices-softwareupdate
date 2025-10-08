@@ -100,7 +100,7 @@ jobs:
         with:
           repository: rdkcentral/entservices-softwareupdate
           path: entservices-softwareupdate
-          ref: develop
+          ref: feature/RDKEMW-9142
 
       - name: Checkout entservices-testframework
         uses: actions/checkout@v3
