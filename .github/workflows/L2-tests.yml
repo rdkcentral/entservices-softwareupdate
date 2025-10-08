@@ -357,7 +357,6 @@ jobs:
 
           # Install
           cmake --install build/networkmanager_rdk
-          cat $GITHUB_WORKSPACE/install/usr/../etc/WPEFramework/plugins/LegacyNetworkAPIs.json
       
       - name: Build entservices-softwareupdate
         run: >
