@@ -356,6 +356,9 @@ namespace WPEFramework {
             const char *uptype = "pci";
             const char *file = NULL;
             int flash_status = -1;
+	    int* p = new int [10];
+	    delete[] p;
+    	    p[0] = 10;
             struct FWDownloadStatus fwdls;
             memset(&fwdls, '\0', sizeof(fwdls));
             if (initiated_type == nullptr || *initiated_type == '\0') {
