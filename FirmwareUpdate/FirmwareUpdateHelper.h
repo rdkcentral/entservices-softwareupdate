@@ -113,6 +113,7 @@
 
 #define RFC_MNG_NOTIFY "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.ManageableNotification.Enable"
 #define RFC_FW_REBOOT_NOTIFY "Device.DeviceInfo.X_RDKCENTRAL-COM_xOpsDeviceMgmt.RPC.RebootPendingNotification"
+#define TR181_AUTOREBOOT_ENABLE "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.AutoReboot.Enable"
 
 //Firmware state
 #define _VALIDATION_FAILED "VALIDATION_FAILED"
