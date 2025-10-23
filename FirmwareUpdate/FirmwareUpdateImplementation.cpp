@@ -768,6 +768,15 @@ namespace WPEFramework {
                 fileWithoutExtension = name;
             }
 
+			// Strip "-signed" suffix if present
+			const std::string signedSuffix = "-signed";
+			if (fileWithoutExtension.size() >= signedSuffix.size() &&
+			    fileWithoutExtension.compare(fileWithoutExtension.size() - signedSuffix.size(),
+			                                  signedSuffix.size(), signedSuffix) == 0)
+			{
+			    fileWithoutExtension = fileWithoutExtension.substr(0, fileWithoutExtension.size() - signedSuffix.size());
+			}
+
             if (fileWithoutExtension == currentFlashedImage)
             {
 
