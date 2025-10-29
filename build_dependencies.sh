@@ -31,7 +31,16 @@ git clone --branch  R4.4.3 https://github.com/rdkcentral/ThunderTools.git
 
 git clone --branch R4.4.1 https://github.com/rdkcentral/Thunder.git
 
-git clone --branch main https://github.com/rdkcentral/entservices-apis.git
+# Get current branch name
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# Clone entservices-apis using the current branch if available, or fallback to develop
+if [ ! -d "entservices-apis" ]; then
+  git clone --branch "$CURRENT_BRANCH" https://github.com/rdkcentral/entservices-apis.git 2>/dev/null \
+    || git clone --branch develop https://github.com/rdkcentral/entservices-apis.git
+fi
+
+#git clone --branch main https://github.com/rdkcentral/entservices-apis.git
 
 git clone https://$GITHUB_TOKEN@github.com/rdkcentral/entservices-testframework.git
 
