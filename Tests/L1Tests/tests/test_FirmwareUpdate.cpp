@@ -1190,7 +1190,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_Success_MediaClient) {
     deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
     deviceProps.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1225,7 +1225,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_Success_NonMediaClient) {
     deviceProps << "DEVICE_TYPE=broadband\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
     deviceProps.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1259,7 +1259,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_Failure_MediaClient) {
     deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
     deviceProps.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(1));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1293,7 +1293,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_Failure_NonMediaClient_X86)
     deviceProps << "DEVICE_TYPE=broadband\nCPU_ARCH=x86\nDIFW_PATH=/tmp\n";
     deviceProps.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(2));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1346,7 +1346,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_Concurrency_InProgressError) {
     deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
     deviceProps.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string req = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1399,7 +1399,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_Success_PDRI) {
     deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
     deviceProps.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"DRI\"}";
@@ -1439,7 +1439,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_ProgressEvents) {
 
     EXPECT_EQ(Core::ERROR_NONE, FirmwareUpdateImpl->Register(progressHandler.get()));
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1474,7 +1474,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_HeaderFileCleanup) {
     }
     EXPECT_EQ(0, access(headerFile.c_str(), F_OK));
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1517,7 +1517,7 @@ TEST_F(FirmwareUpdateTest, Notification_ReceiveUpdateStateChange) {
 
     EXPECT_EQ(Core::ERROR_NONE, FirmwareUpdateImpl->Register(notify.get()));
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string req = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1597,7 +1597,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_USBProtocol_BackslashPath) 
         fw << "dummy firmware";
     }
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + fwPath + "\",\"firmwareType\":\"PCI\"}";
@@ -1623,7 +1623,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_RebootFlagTrue_MediaClient)
     deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
     deviceProps.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::StrEq("1"), ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\",\"reboot\":true}";
@@ -1648,7 +1648,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_PDRI_UpgradeType) {
     deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
     deviceProps.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::StrEq("pdri")))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"DRI\"}";
@@ -1673,7 +1673,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_Failure_NonMediaClient_X86_
     deviceProps << "DEVICE_TYPE=broadband\nCPU_ARCH=x86\nDIFW_PATH=/tmp\n";
     deviceProps.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(1));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1705,7 +1705,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_Failure_MaintenanceMode_Med
     std::ofstream maintenanceFile("/opt/swupdate_maintenance_upgrade");
     maintenanceFile.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(1));
     
     EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
@@ -1738,7 +1738,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_Success_MaintenanceCritical
     std::ofstream maintenanceFile("/opt/swupdate_maintenance_upgrade");
     maintenanceFile.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
@@ -1768,7 +1768,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_USB_Success_CreatesCDLFile)
     deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
     deviceProps.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1797,7 +1797,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_NonPDRI_NonMediaClient_Down
     deviceProps << "DEVICE_TYPE=broadband\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
     deviceProps.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1831,7 +1831,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_HeaderFileDeletion_Success)
         hf << "header data";
     }
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
@@ -1863,7 +1863,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_UserInitiated_RCDLFlagDelet
     rcdlFlag << "flag";
     rcdlFlag.close();
 
-    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_))
         .WillOnce(::testing::Return(0));
 
     std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
