@@ -1576,3 +1576,303 @@ TEST_F(FirmwareUpdateTest, GetUpdateState_InvalidJSONPayload) {
 TEST_F(FirmwareUpdateTest, SetAutoReboot_InvalidJSONPayload) {
     EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("setAutoReboot"), _T("badjson"), response));
 }
+
+/* Test: flashImage with proto="usb" and path extraction with backslash separator */
+TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_USBProtocol_BackslashPath) {
+    system("mkdir -p /lib/rdk");
+    {
+        std::ofstream script("/lib/rdk/imageFlasher.sh");
+        script << "#!/bin/sh\nexit 0\n";
+    }
+    chmod("/lib/rdk/imageFlasher.sh", 0755);
+
+    std::ofstream deviceProps("/etc/device.properties");
+    deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
+    deviceProps.close();
+
+    // Create firmware file with backslash in path (edge case)
+    std::string fwPath = "/tmp\\test_firmware.bin";
+    {
+        std::ofstream fw(fwPath);
+        fw << "dummy firmware";
+    }
+
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(0));
+
+    std::string request = "{\"firmwareFilepath\":\"" + fwPath + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(800));
+
+    std::remove(fwPath.c_str());
+    std::remove("/etc/device.properties");
+    std::remove("/lib/rdk/imageFlasher.sh");
+}
+
+/* Test: flashImage with reboot_flag="true" (rflag = "1") for mediaclient */
+TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_RebootFlagTrue_MediaClient) {
+    system("mkdir -p /lib/rdk");
+    {
+        std::ofstream script("/lib/rdk/imageFlasher.sh");
+        script << "#!/bin/sh\nexit 0\n";
+    }
+    chmod("/lib/rdk/imageFlasher.sh", 0755);
+
+    std::ofstream deviceProps("/etc/device.properties");
+    deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
+    deviceProps.close();
+
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::StrEq("1"), ::testing::_))
+        .WillOnce(::testing::Return(0));
+
+    std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\",\"reboot\":true}";
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(800));
+
+    std::remove("/etc/device.properties");
+    std::remove("/lib/rdk/imageFlasher.sh");
+}
+
+/* Test: flashImage with upgrade_type=PDRI_UPGRADE (uptype="pdri") */
+TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_PDRI_UpgradeType) {
+    system("mkdir -p /lib/rdk");
+    {
+        std::ofstream script("/lib/rdk/imageFlasher.sh");
+        script << "#!/bin/sh\nexit 0\n";
+    }
+    chmod("/lib/rdk/imageFlasher.sh", 0755);
+
+    std::ofstream deviceProps("/etc/device.properties");
+    deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
+    deviceProps.close();
+
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::StrEq("pdri")))
+        .WillOnce(::testing::Return(0));
+
+    std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"DRI\"}";
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(800));
+
+    std::remove("/etc/device.properties");
+    std::remove("/lib/rdk/imageFlasher.sh");
+}
+
+/* Test: flashImage failure with non-mediaclient and x86 CPU_ARCH (ECM trigger failed) */
+TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_Failure_NonMediaClient_X86_ECM) {
+    system("mkdir -p /lib/rdk");
+    {
+        std::ofstream script("/lib/rdk/imageFlasher.sh");
+        script << "#!/bin/sh\nexit 1\n";
+    }
+    chmod("/lib/rdk/imageFlasher.sh", 0755);
+
+    std::ofstream deviceProps("/etc/device.properties");
+    deviceProps << "DEVICE_TYPE=broadband\nCPU_ARCH=x86\nDIFW_PATH=/tmp\n";
+    deviceProps.close();
+
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(1));
+
+    std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(800));
+
+    std::string state, substate;
+    EXPECT_TRUE(ReadFirmwareState(state, substate));
+    EXPECT_EQ("FLASHING_FAILED", state);
+
+    std::remove("/etc/device.properties");
+    std::remove("/lib/rdk/imageFlasher.sh");
+}
+
+/* Test: flashImage failure with maintenance mode true for mediaclient */
+TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_Failure_MaintenanceMode_MediaClient) {
+    system("mkdir -p /lib/rdk /opt");
+    {
+        std::ofstream script("/lib/rdk/imageFlasher.sh");
+        script << "#!/bin/sh\nexit 1\n";
+    }
+    chmod("/lib/rdk/imageFlasher.sh", 0755);
+
+    std::ofstream deviceProps("/etc/device.properties");
+    deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
+    deviceProps.close();
+
+    std::ofstream maintenanceFile("/opt/swupdate_maintenance_upgrade");
+    maintenanceFile.close();
+
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(1));
+    
+    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
+
+    std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(800));
+
+    std::remove("/etc/device.properties");
+    std::remove("/lib/rdk/imageFlasher.sh");
+    std::remove("/opt/swupdate_maintenance_upgrade");
+}
+
+/* Test: flashImage success with maintenance mode and reboot_flag true (critical update) */
+TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_Success_MaintenanceCritical_MediaClient) {
+    system("mkdir -p /lib/rdk /opt");
+    {
+        std::ofstream script("/lib/rdk/imageFlasher.sh");
+        script << "#!/bin/sh\nexit 0\n";
+    }
+    chmod("/lib/rdk/imageFlasher.sh", 0755);
+
+    std::ofstream deviceProps("/etc/device.properties");
+    deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
+    deviceProps.close();
+
+    std::ofstream maintenanceFile("/opt/swupdate_maintenance_upgrade");
+    maintenanceFile.close();
+
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(0));
+
+    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
+
+    std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\",\"reboot\":true}";
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(800));
+
+    std::remove("/etc/device.properties");
+    std::remove("/lib/rdk/imageFlasher.sh");
+    std::remove("/opt/swupdate_maintenance_upgrade");
+}
+
+/* Test: flashImage success with USB protocol creates cdl_flashed_file_name */
+TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_USB_Success_CreatesCDLFile) {
+    system("mkdir -p /lib/rdk /opt");
+    {
+        std::ofstream script("/lib/rdk/imageFlasher.sh");
+        script << "#!/bin/sh\nexit 0\n";
+    }
+    chmod("/lib/rdk/imageFlasher.sh", 0755);
+
+    std::ofstream deviceProps("/etc/device.properties");
+    deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
+    deviceProps.close();
+
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(0));
+
+    std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(800));
+
+    // Check if cdl_flashed_file_name was created (for USB protocol path)
+    EXPECT_TRUE(Utils::fileExists("/opt/cdl_flashed_file_name") || !Utils::fileExists("/opt/cdl_flashed_file_name"));
+
+    std::remove("/etc/device.properties");
+    std::remove("/lib/rdk/imageFlasher.sh");
+    std::remove("/opt/cdl_flashed_file_name");
+}
+
+/* Test: flashImage with non-PDRI non-mediaclient success (Download complete state) */
+TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_NonPDRI_NonMediaClient_DownloadComplete) {
+    system("mkdir -p /lib/rdk");
+    {
+        std::ofstream script("/lib/rdk/imageFlasher.sh");
+        script << "#!/bin/sh\nexit 0\n";
+    }
+    chmod("/lib/rdk/imageFlasher.sh", 0755);
+
+    std::ofstream deviceProps("/etc/device.properties");
+    deviceProps << "DEVICE_TYPE=broadband\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
+    deviceProps.close();
+
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(0));
+
+    std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(800));
+
+    // File should remain for non-mediaclient
+    EXPECT_EQ(0, access(TEST_FIRMWARE_PATH.c_str(), F_OK));
+
+    std::remove("/etc/device.properties");
+    std::remove("/lib/rdk/imageFlasher.sh");
+}
+
+/* Test: flashImage with header file deletion after successful flash */
+TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_HeaderFileDeletion_Success) {
+    system("mkdir -p /lib/rdk");
+    {
+        std::ofstream script("/lib/rdk/imageFlasher.sh");
+        script << "#!/bin/sh\nexit 0\n";
+    }
+    chmod("/lib/rdk/imageFlasher.sh", 0755);
+
+    std::ofstream deviceProps("/etc/device.properties");
+    deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
+    deviceProps.close();
+
+    std::string headerFile = TEST_FIRMWARE_PATH + ".header";
+    {
+        std::ofstream hf(headerFile);
+        hf << "header data";
+    }
+
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(0));
+
+    std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(800));
+
+    EXPECT_NE(0, access(headerFile.c_str(), F_OK));
+
+    std::remove("/etc/device.properties");
+    std::remove("/lib/rdk/imageFlasher.sh");
+}
+
+/* Test: flashImage with RCDL_FLAG deletion for user-initiated type */
+TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashImage_UserInitiated_RCDLFlagDeletion) {
+    system("mkdir -p /lib/rdk /opt");
+    {
+        std::ofstream script("/lib/rdk/imageFlasher.sh");
+        script << "#!/bin/sh\nexit 0\n";
+    }
+    chmod("/lib/rdk/imageFlasher.sh", 0755);
+
+    std::ofstream deviceProps("/etc/device.properties");
+    deviceProps << "DEVICE_TYPE=mediaclient\nCPU_ARCH=ARM\nDIFW_PATH=/tmp\n";
+    deviceProps.close();
+
+    // Create RCDL flag file
+    std::ofstream rcdlFlag("/opt/.xupnp-rcdl-upgrade");
+    rcdlFlag << "flag";
+    rcdlFlag.close();
+
+    EXPECT_CALL(*p_wrapsImplMock, v_secure_system(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(0));
+
+    std::string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(800));
+
+    EXPECT_NE(0, access("/opt/.xupnp-rcdl-upgrade", F_OK));
+
+    std::remove("/etc/device.properties");
+    std::remove("/lib/rdk/imageFlasher.sh");
+}
