@@ -1385,8 +1385,10 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_Concurrency_InProgressError) {
     std::string req = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), req, response));
 
-    // Set the global flag manually to emulate ongoing flashing (before thread clears it)
-    isFlashingInProgress.store(true);
+    // Set the test fixture flag to emulate ongoing flashing
+    flashInProgress.store(true);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
     std::string req2 = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
     uint32_t rc2 = handler.Invoke(connection, _T("updateFirmware"), req2, response);
@@ -1567,7 +1569,10 @@ TEST_F(FirmwareUpdateTest, Notification_ReceiveUpdateStateChange) {
 /* Test: GetUpdateState After Explicit Event Injection (simulate external event feed) */
 TEST_F(FirmwareUpdateTest, GetUpdateState_AfterManualDispatch) {
     // Manually write state file via helper
-    EXPECT_TRUE(FirmwareStatus(std::string("FLASHING_FAILED"), std::string("FIRMWARE_INVALID"), "write"));
+    std::string state = "FLASHING_FAILED";
+    std::string substate = "FIRMWARE_INVALID";
+    EXPECT_TRUE(FirmwareStatus(state, substate, "write"));
+    
     Exchange::IFirmwareUpdate::GetUpdateStateResult res;
     EXPECT_EQ(Core::ERROR_NONE, FirmwareUpdateImpl->GetUpdateState(res));
     EXPECT_EQ(Exchange::IFirmwareUpdate::State::FLASHING_FAILED, res.state);
