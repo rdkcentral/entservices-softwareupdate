@@ -230,6 +230,39 @@ protected:
         string progressRequest = "{\"progress\":" + std::to_string(progress) + "}";
         EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("onFlashingProgressChange"), progressRequest, response));
     }
+
+    bool ReadFirmwareState(std::string& state, std::string& substate) {
+        std::ifstream file(FIRMWARE_UPDATE_STATE);
+        if (!file.is_open()) {
+            return false;
+        }
+
+        std::string line;
+        bool stateFound = false, substateFound = false;
+
+        while (std::getline(file, line)) {
+            std::stringstream ss(line);
+            std::string key, value;
+            std::getline(ss, key, ':');
+            std::getline(ss, value);
+
+            if (key == "state") {
+                state = value;
+                stateFound = true;
+            }
+            if (key == "substate") {
+                substate = value;
+                substateFound = true;
+            }
+
+            if (stateFound && substateFound) {
+                break;
+            }
+        }
+
+        file.close();
+        return stateFound && substateFound;
+    }
 };
 
 // Basic API Method Registration Tests
