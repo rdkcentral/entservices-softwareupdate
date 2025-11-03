@@ -165,17 +165,35 @@ TEST_F(MaintenanceManagerTest, stopMaintenanceWhenNotStarted)
     JsonObject results;
     JsonObject params;
 
-    // Wait for unsolicited maintenance to complete
-    for (int i = 0; i < 60; i++) {
+    // Wait for unsolicited maintenance to complete & stabilize
+    bool maintenanceIdle = false;
+    int stableCount = 0;  // Count consecutive non-STARTED readings
+    
+    for (int i = 0; i < 90; i++) {  // 90 second timeout
         JsonObject statusResult;
         jsonrpc.Invoke<JsonObject, JsonObject>(1000, _T("getMaintenanceActivityStatus"), params, statusResult);
-        if (statusResult.HasLabel("maintenanceStatus") && 
-            statusResult["maintenanceStatus"].String() != "MAINTENANCE_STARTED") {
-            break;
+        
+        if (statusResult.HasLabel("maintenanceStatus")) {
+            std::string status = statusResult["maintenanceStatus"].String();
+            
+            if (status != "MAINTENANCE_STARTED") {
+                stableCount++;
+                // Need 2 consecutive stable readings (2 seconds apart)
+                if (stableCount >= 2) {
+                    maintenanceIdle = true;
+                    break;
+                }
+            } else {
+                stableCount = 0;  // Reset if we see STARTED again
+            }
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    
+    ASSERT_TRUE(maintenanceIdle) << "Maintenance did not stabilize within 90 seconds";
+
+    // Ensure worker thread has fully exited
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     uint32_t status = jsonrpc.Invoke<JsonObject, JsonObject>(1000, _T("stopMaintenance"), params, results);
     EXPECT_EQ(status, Core::ERROR_NONE);
@@ -189,24 +207,55 @@ TEST_F(MaintenanceManagerTest, stopMaintenanceWhenStarted)
     JsonObject params;
     JsonObject results;
 
-    // Wait for unsolicited maintenance to complete
-    for (int i = 0; i < 60; i++) {
+    // Wait for unsolicited maintenance to complete & stabilize
+    bool maintenanceIdle = false;
+    int stableCount = 0;
+    
+    for (int i = 0; i < 90; i++) {
         JsonObject statusResult;
         jsonrpc.Invoke<JsonObject, JsonObject>(1000, _T("getMaintenanceActivityStatus"), params, statusResult);
-        if (statusResult.HasLabel("maintenanceStatus") && 
-            statusResult["maintenanceStatus"].String() != "MAINTENANCE_STARTED") {
-            break;
+        
+        if (statusResult.HasLabel("maintenanceStatus")) {
+            std::string status = statusResult["maintenanceStatus"].String();
+            
+            if (status != "MAINTENANCE_STARTED") {
+                stableCount++;
+                if (stableCount >= 2) {
+                    maintenanceIdle = true;
+                    break;
+                }
+            } else {
+                stableCount = 0;
+            }
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    
+    ASSERT_TRUE(maintenanceIdle) << "Maintenance did not stabilize within 90 seconds";
 
+    // Ensure worker thread has fully exited
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    // Start maintenance explicitly
     JsonObject startResults;
     uint32_t status = jsonrpc.Invoke<JsonObject, JsonObject>(1000, _T("startMaintenance"), params, startResults);
     EXPECT_EQ(status, Core::ERROR_NONE);
     EXPECT_TRUE(startResults["success"].Boolean());
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    // Wait for maintenance to start
+    bool hasStarted = false;
+    for (int i = 0; i < 10; i++) {
+        JsonObject statusResult;
+        jsonrpc.Invoke<JsonObject, JsonObject>(1000, _T("getMaintenanceActivityStatus"), params, statusResult);
+        
+        if (statusResult.HasLabel("maintenanceStatus") && 
+            statusResult["maintenanceStatus"].String() == "MAINTENANCE_STARTED") {
+            hasStarted = true;
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+    ASSERT_TRUE(hasStarted) << "Maintenance did not start within 5 seconds";
 
     status = jsonrpc.Invoke<JsonObject, JsonObject>(1000, _T("stopMaintenance"), params, results);
     EXPECT_EQ(status, Core::ERROR_NONE);
