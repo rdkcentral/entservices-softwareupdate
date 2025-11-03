@@ -198,41 +198,47 @@ TEST_F(MaintenanceManagerTest, setMaintenanceModeJsonRPCAndgetMaintenanceModeJso
                 return WDMP_SUCCESS;
             }));
 
+    // Test 1: Set FOREGROUND + IGNORE_UPDATE
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.setMaintenanceMode"), _T("{\"maintenanceMode\":\"FOREGROUND\",\"optOut\":\"IGNORE_UPDATE\"}"), response_));
     EXPECT_EQ(response_, "{\"success\":true}");
 
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.getMaintenanceMode"), _T("{}"), response_));
-    EXPECT_EQ(response_, "{\"maintenanceMode\":\"FOREGROUND\",\"optOut\":\"IGNORE_UPDATE\",\"success\":true}");
+    EXPECT_EQ(response_, "{\"maintenanceMode\":\"FOREGROUND\",\"triggerMode\":\"\",\"optOut\":\"IGNORE_UPDATE\",\"success\":true}");
 
+    // Test 2: Set FOREGROUND + ENFORCE_OPTOUT
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.setMaintenanceMode"), _T("{\"maintenanceMode\":\"FOREGROUND\",\"optOut\":\"ENFORCE_OPTOUT\"}"), response_));
     EXPECT_EQ(response_, "{\"success\":true}");
 
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.getMaintenanceMode"), _T("{}"), response_));
-    EXPECT_EQ(response_, "{\"maintenanceMode\":\"FOREGROUND\",\"optOut\":\"ENFORCE_OPTOUT\",\"success\":true}");
+    EXPECT_EQ(response_, "{\"maintenanceMode\":\"FOREGROUND\",\"triggerMode\":\"\",\"optOut\":\"ENFORCE_OPTOUT\",\"success\":true}");
 
+    // Test 3: Set FOREGROUND + BYPASS_OPTOUT
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.setMaintenanceMode"), _T("{\"maintenanceMode\":\"FOREGROUND\",\"optOut\":\"BYPASS_OPTOUT\"}"), response_));
     EXPECT_EQ(response_, "{\"success\":true}");
 
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.getMaintenanceMode"), _T("{}"), response_));
-    EXPECT_EQ(response_, "{\"maintenanceMode\":\"FOREGROUND\",\"optOut\":\"BYPASS_OPTOUT\",\"success\":true}");
+    EXPECT_EQ(response_, "{\"maintenanceMode\":\"FOREGROUND\",\"triggerMode\":\"\",\"optOut\":\"BYPASS_OPTOUT\",\"success\":true}");
 
+    // Test 4: Set BACKGROUND + IGNORE_UPDATE
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.setMaintenanceMode"), _T("{\"maintenanceMode\":\"BACKGROUND\",\"optOut\":\"IGNORE_UPDATE\"}"), response_));
     EXPECT_EQ(response_, "{\"success\":true}");
 
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.getMaintenanceMode"), _T("{}"), response_));
-    EXPECT_EQ(response_, "{\"maintenanceMode\":\"BACKGROUND\",\"optOut\":\"IGNORE_UPDATE\",\"success\":true}");
+    EXPECT_EQ(response_, "{\"maintenanceMode\":\"BACKGROUND\",\"triggerMode\":\"\",\"optOut\":\"IGNORE_UPDATE\",\"success\":true}");
 
+    // Test 5: Set BACKGROUND + ENFORCE_OPTOUT
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.setMaintenanceMode"), _T("{\"maintenanceMode\":\"BACKGROUND\",\"optOut\":\"ENFORCE_OPTOUT\"}"), response_));
     EXPECT_EQ(response_, "{\"success\":true}");
 
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.getMaintenanceMode"), _T("{}"), response_));
-    EXPECT_EQ(response_, "{\"maintenanceMode\":\"BACKGROUND\",\"optOut\":\"ENFORCE_OPTOUT\",\"success\":true}");
+    EXPECT_EQ(response_, "{\"maintenanceMode\":\"BACKGROUND\",\"triggerMode\":\"\",\"optOut\":\"ENFORCE_OPTOUT\",\"success\":true}");
 
+    // Test 6: Set BACKGROUND + BYPASS_OPTOUT
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.setMaintenanceMode"), _T("{\"maintenanceMode\":\"BACKGROUND\",\"optOut\":\"BYPASS_OPTOUT\"}"), response_));
     EXPECT_EQ(response_, "{\"success\":true}");
 
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("org.rdk.MaintenanceManager.1.getMaintenanceMode"), _T("{}"), response_));
-    EXPECT_EQ(response_, "{\"maintenanceMode\":\"BACKGROUND\",\"optOut\":\"BYPASS_OPTOUT\",\"success\":true}");
+    EXPECT_EQ(response_, "{\"maintenanceMode\":\"BACKGROUND\",\"triggerMode\":\"\",\"optOut\":\"BYPASS_OPTOUT\",\"success\":true}");
 }
 
 /* --- getTaskPID() ---- */
