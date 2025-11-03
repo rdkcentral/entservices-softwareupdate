@@ -158,39 +158,59 @@ TEST_F(MaintenanceManagerTest,setMaintenanceMode_json_rpc)
     ASSERT_EQ(status, Core::ERROR_NONE);
 }
 
-//stopMaintenance on an active Maintenance Cycle
+// stopMaintenance when no Maintenance is active
 TEST_F(MaintenanceManagerTest, stopMaintenanceWhenNotStarted)
 {
-    // Test Case 1: stopMaintenance when maintenance is NOT started
     JSONRPC::LinkType<Core::JSON::IElement> jsonrpc(MAINTENANCEMANAGER_CALLSIGN, MAINTENANCEMANAGER_CALLSIGN);
     JsonObject results;
     JsonObject params;
+
+    // Wait for unsolicited maintenance to complete
+    for (int i = 0; i < 60; i++) {
+        JsonObject statusResult;
+        jsonrpc.Invoke<JsonObject, JsonObject>(1000, _T("getMaintenanceActivityStatus"), params, statusResult);
+        if (statusResult.HasLabel("maintenanceStatus") && 
+            statusResult["maintenanceStatus"].String() != "MAINTENANCE_STARTED") {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     uint32_t status = jsonrpc.Invoke<JsonObject, JsonObject>(1000, _T("stopMaintenance"), params, results);
     EXPECT_EQ(status, Core::ERROR_NONE);
-    EXPECT_FALSE(results["success"].Boolean());  // ← Should return false (not started)
+    EXPECT_FALSE(results["success"].Boolean());
 }
 
+// stopMaintenance when Maintenance is active
 TEST_F(MaintenanceManagerTest, stopMaintenanceWhenStarted)
 {
-    // Test Case 2: stopMaintenance when maintenance IS started
     JSONRPC::LinkType<Core::JSON::IElement> jsonrpc(MAINTENANCEMANAGER_CALLSIGN, MAINTENANCEMANAGER_CALLSIGN);
     JsonObject params;
     JsonObject results;
 
-    // Start maintenance first
+    // Wait for unsolicited maintenance to complete
+    for (int i = 0; i < 60; i++) {
+        JsonObject statusResult;
+        jsonrpc.Invoke<JsonObject, JsonObject>(1000, _T("getMaintenanceActivityStatus"), params, statusResult);
+        if (statusResult.HasLabel("maintenanceStatus") && 
+            statusResult["maintenanceStatus"].String() != "MAINTENANCE_STARTED") {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
     JsonObject startResults;
     uint32_t status = jsonrpc.Invoke<JsonObject, JsonObject>(1000, _T("startMaintenance"), params, startResults);
     EXPECT_EQ(status, Core::ERROR_NONE);
     EXPECT_TRUE(startResults["success"].Boolean());
 
-    // Wait for maintenance to actually start
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    // Now stop maintenance
     status = jsonrpc.Invoke<JsonObject, JsonObject>(1000, _T("stopMaintenance"), params, results);
     EXPECT_EQ(status, Core::ERROR_NONE);
-    EXPECT_TRUE(results["success"].Boolean());  // ← Should now pass
+    EXPECT_TRUE(results["success"].Boolean());
 }
 
 //startMaintenance jsonPRC Test on an active Maintenance Cycle
@@ -207,6 +227,7 @@ TEST_F(MaintenanceManagerTest, startMaintenance_active_maintenance)
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results1["success"].Boolean(), true);
 }
+
 TEST_F(MaintenanceManagerTest, Solicited_maintenance)
 {
     uint32_t status = Core::ERROR_GENERAL;
