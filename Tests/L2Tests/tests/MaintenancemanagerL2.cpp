@@ -167,6 +167,7 @@ TEST_F(MaintenanceManagerTest,stopMaintenance)
     ASSERT_EQ(results1["success"].Boolean(), true);
     ASSERT_EQ(status, Core::ERROR_NONE);
 }
+
 //startMaintenance jsonPRC Test on an active Maintenance Cycle
 TEST_F(MaintenanceManagerTest, startMaintenance_active_maintenance)
 {
@@ -181,7 +182,6 @@ TEST_F(MaintenanceManagerTest, startMaintenance_active_maintenance)
     ASSERT_EQ(status, Core::ERROR_NONE);
     ASSERT_EQ(results1["success"].Boolean(), true);
 }
-
 TEST_F(MaintenanceManagerTest, Solicited_maintenance)
 {
     uint32_t status = Core::ERROR_GENERAL;
