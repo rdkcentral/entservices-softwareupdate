@@ -162,7 +162,7 @@ TEST_F(MaintenanceManagerTest,setMaintenanceMode_json_rpc)
 TEST_F(MaintenanceManagerTest, stopMaintenanceWhenNotStarted)
 {
     // Test Case 1: stopMaintenance when maintenance is NOT started
-    JSONRPC::LinkType<Core::JSON::IElement> jsonrpc(MAINTENANCEMANAGER_CALLSIGN, MAINTENANCEMANAGER_CALLSIGN_VER);
+    JSONRPC::LinkType<Core::JSON::IElement> jsonrpc(MAINTENANCEMANAGER_CALLSIGN, MAINTENANCEMANAGER_CALLSIGN);
     JsonObject results;
     JsonObject params;
 
@@ -174,7 +174,7 @@ TEST_F(MaintenanceManagerTest, stopMaintenanceWhenNotStarted)
 TEST_F(MaintenanceManagerTest, stopMaintenanceWhenStarted)
 {
     // Test Case 2: stopMaintenance when maintenance IS started
-    JSONRPC::LinkType<Core::JSON::IElement> jsonrpc(MAINTENANCEMANAGER_CALLSIGN, MAINTENANCEMANAGER_CALLSIGN_VER);
+    JSONRPC::LinkType<Core::JSON::IElement> jsonrpc(MAINTENANCEMANAGER_CALLSIGN, MAINTENANCEMANAGER_CALLSIGN);
     JsonObject params;
     JsonObject results;
 
