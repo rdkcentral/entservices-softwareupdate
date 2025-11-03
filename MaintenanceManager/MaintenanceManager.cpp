@@ -1528,6 +1528,7 @@ namespace WPEFramework
         {
             /* on boot up we set these things */
             MaintenanceManager::g_currentMode = FOREGROUND_MODE;
+            MaintenanceManager::g_triggerMode = "";
 
             MaintenanceManager::m_notify_status = MAINTENANCE_IDLE;
             MaintenanceManager::g_epoch_time = "";
@@ -2205,6 +2206,7 @@ namespace WPEFramework
         uint32_t MaintenanceManager::getMaintenanceMode(const JsonObject &parameters,
                                                         JsonObject &response)
         {
+            MM_LOGINFO("Invoke getMaintenanceMode");
             bool result = false;
             string softwareOptOutmode = "NONE";
             if (BACKGROUND_MODE != g_currentMode && FOREGROUND_MODE != g_currentMode)
@@ -2217,16 +2219,19 @@ namespace WPEFramework
             }
             else
             {
+                std::lock_guard<std::mutex> guard(m_callMutex); // Add Mutex to prevent Data race
                 response["maintenanceMode"] = g_currentMode;
+                response["triggerMode"] = g_triggerMode;
 
                 if (Utils::fileExists(MAINTENANCE_MGR_RECORD_FILE))
                 {
                     if (parseConfigFile(MAINTENANCE_MGR_RECORD_FILE, "softwareoptout", softwareOptOutmode))
                     {
                         /* check if the value is valid */
+                        MM_LOGINFO("Successfully read OptOut value from %s", MAINTENANCE_MGR_RECORD_FILE);
                         if (!checkValidOptOutModes(softwareOptOutmode))
                         {
-                            MM_LOGERR("OptOut Value Corrupted. Failed");
+                            MM_LOGERR("Invalid OptOut Value");
 #if defined(ENABLE_JOURNAL_LOGGING)
                             MM_RETURN_RESPONSE(false);
 #endif
@@ -2234,12 +2239,12 @@ namespace WPEFramework
                         }
                         else
                         {
-                            MM_LOGINFO("OptOut Value = %s", softwareOptOutmode.c_str());
+                            MM_LOGINFO("Valid OptOut Value = %s", softwareOptOutmode.c_str());
                         }
                     }
                     else
                     {
-                        MM_LOGERR("OptOut Value Not Found. Failed");
+                        MM_LOGERR("OptOut Value Not Found");
 #if defined(ENABLE_JOURNAL_LOGGING)
                         MM_RETURN_RESPONSE(false);
 #endif
@@ -2248,7 +2253,7 @@ namespace WPEFramework
                 }
                 else
                 {
-                    MM_LOGERR("OptOut Config File Not Found. Failed");
+                    MM_LOGERR("%s File Not Found to get OptOut Value", MAINTENANCE_MGR_RECORD_FILE);
 #if defined(ENABLE_JOURNAL_LOGGING)
                     MM_RETURN_RESPONSE(false);
 #endif
@@ -2275,21 +2280,26 @@ namespace WPEFramework
         uint32_t MaintenanceManager::setMaintenanceMode(const JsonObject &parameters,
                                                         JsonObject &response)
         {
+            MM_LOGINFO("Invoke setMaintenanceMode");
             bool result = false;
             string new_mode = "";
             string old_mode = g_currentMode;
             string bg_flag = "false";
             string new_optout_state = "";
+            string new_trigger_mode = "";
             bool rdkvfwrfc = true;
-            // 1 = Foreground and 0 = background
-            int mode = 1;
-            MM_LOGINFO("RDKE Device.Mode change allow anytime");
+            int mode = 1; // 1 = Foreground and 0 = background
 
             /* Label should have maintenance mode and softwareOptout field */
             if (parameters.HasLabel("maintenanceMode") && parameters.HasLabel("optOut"))
             {
-
                 new_mode = parameters["maintenanceMode"].String();
+                new_optout_state = parameters["optOut"].String();
+
+                if (parameters.HasLabel("triggerMode"))
+                {
+                    new_trigger_mode = parameters["triggerMode"].String();
+                }
 
                 if (BACKGROUND_MODE != new_mode && FOREGROUND_MODE != new_mode)
                 {
@@ -2299,33 +2309,28 @@ namespace WPEFramework
 #endif
                     returnResponse(false);
                 }
+                MM_LOGINFO("setMaintenanceMode called: maintenanceMode=%s, optOut=%s, triggerMode=%s", new_mode.c_str(), new_optout_state.c_str(), new_trigger_mode.c_str());
 
-                std::lock_guard<std::mutex> guard(m_callMutex);
+                std::lock_guard<std::mutex> guard(m_callMutex); // Add Mutex
+                g_triggerMode = new_trigger_mode; // Update inside mutex lock
 
                 /* check if maintenance is on progress or not */
                 /* if in progress restrict the same */
                 if (MAINTENANCE_STARTED != m_notify_status)
                 {
-
                     MM_LOGINFO("SetMaintenanceMode new_mode = %s", new_mode.c_str());
 
                     /* remove any older one */
                     m_setting.remove("background_flag");
-                    if (BACKGROUND_MODE == new_mode)
-                    {
-                        bg_flag = "true";
-                    }
-                    else
-                    {
-                        /* foreground */
-                        bg_flag = "false";
-                    }
+                    (BACKGROUND_MODE == new_mode) ? bg_flag = "true" : bg_flag = "false";
                     g_currentMode = new_mode;
                     m_setting.setValue("background_flag", bg_flag);
+                    MM_LOGINFO("Maintenance mode changed from %s to %s", old_mode.c_str(), new_mode.c_str());
                 }
                 else
                 {
-                    /*If firmware rfc is true and IARM bus component present allow to change maintenance mode*/
+                    /* Maintenance in progress. Mode change is restricted (if rdkvfwrfc is not set)
+                       Can be changed (if rdkvfwrfc set) */
                     if (rdkvfwrfc == true)
                     {
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
@@ -2341,15 +2346,7 @@ namespace WPEFramework
                             g_currentMode = new_mode;
                             /* remove any older one */
                             m_setting.remove("background_flag");
-                            if (BACKGROUND_MODE == new_mode)
-                            {
-                                bg_flag = "true";
-                            }
-                            else
-                            {
-                                /* foreground */
-                                bg_flag = "false";
-                            }
+                            (BACKGROUND_MODE == new_mode) ? bg_flag = "true" : bg_flag = "false";
                             m_setting.setValue("background_flag", bg_flag);
                         }
                         else
@@ -2360,13 +2357,10 @@ namespace WPEFramework
                     }
                     else
                     {
-                        MM_LOGERR("Maintenance is in Progress, Mode change not allowed");
+                        MM_LOGERR("setMaintenanceMode cant be done as Maintenance is in Progress");
                     }
                     result = true;
                 }
-
-                /* OptOut changes here */
-                new_optout_state = parameters["optOut"].String();
 
                 MM_LOGINFO("SetMaintenanceMode optOut = %s", new_optout_state.c_str());
 
@@ -2375,6 +2369,7 @@ namespace WPEFramework
                 {
                     /* we got a valid state; Now store it in persistant location */
                     m_setting.setValue("softwareoptout", new_optout_state);
+                    MM_LOGINFO("Valid optOut = %s", new_optout_state.c_str());
                 }
                 else
                 {
@@ -2384,7 +2379,6 @@ namespace WPEFramework
 #endif
                     returnResponse(false);
                 }
-
                 /* Set the result as true */
                 result = true;
             }
@@ -2414,14 +2408,18 @@ namespace WPEFramework
             /* check what mode we currently have */
             string current_mode = "";
 
-            MM_LOGINFO("Triggering scheduled maintenance ");
+            MM_LOGINFO("Triggering Scheduled Maintenance now...");
             /* only one maintenance at a time */
             /* Lock so that m_notify_status will not be updated  further */
             m_statusMutex.lock();
+
             if (MAINTENANCE_STARTED != m_notify_status && g_unsolicited_complete)
             {
-
-                /*reset the status to 0*/
+                {
+                    std::lock_guard<std::mutex> guard(m_callMutex);
+                    MM_LOGINFO("startMaintenance triggered: triggerMode=%s", g_triggerMode.c_str());
+                }
+                
                 g_task_status = 0;
                 g_maintenance_type = SOLICITED_MAINTENANCE;
 
