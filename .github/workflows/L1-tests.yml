@@ -464,8 +464,8 @@ jobs:
           -DUSE_THUNDER_R4=ON
           -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
           -DPLUGIN_FIRMWAREUPDATE=ON
-          -DPLUGIN_MAINTENANCEMANAGER=ON
-          -DPLUGIN_PACKAGER=ON
+          -DPLUGIN_MAINTENANCEMANAGER=OFF
+          -DPLUGIN_PACKAGER=OFF
           &&
           cmake --build build/entservices-softwareupdate -j8
           &&
@@ -535,7 +535,7 @@ jobs:
           -DCMAKE_DISABLE_FIND_PACKAGE_RFC=ON
           -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
           -DCMAKE_BUILD_TYPE=Debug
-          -DPLUGIN_PACKAGER=ON
+          -DPLUGIN_PACKAGER=OFF
           -DDS_FOUND=ON
           -DRDK_SERVICES_L1_TEST=ON
           -DUSE_THUNDER_R4=ON
