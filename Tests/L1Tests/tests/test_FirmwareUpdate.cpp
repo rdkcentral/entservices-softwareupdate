@@ -81,12 +81,6 @@ protected:
         
         ON_CALL(*p_wrapsImplMock, fopen(::testing::_, ::testing::_))
             .WillByDefault(::testing::Return(nullptr));
-        
-        ON_CALL(*p_wrapsImplMock, fclose(::testing::_))
-            .WillByDefault(::testing::Return(0));
-        
-        ON_CALL(*p_wrapsImplMock, fgets(::testing::_, ::testing::_, ::testing::_))
-            .WillByDefault(::testing::Return(nullptr));
 
         ON_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
             .WillByDefault(::testing::Return(IARM_RESULT_SUCCESS));
@@ -103,7 +97,7 @@ protected:
             .WillByDefault(::testing::Invoke(
                 [&](const RPC::Object& object, const uint32_t waitTime, uint32_t& connectionId) {
                         FirmwareUpdateImpl = Core::ProxyType<Plugin::FirmwareUpdateImplementation>::Create();
-                        TEST_LOG("Pass created FirmwareUpdateImpl: %p &FirmwareUpdateImpl: %p", FirmwareUpdateImpl, &FirmwareUpdateImpl);
+                        TEST_LOG("Pass created FirmwareUpdateImpl");
                         return &FirmwareUpdateImpl;
                     }));
 #else
@@ -127,8 +121,6 @@ protected:
     virtual ~FirmwareUpdateTest() override
     {
         TEST_LOG("FirmwareUpdateTest Destructor");
-
-        isFlashingInProgress.store(false);
         
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
@@ -177,7 +169,6 @@ TEST_F(FirmwareUpdateTest, getUpdateState)
 
 TEST_F(FirmwareUpdateTest, EmptyFirmwareFilepath)
 {
-
     EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"\" ,\"firmwareType\":\"PCI\"}"), response));    
 }
 
@@ -192,7 +183,6 @@ TEST_F(FirmwareUpdateTest, EmptyFirmwareType)
 {
     std::ofstream outfile("/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin");
     if (outfile.is_open()) {
-
         EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\" ,\"firmwareType\":\"\"}"), response));
     }
 }
@@ -201,7 +191,6 @@ TEST_F(FirmwareUpdateTest, InvalidFirmwareType)
 {
     std::ofstream outfile("/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin");
     if (outfile.is_open()) {
-
         EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\" ,\"firmwareType\":\"ABC\"}"), response));
     }
 }
@@ -415,8 +404,6 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_InvalidBinExtension)
 
 TEST_F(FirmwareUpdateTest, UpdateFirmware_PathTraversal)
 {
-    const char* filePath = "/tmp/../etc/passwd";
-    
     EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/../etc/passwd\",\"firmwareType\":\"PCI\"}"), response));
 }
 
