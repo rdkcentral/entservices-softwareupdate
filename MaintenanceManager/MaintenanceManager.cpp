@@ -2417,7 +2417,7 @@ namespace WPEFramework
             {
                 {
                     std::lock_guard<std::mutex> guard(m_callMutex);
-                    MM_LOGINFO("startMaintenance triggered: triggerMode=%s", g_triggerMode.c_str());
+                    MM_LOGINFO("startMaintenance triggered with %s TriggerMode", g_triggerMode.empty()?"EMPTY":g_triggerMode.c_str());
                 }
                 
                 g_task_status = 0;
