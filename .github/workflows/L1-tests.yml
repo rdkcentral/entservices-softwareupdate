@@ -465,7 +465,7 @@ jobs:
           -DUSE_THUNDER_R4=ON
           -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
           -DPLUGIN_FIRMWAREUPDATE=ON
-          -DPLUGIN_MAINTENANCEMANAGER=ON
+          -DPLUGIN_MAINTENANCEMANAGER=OFF
           -DPLUGIN_PACKAGER=ON
           &&
           cmake --build build/entservices-softwareupdate -j8
