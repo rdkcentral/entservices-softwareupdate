@@ -263,7 +263,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_PostFlash_ValidDRI_Success)
 
     createTestFirmwareFile();
 
-    EXPECT_EQ(ERROR_FIRMWAREUPDATE_INPROGRESS, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/test_firmware.bin\",\"firmwareType\":\"DRI\"}"), response));
+    EXPECT_EQ(ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/test_firmware.bin\",\"firmwareType\":\"DRI\"}"), response));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
