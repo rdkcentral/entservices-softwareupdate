@@ -1289,7 +1289,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_PostFlash_RebootFlagCreation)
         .Times(::testing::AtLeast(1))
         .WillRepeatedly(::testing::Invoke(
             [](const char* pathname, const char* mode) -> FILE* {
-                return __real_fopen(pathname, mode);
+                return fopen(pathname, mode);
             }));
 
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\",\"firmwareType\":\"PCI\"}"), response));
@@ -1327,7 +1327,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_PostFlash_CDLFlashedFileName)
     EXPECT_CALL(*p_wrapsImplMock, fopen(::testing::StrEq("/opt/cdl_flashed_file_name"), ::testing::_))
         .WillOnce(::testing::Invoke(
             [](const char* pathname, const char* mode) -> FILE* {
-                return __real_fopen(pathname, mode);
+                return fopen(pathname, mode);
             }));
 
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\",\"firmwareType\":\"PCI\"}"), response));
@@ -1427,7 +1427,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_PostFlash_FileCreationFailure)
         .WillOnce(::testing::Return(nullptr))
         .WillRepeatedly(::testing::Invoke(
             [](const char* pathname, const char* mode) -> FILE* {
-                return __real_fopen(pathname, mode);
+                return fopen(pathname, mode);
             }));
 
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\",\"firmwareType\":\"PCI\"}"), response));
