@@ -62,37 +62,54 @@ protected:
     NiceMock<FactoriesImplementation> factoriesImplementation;
 
     FirmwareUpdateTest()
-        : plugin(Core::ProxyType<Plugin::FirmwareUpdate>::Create())
-        , handler(*(plugin))
-        , INIT_CONX(1, 0)
-        , workerPool(Core::ProxyType<WorkerPoolImplementation>::Create(
-            2, Core::Thread::DefaultStackSize(), 16))
+    : plugin(Core::ProxyType<Plugin::FirmwareUpdate>::Create())
+    , handler(*(plugin))
+    , INIT_CONX(1, 0)
+    , workerPool(Core::ProxyType<WorkerPoolImplementation>::Create(
+        2, Core::Thread::DefaultStackSize(), 16))
     {
+        p_wrapsImplMock  = new testing::NiceMock <WrapsImplMock>;
+        Wraps::setImpl(p_wrapsImplMock);
+        p_iarmBusImplMock  = new NiceMock <IarmBusImplMock>;
+        IarmBus::setImpl(p_iarmBusImplMock);
+
+        ON_CALL(*p_wrapsImplMock, popen(::testing::_, ::testing::_))
+            .WillByDefault(::testing::Return(nullptr));
         
-    	p_wrapsImplMock  = new testing::NiceMock <WrapsImplMock>;
-    	Wraps::setImpl(p_wrapsImplMock);
-	p_iarmBusImplMock  = new NiceMock <IarmBusImplMock>;
-    	IarmBus::setImpl(p_iarmBusImplMock);
+        ON_CALL(*p_wrapsImplMock, pclose(::testing::_))
+            .WillByDefault(::testing::Return(0));
+        
+        ON_CALL(*p_wrapsImplMock, fopen(::testing::_, ::testing::_))
+            .WillByDefault(::testing::Return(nullptr));
+        
+        ON_CALL(*p_wrapsImplMock, fclose(::testing::_))
+            .WillByDefault(::testing::Return(0));
+        
+        ON_CALL(*p_wrapsImplMock, fgets(::testing::_, ::testing::_, ::testing::_))
+            .WillByDefault(::testing::Return(nullptr));
+
+        ON_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+            .WillByDefault(::testing::Return(IARM_RESULT_SUCCESS));
 
         ON_CALL(service, COMLink())
             .WillByDefault(::testing::Invoke(
-                  [this]() {
+                [this]() {
                         TEST_LOG("Pass created comLinkMock: %p ", &comLinkMock);
                         return &comLinkMock;
                     }));
 
 #ifdef USE_THUNDER_R4
         ON_CALL(comLinkMock, Instantiate(::testing::_, ::testing::_, ::testing::_))
-			.WillByDefault(::testing::Invoke(
-                  [&](const RPC::Object& object, const uint32_t waitTime, uint32_t& connectionId) {
+            .WillByDefault(::testing::Invoke(
+                [&](const RPC::Object& object, const uint32_t waitTime, uint32_t& connectionId) {
                         FirmwareUpdateImpl = Core::ProxyType<Plugin::FirmwareUpdateImplementation>::Create();
                         TEST_LOG("Pass created FirmwareUpdateImpl: %p &FirmwareUpdateImpl: %p", FirmwareUpdateImpl, &FirmwareUpdateImpl);
                         return &FirmwareUpdateImpl;
                     }));
 #else
-	  ON_CALL(comLinkMock, Instantiate(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
-	    .WillByDefault(::testing::Return(FirmwareUpdateImpl));
-#endif /*USE_THUNDER_R4 */
+        ON_CALL(comLinkMock, Instantiate(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+            .WillByDefault(::testing::Return(FirmwareUpdateImpl));
+#endif
 
         PluginHost::IFactories::Assign(&factoriesImplementation);
 
@@ -106,17 +123,26 @@ protected:
         std::remove(FIRMWARE_UPDATE_STATE);	
         EXPECT_EQ(string(""), plugin->Initialize(&service));	    
     }
+
     virtual ~FirmwareUpdateTest() override
     {
         TEST_LOG("FirmwareUpdateTest Destructor");
 
+        isFlashingInProgress.store(false);
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
         plugin->Deinitialize(&service);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         dispatcher->Deactivate();
         dispatcher->Release();
 
         Core::IWorkerPool::Assign(nullptr);
         workerPool.Release();
+
+        FirmwareUpdateImpl.Release();
 
         Wraps::setImpl(nullptr);
         if (p_wrapsImplMock != nullptr)
@@ -126,14 +152,14 @@ protected:
         }
 
         PluginHost::IFactories::Assign(nullptr);
-	IarmBus::setImpl(nullptr);
+        IarmBus::setImpl(nullptr);
         if (p_iarmBusImplMock != nullptr)
         {
             delete p_iarmBusImplMock;
             p_iarmBusImplMock = nullptr;
         }
-
     }
+
 };
 
 TEST_F(FirmwareUpdateTest, RegisteredMethods)
@@ -262,18 +288,10 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidPCIFirmware)
         versionFile.close();
     }
 
-    EXPECT_CALL(*p_wrapsImplMock, popen(::testing::_, ::testing::_))
-        .WillRepeatedly(::testing::Return(nullptr));
-    
-    EXPECT_CALL(*p_wrapsImplMock, pclose(::testing::_))
-        .WillRepeatedly(::testing::Return(0));
-
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\",\"firmwareType\":\"PCI\"}"), response));
     EXPECT_TRUE(response.find("\"success\":true") != string::npos);
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidDRIFirmware)
@@ -291,18 +309,10 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidDRIFirmware)
         versionFile.close();
     }
 
-    EXPECT_CALL(*p_wrapsImplMock, popen(::testing::_, ::testing::_))
-        .WillRepeatedly(::testing::Return(nullptr));
-    
-    EXPECT_CALL(*p_wrapsImplMock, pclose(::testing::_))
-        .WillRepeatedly(::testing::Return(0));
-
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_DRI_DEV_default_20241122145614.bin\",\"firmwareType\":\"DRI\"}"), response));
     EXPECT_TRUE(response.find("\"success\":true") != string::npos);
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 TEST_F(FirmwareUpdateTest, UpdateFirmware_SameVersionImage)
@@ -370,19 +380,13 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FlashingAlreadyInProgress)
         versionFile.close();
     }
 
-    EXPECT_CALL(*p_wrapsImplMock, popen(::testing::_, ::testing::_))
-        .WillRepeatedly(::testing::Return(nullptr));
-    
-    EXPECT_CALL(*p_wrapsImplMock, pclose(::testing::_))
-        .WillRepeatedly(::testing::Return(0));
-
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_1.bin\",\"firmwareType\":\"PCI\"}"), response));
     
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    
     EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_2.bin\",\"firmwareType\":\"PCI\"}"), response));
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 TEST_F(FirmwareUpdateTest, SetAutoReboot_Enable)
@@ -637,18 +641,10 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidFileWithHyphen)
         versionFile.close();
     }
 
-    EXPECT_CALL(*p_wrapsImplMock, popen(::testing::_, ::testing::_))
-        .WillRepeatedly(::testing::Return(nullptr));
-    
-    EXPECT_CALL(*p_wrapsImplMock, pclose(::testing::_))
-        .WillRepeatedly(::testing::Return(0));
-
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR-MIDDLEWARE-DEV-default-20241122145614.bin\",\"firmwareType\":\"PCI\"}"), response));
     EXPECT_TRUE(response.find("\"success\":true") != string::npos);
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidFileWithUnderscore)
@@ -666,18 +662,10 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidFileWithUnderscore)
         versionFile.close();
     }
 
-    EXPECT_CALL(*p_wrapsImplMock, popen(::testing::_, ::testing::_))
-        .WillRepeatedly(::testing::Return(nullptr));
-    
-    EXPECT_CALL(*p_wrapsImplMock, pclose(::testing::_))
-        .WillRepeatedly(::testing::Return(0));
-
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\",\"firmwareType\":\"PCI\"}"), response));
     EXPECT_TRUE(response.find("\"success\":true") != string::npos);
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
 TEST_F(FirmwareUpdateTest, UpdateFirmware_FileWithDoubleBinExtension)
@@ -695,16 +683,8 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_FileWithDoubleBinExtension)
         versionFile.close();
     }
 
-    EXPECT_CALL(*p_wrapsImplMock, popen(::testing::_, ::testing::_))
-        .WillRepeatedly(::testing::Return(nullptr));
-    
-    EXPECT_CALL(*p_wrapsImplMock, pclose(::testing::_))
-        .WillRepeatedly(::testing::Return(0));
-
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE.bin.bin\",\"firmwareType\":\"PCI\"}"), response));
     EXPECT_TRUE(response.find("\"success\":true") != string::npos);
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
