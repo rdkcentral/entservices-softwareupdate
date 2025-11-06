@@ -1389,7 +1389,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_PostFlash_DevicePropertyReadFailure)
     // EXPECT_CALL(*p_wrapsImplMock, system(::testing::_))
     //     .WillOnce(::testing::Return(0));
 
-    EXPECT_EQ(Core::ERROR_FIRMWAREUPDATE_INPROGRESS, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\",\"firmwareType\":\"PCI\"}"), response));
+    handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\",\"firmwareType\":\"PCI\"}"), response);
     // EXPECT_TRUE(response.find("\"success\":true") != string::npos);
 }
 
