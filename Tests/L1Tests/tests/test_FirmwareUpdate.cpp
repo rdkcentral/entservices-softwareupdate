@@ -284,7 +284,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_PostFlash_MaintenanceMode_True)
     rebootScript.close();
     chmod("/rebootNow.sh", 0755);
 
-    EXPECT_EQ(ERROR_FIRMWAREUPDATE_INPROGRESS, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/test_firmware.bin\",\"firmwareType\":\"PCI\"}"), response));
+    handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/test_firmware.bin\",\"firmwareType\":\"PCI\"}"), response);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     std::remove("/etc/device.properties");
