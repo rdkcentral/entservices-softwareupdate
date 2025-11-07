@@ -186,7 +186,9 @@ namespace WPEFramework
             typedef Core::JSON::ArrayType<JString> JStringArray;
             typedef Core::JSON::Boolean JBool;
 
+            // TODO: make them all static as they are shared across all instances (It is a singleton anyway)
             string g_currentMode;
+            string g_triggerMode;
             string g_is_critical_maintenance;
             string g_is_reboot_pending;
             string g_lastSuccessful_maint_time;
