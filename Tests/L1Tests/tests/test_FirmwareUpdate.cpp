@@ -93,6 +93,7 @@ protected:
     string response;    
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
     IarmBusImplMock  *p_iarmBusImplMock   = nullptr;
+    RfcApiImplMock  *p_rfcApiImplMock   = nullptr;
     Core::ProxyType<Plugin::FirmwareUpdateImplementation> FirmwareUpdateImpl;
     NiceMock<COMLinkMock> comLinkMock;
     NiceMock<ServiceMock> service;
