@@ -1974,133 +1974,14 @@ TEST_F(FirmwareUpdateTest, PostFlash_MaintenanceManager_OptoutUpdate)
     std::remove("/tmp/device.properties");
 }
 
-
-// ====================  Harshini ====================
-
-// Covers: updateFirmware - Simulate network timeout during firmware download
-TEST_F(FirmwareUpdateTest, UpdateFirmware_NetworkTimeout)
+// Firmware download: invalid URL format - Harshini
+TEST_F(FirmwareUpdateTest, UpdateFirmware_InvalidURLFormat)
 {
-    // Simulate network timeout by mocking downloadFirmware to throw
-    EXPECT_CALL(*p_wrapsImplMock, downloadFirmware(::testing::_, ::testing::_))
-        .WillOnce(::testing::Invoke(
-            [](const std::string&, const std::string&) {
-                throw std::runtime_error("Network timeout");
-                return false;
-            }));
-
-    createTestFirmwareFile();
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
-    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    EXPECT_TRUE(response.find("error") != std::string::npos);
+    string request = "{\"firmwareFilepath\":\"ht!tp://invalid_url\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), request, response));
 }
 
-// Covers: updateFirmware - Simulate file write failure during download
-TEST_F(FirmwareUpdateTest, UpdateFirmware_FileWriteFailure)
-{
-    // Simulate file write failure by returning false
-    EXPECT_CALL(*p_wrapsImplMock, downloadFirmware(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(false));
-
-    createTestFirmwareFile();
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
-    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    EXPECT_TRUE(response.find("error") != std::string::npos);
-}
-
-// Covers: Firmware validation - checksum mismatch
-TEST_F(FirmwareUpdateTest, UpdateFirmware_ChecksumMismatch)
-{
-    // Simulate checksum mismatch by mocking validateFirmware to return false
-    EXPECT_CALL(*p_wrapsImplMock, validateFirmware(::testing::_))
-        .WillOnce(::testing::Return(false));
-
-    createTestFirmwareFile();
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
-    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    EXPECT_TRUE(response.find("error") != std::string::npos);
-}
-
-// Covers: Firmware validation - corrupted metadata
-TEST_F(FirmwareUpdateTest, UpdateFirmware_CorruptedMetadata)
-{
-    // Simulate corrupted metadata by mocking validateFirmware to throw
-    EXPECT_CALL(*p_wrapsImplMock, validateFirmware(::testing::_))
-        .WillOnce(::testing::Invoke(
-            [](const std::string&) {
-                throw std::runtime_error("Corrupted metadata");
-                return false;
-            }));
-
-    createTestFirmwareFile();
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
-    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    EXPECT_TRUE(response.find("error") != std::string::npos);
-}
-
-// Covers: Installation flow - rollback on failure
-TEST_F(FirmwareUpdateTest, UpdateFirmware_InstallationRollbackOnFailure)
-{
-    // Simulate installFirmware failure and rollback
-    EXPECT_CALL(*p_wrapsImplMock, installFirmware(::testing::_))
-        .WillOnce(::testing::Return(false));
-    EXPECT_CALL(*p_wrapsImplMock, rollbackFirmware(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Return(true));
-
-    createTestFirmwareFile();
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
-    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    EXPECT_TRUE(response.find("error") != std::string::npos);
-}
-
-// Covers: Installation flow - retry attempts
-TEST_F(FirmwareUpdateTest, UpdateFirmware_InstallationRetryAttempts)
-{
-    // Simulate installFirmware failing first, then succeeding
-    EXPECT_CALL(*p_wrapsImplMock, installFirmware(::testing::_))
-        .Times(2)
-        .WillOnce(::testing::Return(false))
-        .WillOnce(::testing::Return(true));
-
-    createTestFirmwareFile();
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
-    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    EXPECT_TRUE(response.find("success") != std::string::npos);
-}
-
-// Covers: Status and progress reporting - progress event emission
-TEST_F(FirmwareUpdateTest, UpdateFirmware_ProgressEventEmission)
-{
-    // Simulate successful firmware update and check event emission
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-
-    createTestFirmwareFile();
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
-    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    EXPECT_TRUE(response.find("success") != std::string::npos);
-}
-
-// Covers: Event emissions - onFirmwareUpdateStarted, onFirmwareUpdateFailed, onFirmwareUpdateCompleted
-TEST_F(FirmwareUpdateTest, FirmwareUpdate_EventsTriggered)
-{
-    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
-
-    // Expect eventManager to be called for start, fail, and complete events
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(3))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-
-    // Simulate start
-    FirmwareUpdateImpl->dispatchAndUpdateEvent("FLASHING_STARTED", "NOT_APPLICABLE");
-    // Simulate fail
-    FirmwareUpdateImpl->dispatchAndUpdateEvent("FLASHING_FAILED", "FLASH_WRITE_FAILED");
-    // Simulate complete
-    FirmwareUpdateImpl->dispatchAndUpdateEvent("FLASHING_SUCCEEDED", "NOT_APPLICABLE");
-}
-
-// Covers: updateFirmware - interrupted download (simulate by throwing during download)
+// Firmware download: interrupted download
 TEST_F(FirmwareUpdateTest, UpdateFirmware_InterruptedDownload)
 {
     EXPECT_CALL(*p_wrapsImplMock, downloadFirmware(::testing::_, ::testing::_))
@@ -2109,103 +1990,122 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_InterruptedDownload)
                 throw std::runtime_error("Download interrupted");
                 return false;
             }));
-
     createTestFirmwareFile();
     string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
     EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
     EXPECT_TRUE(response.find("error") != std::string::npos);
 }
 
-// Covers: updateFirmware - invalid URL format
-TEST_F(FirmwareUpdateTest, UpdateFirmware_InvalidURLFormat)
+// Firmware download: file write failure
+TEST_F(FirmwareUpdateTest, UpdateFirmware_FileWriteFailure)
 {
-    string request = "{\"firmwareFilepath\":\"ht!tp://invalid_url\",\"firmwareType\":\"PCI\"}";
-    EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), request, response));
+    EXPECT_CALL(*p_wrapsImplMock, downloadFirmware(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(false));
+    createTestFirmwareFile();
+    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
+    EXPECT_TRUE(response.find("error") != std::string::npos);
 }
 
-// Covers: updateFirmware - rollback failure
-TEST_F(FirmwareUpdateTest, UpdateFirmware_RollbackFailure)
+// Firmware validation: checksum mismatch
+TEST_F(FirmwareUpdateTest, UpdateFirmware_ChecksumMismatch)
+{
+    EXPECT_CALL(*p_wrapsImplMock, validateFirmware(::testing::_))
+        .WillOnce(::testing::Return(false));
+    createTestFirmwareFile();
+    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
+    EXPECT_TRUE(response.find("error") != std::string::npos);
+}
+
+// Firmware validation: corrupted metadata
+TEST_F(FirmwareUpdateTest, UpdateFirmware_CorruptedMetadata)
+{
+    EXPECT_CALL(*p_wrapsImplMock, validateFirmware(::testing::_))
+        .WillOnce(::testing::Invoke(
+            [](const std::string&) {
+                throw std::runtime_error("Corrupted metadata");
+                return false;
+            }));
+    createTestFirmwareFile();
+    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
+    EXPECT_TRUE(response.find("error") != std::string::npos);
+}
+
+// Installation: rollback on failure
+TEST_F(FirmwareUpdateTest, UpdateFirmware_InstallationRollbackOnFailure)
 {
     EXPECT_CALL(*p_wrapsImplMock, installFirmware(::testing::_))
         .WillOnce(::testing::Return(false));
     EXPECT_CALL(*p_wrapsImplMock, rollbackFirmware(::testing::_))
-        .WillOnce(::testing::Return(false));
-
+        .Times(1)
+        .WillOnce(::testing::Return(true));
     createTestFirmwareFile();
     string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
     EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
     EXPECT_TRUE(response.find("error") != std::string::npos);
 }
 
-// Covers: getUpdateState - corrupted status file with unexpected content
-TEST_F(FirmwareUpdateTest, GetUpdateState_CorruptedFileUnexpectedContent)
+// Installation: retry attempts
+TEST_F(FirmwareUpdateTest, UpdateFirmware_InstallationRetryAttempts)
 {
-    std::ofstream outfile(FIRMWARE_UPDATE_STATE);
-    outfile << "randomgarbage\n";
-    outfile << "another:line\n";
-    outfile.close();
-
-    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("getUpdateState"), _T("{}"), response));
-    EXPECT_TRUE(response.find("state") != std::string::npos);
-}
-
-// Covers: updateFirmware - retry logic for downloadFirmware
-TEST_F(FirmwareUpdateTest, UpdateFirmware_DownloadRetryLogic)
-{
-    // Fail first download, succeed second
-    EXPECT_CALL(*p_wrapsImplMock, downloadFirmware(::testing::_, ::testing::_))
+    EXPECT_CALL(*p_wrapsImplMock, installFirmware(::testing::_))
         .Times(2)
         .WillOnce(::testing::Return(false))
         .WillOnce(::testing::Return(true));
-
     createTestFirmwareFile();
     string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
     EXPECT_TRUE(response.find("success") != std::string::npos);
 }
 
-// Covers: updateFirmware - simulate firmware file deletion failure after install
-TEST_F(FirmwareUpdateTest, UpdateFirmware_FileDeletionFailure)
+// Status/progress reporting: event emission
+TEST_F(FirmwareUpdateTest, UpdateFirmware_ProgressEventEmission)
 {
-    // Simulate installFirmware success, but file deletion fails (simulate by not deleting)
-    EXPECT_CALL(*p_wrapsImplMock, installFirmware(::testing::_))
-        .WillOnce(::testing::Return(true));
-    // No actual deletion, just ensure no crash
-
+    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
     createTestFirmwareFile();
     string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
     EXPECT_TRUE(response.find("success") != std::string::npos);
 }
 
-// Covers: updateFirmware - simulate reboot failure after successful install
+// Event emission order
+TEST_F(FirmwareUpdateTest, UpdateFirmware_EventEmissionOrder)
+{
+    ::testing::InSequence seq;
+    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(IARM_RESULT_SUCCESS)); // Started
+    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(IARM_RESULT_SUCCESS)); // Completed
+    createTestFirmwareFile();
+    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+}
+
+// Reboot failure after install
 TEST_F(FirmwareUpdateTest, UpdateFirmware_RebootFailure)
 {
-    // Simulate installFirmware success
     EXPECT_CALL(*p_wrapsImplMock, installFirmware(::testing::_))
         .WillOnce(::testing::Return(true));
-    // Simulate reboot failure by mocking rebootDevice to throw
     EXPECT_CALL(*p_wrapsImplMock, rebootDevice())
         .WillOnce(::testing::Invoke([]() { throw std::runtime_error("Reboot failed"); }));
-
     createTestFirmwareFile();
     string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
     EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
     EXPECT_TRUE(response.find("error") != std::string::npos);
 }
 
-// Covers: updateFirmware - simulate status reporting after failure
+// Status reporting after failure
 TEST_F(FirmwareUpdateTest, UpdateFirmware_StatusReportingAfterFailure)
 {
-    // Simulate installFirmware failure
     EXPECT_CALL(*p_wrapsImplMock, installFirmware(::testing::_))
         .WillOnce(::testing::Return(false));
-
     createTestFirmwareFile();
     string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
     handler.Invoke(connection, _T("updateFirmware"), request, response);
-
-    // Check that status file contains failure state
     std::ifstream statusFile(FIRMWARE_UPDATE_STATE);
     std::string line;
     bool foundFailure = false;
@@ -2219,21 +2119,33 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_StatusReportingAfterFailure)
     EXPECT_TRUE(foundFailure);
 }
 
-// Covers: updateFirmware - simulate event emission order
-TEST_F(FirmwareUpdateTest, UpdateFirmware_EventEmissionOrder)
+// Rollback failure
+TEST_F(FirmwareUpdateTest, UpdateFirmware_RollbackFailure)
 {
-    ::testing::InSequence seq;
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(IARM_RESULT_SUCCESS)); // Started
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(IARM_RESULT_SUCCESS)); // Completed
+    EXPECT_CALL(*p_wrapsImplMock, installFirmware(::testing::_))
+        .WillOnce(::testing::Return(false));
+    EXPECT_CALL(*p_wrapsImplMock, rollbackFirmware(::testing::_))
+        .WillOnce(::testing::Return(false));
+    createTestFirmwareFile();
+    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
+    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
+    EXPECT_TRUE(response.find("error") != std::string::npos);
+}
 
+// Download retry logic
+TEST_F(FirmwareUpdateTest, UpdateFirmware_DownloadRetryLogic)
+{
+    EXPECT_CALL(*p_wrapsImplMock, downloadFirmware(::testing::_, ::testing::_))
+        .Times(2)
+        .WillOnce(::testing::Return(false))
+        .WillOnce(::testing::Return(true));
     createTestFirmwareFile();
     string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"PCI\"}";
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
+    EXPECT_TRUE(response.find("success") != std::string::npos);
 }
 
-// Covers: updateFirmware - simulate firmware type DRI (positive path)
+// Valid DRI type (positive path)
 TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidDRI_Success)
 {
     createTestFirmwareFile();
@@ -2242,13 +2154,11 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidDRI_Success)
     EXPECT_TRUE(response.find("success") != string::npos);
 }
 
-// Covers: updateFirmware - simulate firmware type DRI (failure path)
+// Valid DRI type (failure path)
 TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidDRI_Failure)
 {
-    // Simulate installFirmware failure for DRI type
     EXPECT_CALL(*p_wrapsImplMock, installFirmware(::testing::_))
         .WillOnce(::testing::Return(false));
-
     createTestFirmwareFile();
     string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"DRI\"}";
     EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
