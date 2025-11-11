@@ -112,7 +112,9 @@ protected:
         
     	p_wrapsImplMock  = new testing::NiceMock <WrapsImplMock>;
     	Wraps::setImpl(p_wrapsImplMock);
-	p_iarmBusImplMock  = new NiceMock <IarmBusImplMock>;
+	    p_iarmBusImplMock  = new NiceMock <IarmBusImplMock>;
+		p_rfcApiImplMock = new NiceMock <RfcApiImplMock>;
+		RfcApi::setImpl(p_rfcApiImplMock);
     	IarmBus::setImpl(p_iarmBusImplMock);
 
         ON_CALL(service, COMLink())
@@ -184,6 +186,12 @@ protected:
         {
             delete p_wrapsImplMock;
             p_wrapsImplMock = nullptr;
+        }
+		RfcApi::setImpl(nullptr);
+        if (p_rfcApiImplMock != nullptr)
+        {
+            delete p_rfcApiImplMock;
+            p_rfcApiImplMock = nullptr;
         }
 
         PluginHost::IFactories::Assign(nullptr);
