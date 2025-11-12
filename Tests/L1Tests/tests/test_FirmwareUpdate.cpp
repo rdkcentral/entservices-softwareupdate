@@ -2925,3 +2925,72 @@ TEST_F(FirmwareUpdateTest, SpecialCharacters_HandledCorrectly)
     // Should handle special characters gracefully
     EXPECT_TRUE(result >= 0);
 }
+
+// Notification Tests
+TEST_F(FirmwareUpdateTest, Notification_Register_Success)
+{
+    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
+    Core::hresult result = FirmwareUpdateImpl->Register(notificationMock.get());
+    EXPECT_EQ(Core::ERROR_NONE, result);
+}
+
+TEST_F(FirmwareUpdateTest, Notification_Unregister_Success)
+{
+    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
+    Core::hresult result1 = FirmwareUpdateImpl->Register(notificationMock.get());
+    EXPECT_EQ(Core::ERROR_NONE, result1);
+    
+    Core::hresult result2 = FirmwareUpdateImpl->Unregister(notificationMock.get());
+    EXPECT_EQ(Core::ERROR_NONE, result2);
+}
+
+// Notification Tests
+TEST_F(FirmwareUpdateTest, Notification_Register_Success)
+{
+    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
+    Core::hresult result = FirmwareUpdateImpl->Register(notificationMock.get());
+    EXPECT_EQ(Core::ERROR_NONE, result);
+}
+
+TEST_F(FirmwareUpdateTest, Notification_Unregister_Success)
+{
+    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
+    Core::hresult result1 = FirmwareUpdateImpl->Register(notificationMock.get());
+    EXPECT_EQ(Core::ERROR_NONE, result1);
+    
+    Core::hresult result2 = FirmwareUpdateImpl->Unregister(notificationMock.get());
+    EXPECT_EQ(Core::ERROR_NONE, result2);
+}
+
+TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_ValidFile)
+{
+    // Create test optout file
+    const char* testOptoutFile = "/tmp/test_optout.conf";
+    std::ofstream optoutFile(testOptoutFile);
+    optoutFile << "softwareoptout=DISABLED\n";
+    optoutFile << "other_setting=value\n";
+    optoutFile.close();
+    
+    bool result = updateOPTOUTFile(testOptoutFile);
+    // Result depends on file operations, ensure no crash
+    
+    // Clean up
+    safeRemoveFile(testOptoutFile);
+    safeRemoveFile("/tmp/mm_record_update.conf");
+}
+
+TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_NullParameter)
+{
+    bool result = updateOPTOUTFile(nullptr);
+    EXPECT_FALSE(result);
+}
+
+TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_NonExistentFile)
+{
+    bool result = updateOPTOUTFile("/tmp/nonexistent_optout.conf");
+    // Should handle gracefully and create update file with enforce optout
+    
+    // Clean up
+    safeRemoveFile("/tmp/mm_record_update.conf");
+}
+
