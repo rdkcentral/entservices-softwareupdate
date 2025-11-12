@@ -1767,466 +1767,6 @@ TEST_F(FirmwareUpdateTest, PostFlash_MaintenanceManager_OptoutUpdate)
     safeRemoveFile("/tmp/device.properties");
 }
 
-
-// Additional PostFlash Coverage Tests for lines 220-330
-TEST_F(FirmwareUpdateTest, PostFlash_BroadbandDevice_MaintenanceMode)
-{
-    // Mock device.properties for broadband device
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=broadband\n";
-    propFile << "DEVICE_NAME=TestBroadband\n";
-    propFile.close();
-    
-    int result = FirmwareUpdateImpl->postFlash("true", "firmware.bin", 0, "true", "user");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, PostFlash_NonBroadbandDevice_MaintenanceMode)
-{
-    // Mock device.properties for non-broadband device
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestDevice\n";
-    propFile.close();
-    
-    int result = FirmwareUpdateImpl->postFlash("true", "firmware.bin", 0, "true", "user");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, PostFlash_PDRIUpgrade_NoReboot)
-{
-    // Mock device.properties
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestDevice\n";
-    propFile.close();
-    
-    // Test PDRI upgrade (upgrade_type = 1) - should not require reboot
-    int result = FirmwareUpdateImpl->postFlash("false", "firmware.bin", 1, "true", "user");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, PostFlash_MaintenanceMode_CriticalReboot)
-{
-    // Mock device.properties for PLATCO device
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=PLATCO123\n";
-    propFile.close();
-    
-    // Create rebootNow.sh file
-    std::ofstream rebootScript("/rebootNow.sh");
-    rebootScript << "#!/bin/bash\necho 'Rebooting'\n";
-    rebootScript.close();
-    system("chmod +x /rebootNow.sh");
-    
-    int result = FirmwareUpdateImpl->postFlash("true", "firmware.bin", 0, "true", "user");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-    std::remove("/rebootNow.sh");
-}
-
-TEST_F(FirmwareUpdateTest, PostFlash_NoMaintenanceMode_DirectReboot)
-{
-    // Mock device.properties
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestDevice\n";
-    propFile.close();
-    
-    // Create rebootNow.sh file
-    std::ofstream rebootScript("/rebootNow.sh");
-    rebootScript << "#!/bin/bash\necho 'Rebooting'\n";
-    rebootScript.close();
-    system("chmod +x /rebootNow.sh");
-    
-    int result = FirmwareUpdateImpl->postFlash("false", "firmware.bin", 0, "true", "user");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-    std::remove("/rebootNow.sh");
-}
-
-TEST_F(FirmwareUpdateTest, PostFlash_NoRebootFlag)
-{
-    // Mock device.properties
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestDevice\n";
-    propFile.close();
-    
-    // Test with reboot_flag = "false" - should not reboot
-    int result = FirmwareUpdateImpl->postFlash("false", "firmware.bin", 0, "false", "user");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, PostFlash_DevicePropertyFailure)
-{
-    // Remove device.properties to simulate failure
-    std::remove("/tmp/device.properties");
-    
-    // Should fail early due to missing device properties
-    int result = FirmwareUpdateImpl->postFlash("false", "firmware.bin", 0, "true", "user");
-    EXPECT_EQ(-1, result);
-}
-
-TEST_F(FirmwareUpdateTest, PostFlash_MissingRebootScript)
-{
-    // Mock device.properties
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestDevice\n";
-    propFile.close();
-    
-    // Ensure rebootNow.sh doesn't exist
-    std::remove("/rebootNow.sh");
-    
-    int result = FirmwareUpdateImpl->postFlash("false", "firmware.bin", 0, "true", "user");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-// Additional FlashImage Coverage Tests for lines 482-526
-TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_USBProtocol)
-{
-    // Mock device.properties for media client
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestMediaClient\n";
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-    
-    // Test USB protocol with media client device
-    int result = FirmwareUpdateImpl->flashImage("", TEST_FIRMWARE_PATH.c_str(), "true", "usb", 0, "false", "user", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_MaintenanceModeCritical)
-{
-    // Mock device.properties for media client
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestMediaClient\n";
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(2))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-    
-    // Test maintenance mode with critical update (maint=true, reboot=true)
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "true", "user", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_DeviceInitiated)
-{
-    // Mock device.properties for media client
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestMediaClient\n";
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-    
-    // Test device initiated upgrade
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "device", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_FileCleanup)
-{
-    // Mock device.properties for media client
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestMediaClient\n";
-    propFile.close();
-    
-    // Create firmware file that should be deleted after flashing
-    createTestFirmwareFile();
-    EXPECT_TRUE(Utils::fileExists(TEST_FIRMWARE_PATH.c_str()));
-    
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-    
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_NonUSBProtocol)
-{
-    // Mock device.properties for media client
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestMediaClient\n";
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-    
-    // Test non-USB protocol (HTTP) - should call postFlash
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_NonMediaClient_DownloadComplete)
-{
-    // Mock device.properties for non-media client
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=broadband\n";
-    propFile << "DEVICE_NAME=TestBroadband\n";
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    // Test non-media client device - should go to "Download complete" branch
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_FlashingFailure)
-{
-    // Mock device.properties
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestMediaClient\n";
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-// Additional Edge Case Coverage Tests
-TEST_F(FirmwareUpdateTest, FlashImage_MissingImageFlasherScript)
-{
-    // Mock device.properties
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestMediaClient\n";
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    // Remove imageFlasher.sh to test missing script scenario
-    std::remove("/lib/rdk/imageFlasher.sh");
-    
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_USBProtocol_PathExtraction)
-{
-    // Mock device.properties
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestMediaClient\n";
-    propFile.close();
-    
-    // Create test file in specific path to test USB path extraction
-    std::string usbPath = "/mnt/usb/firmware.bin";
-    std::ofstream usbFile(usbPath);
-    usbFile << "test firmware content";
-    usbFile.close();
-    
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-    
-    int result = FirmwareUpdateImpl->flashImage("", usbPath.c_str(), "true", "usb", 0, "false", "device", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-    std::remove(usbPath.c_str());
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_PDRIUpgrade_Type)
-{
-    // Mock device.properties
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestMediaClient\n";
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-    
-    // Test PDRI upgrade type (upgrade_type = 1)
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 1, "false", "user", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_NonMediaClient_FlashingFailed)
-{
-    // Mock device.properties for non-media client
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=broadband\n";
-    propFile << "DEVICE_NAME=TestBroadband\n";
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "device", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_DeviceInitiated_CPUArchFailure)
-{
-    // Mock device.properties without CPU_ARCH
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestMediaClient\n";
-    // Intentionally omit CPU_ARCH to test failure case
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-    
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "device", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_NonUSB_DIFWPathFailure)
-{
-    // Mock device.properties without DIFW_PATH
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestMediaClient\n";
-    propFile << "CPU_ARCH=arm\n";
-    // Intentionally omit DIFW_PATH to test failure case
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-    
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "device", "false");
-    EXPECT_GE(result, -1);
-    
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_EmptyServerURL_Parameter)
-{
-    createTestFirmwareFile();
-    
-    // Test with empty server URL - should use "empty" as default
-    int result = FirmwareUpdateImpl->flashImage("", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
-    EXPECT_GE(result, -1);
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_NullCodebigParameter)
-{
-    createTestFirmwareFile();
-    
-    // Test with null codebig parameter - should use "false" as default
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", nullptr);
-    EXPECT_GE(result, -1);
-}
-
-TEST_F(FirmwareUpdateTest, PostFlash_FileCreationSucccess)
-{
-    // Mock device.properties
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestDevice\n";
-    propFile.close();
-    
-    // Clean up any existing files
-    std::remove("/tmp/fw_preparing_to_reboot");
-    std::remove("/opt/cdl_flashed_file_name");
-    
-    int result = FirmwareUpdateImpl->postFlash("false", "firmware.bin", 0, "false", "user");
-    EXPECT_GE(result, -1);
-    
-    // Clean up created files
-    std::remove("/tmp/fw_preparing_to_reboot");
-    std::remove("/opt/cdl_flashed_file_name");
-    std::remove("/tmp/device.properties");
-}
-
-TEST_F(FirmwareUpdateTest, PostFlash_MaintenanceManager_OptoutUpdate)
-{
-    // Mock device.properties
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestDevice\n";
-    propFile.close();
-    
-    // Create rebootNow.sh and maintenance config files
-    std::ofstream rebootScript("/rebootNow.sh");
-    rebootScript << "#!/bin/bash\necho 'Rebooting'\n";
-    rebootScript.close();
-    system("chmod +x /rebootNow.sh");
-    
-    std::ofstream maintConfig("/tmp/maintenance_mgr_record.conf");
-    maintConfig << "softwareoptout=DISABLED\n";
-    maintConfig.close();
-    
-    int result = FirmwareUpdateImpl->postFlash("true", "firmware.bin", 0, "true", "user");
-    EXPECT_GE(result, -1);
-    
-    // Clean up
-    std::remove("/rebootNow.sh");
-    std::remove("/tmp/maintenance_mgr_record.conf");
-    std::remove("/tmp/device.properties");
-}
-
 // Targeted tests for uncovered lines in postFlash (220-330) and flashImage (482-526)
 
 // PostFlash specific coverage tests for lines 220-330
@@ -2241,13 +1781,13 @@ TEST_F(FirmwareUpdateTest, PostFlash_DeviceType_GetDeviceName_Failure)
     int result = FirmwareUpdateImpl->postFlash("false", "firmware.bin", 0, "true", "user");
     EXPECT_EQ(-1, result); // Should return -1 due to DEVICE_NAME failure
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, PostFlash_DeviceType_GetDeviceType_Failure) 
 {
     // Remove device.properties completely to trigger DEVICE_TYPE failure on line 222
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
     
     int result = FirmwareUpdateImpl->postFlash("false", "firmware.bin", 0, "true", "user");
     EXPECT_EQ(-1, result); // Should return -1 due to DEVICE_TYPE failure
@@ -2264,7 +1804,7 @@ TEST_F(FirmwareUpdateTest, PostFlash_BroadbandDevice_SkipMaintenanceEvent)
     int result = FirmwareUpdateImpl->postFlash("true", "firmware.bin", 0, "true", "user");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, PostFlash_FwPreparingToReboot_FileExists)
@@ -2283,8 +1823,8 @@ TEST_F(FirmwareUpdateTest, PostFlash_FwPreparingToReboot_FileExists)
     int result = FirmwareUpdateImpl->postFlash("false", "firmware.bin", 0, "false", "user");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/fw_preparing_to_reboot");
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/fw_preparing_to_reboot");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, PostFlash_CdlFlashedFileName_WriteFailure)
@@ -2296,13 +1836,13 @@ TEST_F(FirmwareUpdateTest, PostFlash_CdlFlashedFileName_WriteFailure)
     propFile.close();
     
     // Create a directory with same name to cause fopen to fail
-    system("mkdir -p /opt/cdl_flashed_file_name");
+    safeSystemCall("mkdir -p /opt/cdl_flashed_file_name");
     
     int result = FirmwareUpdateImpl->postFlash("false", "firmware.bin", 0, "false", "user");
     EXPECT_GE(result, -1);
     
-    system("rm -rf /opt/cdl_flashed_file_name");
-    std::remove("/tmp/device.properties");
+    safeSystemCall("rm -rf /opt/cdl_flashed_file_name");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, PostFlash_MaintenanceMode_NoRebootScript)
@@ -2314,12 +1854,12 @@ TEST_F(FirmwareUpdateTest, PostFlash_MaintenanceMode_NoRebootScript)
     propFile.close();
     
     // Ensure rebootNow.sh doesn't exist
-    std::remove("/rebootNow.sh");
+    safeRemoveFile("/rebootNow.sh");
     
     int result = FirmwareUpdateImpl->postFlash("true", "firmware.bin", 0, "true", "user");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, PostFlash_PLATCO_CriticalRebootPath)
@@ -2333,14 +1873,14 @@ TEST_F(FirmwareUpdateTest, PostFlash_PLATCO_CriticalRebootPath)
     std::ofstream rebootScript("/rebootNow.sh");
     rebootScript << "#!/bin/bash\necho 'Rebooting'\n";
     rebootScript.close();
-    system("chmod +x /rebootNow.sh");
+    safeSystemCall("chmod +x /rebootNow.sh");
     
     // This will trigger the PLATCO critical reboot path (lines 303-309)
     int result = FirmwareUpdateImpl->postFlash("true", "firmware.bin", 0, "true", "user");
     EXPECT_GE(result, -1);
     
-    std::remove("/rebootNow.sh");
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/rebootNow.sh");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, PostFlash_NonMaintenance_RebootWithNotification)
@@ -2354,14 +1894,14 @@ TEST_F(FirmwareUpdateTest, PostFlash_NonMaintenance_RebootWithNotification)
     std::ofstream rebootScript("/rebootNow.sh");
     rebootScript << "#!/bin/bash\necho 'Rebooting'\n";
     rebootScript.close();
-    system("chmod +x /rebootNow.sh");
+    safeSystemCall("chmod +x /rebootNow.sh");
     
     // Mock notification enabled
     int result = FirmwareUpdateImpl->postFlash("false", "firmware.bin", 0, "true", "user");
     EXPECT_GE(result, -1);
     
-    std::remove("/rebootNow.sh");
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/rebootNow.sh");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 // FlashImage specific coverage tests for lines 482-526
@@ -2383,7 +1923,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_FlashSuccess_CriticalUpdate)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "true", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_FileExists_DeleteFile)
@@ -2403,7 +1943,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_FileExists_DeleteFile)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_USB_CdlFlashedFile)
@@ -2424,8 +1964,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_USB_CdlFlashedFile)
     int result = FirmwareUpdateImpl->flashImage("", TEST_FIRMWARE_PATH.c_str(), "true", "usb", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/opt/cdl_flashed_file_name");
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/opt/cdl_flashed_file_name");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_NonUSB_PostFlashCall)
@@ -2442,7 +1982,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_NonUSB_PostFlashCall)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_DeviceInitiated_UpdateUpgradeFlag)
@@ -2463,7 +2003,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_DeviceInitiated_UpdateUpgradeF
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "device", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_NonMediaClient_DownloadComplete_Status)
@@ -2480,7 +2020,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_NonMediaClient_DownloadComplete_Status)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 // Additional targeted tests for FlashImage lines 482-530 edge cases
@@ -2504,7 +2044,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_NoCriticalUpdate_MaintenanceFa
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_NoCriticalUpdate_RebootFalse)
@@ -2525,7 +2065,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_NoCriticalUpdate_RebootFalse)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "true", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_FileNotExists_SkipDelete)
@@ -2547,7 +2087,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_FileNotExists_SkipDelete)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", nonExistentFile.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_USB_FopenFailure)
@@ -2561,7 +2101,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_USB_FopenFailure)
     createTestFirmwareFile();
     
     // Create a directory with the same name to make fopen fail
-    system("mkdir -p /tmp/test_cdl_flashed_file_name");
+    safeSystemCall("mkdir -p /tmp/test_cdl_flashed_file_name");
     
     EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
         .Times(::testing::AtLeast(2))
@@ -2572,8 +2112,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_USB_FopenFailure)
     EXPECT_GE(result, -1);
     
     // Clean up
-    system("rm -rf /tmp/test_cdl_flashed_file_name");
-    std::remove("/tmp/device.properties");
+    safeSystemCall("rm -rf /tmp/test_cdl_flashed_file_name");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_NonMaintenance_NonReboot)
@@ -2594,7 +2134,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_NonMaintenance_NonReboot)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_USB_UserInitiated)
@@ -2615,7 +2155,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_USB_UserInitiated)
     int result = FirmwareUpdateImpl->flashImage("", TEST_FIRMWARE_PATH.c_str(), "true", "usb", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_NonUSB_UserInitiated)
@@ -2632,7 +2172,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_NonUSB_UserInitiated)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_ComplexScenario_AllBranches)
@@ -2650,7 +2190,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_ComplexScenario_AllBranches)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "true", "device", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 // Comprehensive FlashImage Coverage Tests - Missing Code Path Coverage
@@ -2670,7 +2210,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_NullServer_USBProtocol_Should_Pass)
     int result = FirmwareUpdateImpl->flashImage(nullptr, TEST_FIRMWARE_PATH.c_str(), "true", "usb", 0, "false", "user", "false");
     EXPECT_GE(result, -1); // Should not return -1 for early exit
     
-    std::remove(TEST_FIRMWARE_PATH.c_str());
+    safeRemoveFile(TEST_FIRMWARE_PATH.c_str());
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_NullRebootFlag_Should_Return_Negative)
@@ -2712,7 +2252,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_EmptyInitiatedType_DefaultsToDevice)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_EmptyCodebig_DefaultsToFalse)
@@ -2764,7 +2304,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_NoSlashInUpgradeFile_NullFilePointer)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", "testfile.bin", "false", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("testfile.bin");
+    safeRemoveFile("testfile.bin");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_PDRIUpgrade_SetsUptypeToPdri)
@@ -2792,7 +2332,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_DeviceInitiated_MediaClient_CallsEventMana
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "device", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_DeviceInitiated_GetCPUArch_Success)
@@ -2812,7 +2352,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_DeviceInitiated_GetCPUArch_Success)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "device", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_DeviceInitiated_GetCPUArch_Failure)
@@ -2832,7 +2372,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_DeviceInitiated_GetCPUArch_Failure)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "device", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_USBProtocol_ExtractsDifwPath)
@@ -2861,7 +2401,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_NonUSBProtocol_GetsDifwPath_Success)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_NonUSBProtocol_GetsDifwPath_Failure)
@@ -2881,7 +2421,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_NonUSBProtocol_GetsDifwPath_Failure)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/tmp/device.properties");
+    safeRemoveFile("/tmp/device.properties");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_ImageFlasherNotExists_ErrorPath)
@@ -2890,7 +2430,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_ImageFlasherNotExists_ErrorPath)
     createTestFirmwareFile();
     
     // Ensure imageFlasher.sh doesn't exist
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1);
@@ -2908,7 +2448,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashSuccess_PDRIUpgrade_Success)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 1, "false", "user", "false");
     EXPECT_GE(result, -1);
     
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_NonMediaClient_DeviceInitiated_RCDLFailure)
@@ -2929,8 +2469,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_NonMediaClient_DeviceInitiate
     // Just verify function executes without crashing
     EXPECT_GE(result, -1); // Accept any valid return value
     
-    std::remove("/tmp/device.properties");
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/tmp/device.properties");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_NonMediaClient_DeviceInitiated_x86_ECMFailure)
@@ -2952,8 +2492,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_NonMediaClient_DeviceInitiate
     // Just verify function executes without crashing
     EXPECT_GE(result, -1); // Accept any valid return value
     
-    std::remove("/tmp/device.properties");
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/tmp/device.properties");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_MediaClient_FlashWriteFailure)
@@ -2974,8 +2514,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_MediaClient_FlashWriteFailure
     // Just verify function executes without crashing
     EXPECT_GE(result, -1); // Accept any valid return value
     
-    std::remove("/tmp/device.properties");
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/tmp/device.properties");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_MediaClient_MaintenanceTrue)
@@ -2996,8 +2536,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_MediaClient_MaintenanceTrue)
     // Just verify function executes without crashing
     EXPECT_GE(result, -1); // Accept any valid return value
     
-    std::remove("/tmp/device.properties");
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/tmp/device.properties");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_DeviceInitiated_UpdateUpgradeFlag)
@@ -3018,8 +2558,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_DeviceInitiated_UpdateUpgrade
     // Just verify function executes without crashing
     EXPECT_GE(result, -1); // Accept any valid return value
     
-    std::remove("/tmp/device.properties");
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/tmp/device.properties");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_Success_MediaClient_NonMaintenance)
@@ -3038,8 +2578,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_MediaClient_NonMaintenance)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_EQ(0, result); // Should return success
     
-    std::remove("/tmp/device.properties");
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/tmp/device.properties");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_Success_MediaClient_MaintenanceTrue_RebootTrue)
@@ -3058,8 +2598,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_MediaClient_MaintenanceTrue_Reboot
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "true", "user", "false");
     EXPECT_EQ(0, result); // Should return success
     
-    std::remove("/tmp/device.properties");
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/tmp/device.properties");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_Success_MediaClient_FileExists_DeletesUpgradeFile)
@@ -3081,11 +2621,11 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_MediaClient_FileExists_DeletesUpgr
     // Note: File deletion behavior may vary in test environment
     // Just verify the function executed without crashing
     
-    std::remove("/tmp/device.properties");
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/tmp/device.properties");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
     // Clean up test file if it still exists
     if (Utils::fileExists(TEST_FIRMWARE_PATH.c_str())) {
-        std::remove(TEST_FIRMWARE_PATH.c_str());
+        safeRemoveFile(TEST_FIRMWARE_PATH.c_str());
     }
 }
 
@@ -3104,9 +2644,9 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_USB_CreatesFileNameFile)
     // Note: File creation behavior may vary in test environment
     // Clean up file if it was created
     if (Utils::fileExists("/opt/cdl_flashed_file_name")) {
-        std::remove("/opt/cdl_flashed_file_name");
+        safeRemoveFile("/opt/cdl_flashed_file_name");
     }
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_Success_NonUSB_CallsPostFlash)
@@ -3125,8 +2665,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_NonUSB_CallsPostFlash)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_EQ(0, result); // Should return success
     
-    std::remove("/tmp/device.properties");
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/tmp/device.properties");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_Success_DeviceInitiated_UpdatesUpgradeFlag)
@@ -3145,8 +2685,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_DeviceInitiated_UpdatesUpgradeFlag
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "device", "false");
     EXPECT_EQ(0, result); // Should return success
     
-    std::remove("/tmp/device.properties");
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/tmp/device.properties");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_Success_NonMediaClient_DownloadComplete)
@@ -3165,8 +2705,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_NonMediaClient_DownloadComplete)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_EQ(0, result); // Should return success
     
-    std::remove("/tmp/device.properties");
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/tmp/device.properties");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_HeaderFileExists_DeletesHeaderFile)
@@ -3191,10 +2731,10 @@ TEST_F(FirmwareUpdateTest, FlashImage_HeaderFileExists_DeletesHeaderFile)
     // Clean up header file if it still exists
     std::string headerPath = std::string(TEST_FIRMWARE_PATH) + ".header";
     if (Utils::fileExists(headerPath.c_str())) {
-        std::remove(headerPath.c_str());
+        safeRemoveFile(headerPath.c_str());
     }
     
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_UserInitiated_RCDLFlagExists_DeletesRCDLFlag)
@@ -3218,10 +2758,10 @@ TEST_F(FirmwareUpdateTest, FlashImage_UserInitiated_RCDLFlagExists_DeletesRCDLFl
     // Note: File deletion behavior may vary in test environment
     // Clean up RCDL flag if it still exists
     if (Utils::fileExists("/tmp/.lastdownloadtype_xconf_cdl")) {
-        std::remove("/tmp/.lastdownloadtype_xconf_cdl");
+        safeRemoveFile("/tmp/.lastdownloadtype_xconf_cdl");
     }
     
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_FWDownloadStatus_PDRIUpgrade_YesPDRI)
@@ -3236,7 +2776,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_FWDownloadStatus_PDRIUpgrade_YesPDRI)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 1, "false", "user", "false");
     EXPECT_EQ(0, result); // Should return success
     
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 TEST_F(FirmwareUpdateTest, FlashImage_FWDownloadStatus_NonPDRIUpgrade_NoPDRI)
@@ -3251,7 +2791,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_FWDownloadStatus_NonPDRIUpgrade_NoPDRI)
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_EQ(0, result); // Should return success
     
-    std::remove("/lib/rdk/imageFlasher.sh");
+    safeRemoveFile("/lib/rdk/imageFlasher.sh");
 }
 
 // Tests for FirmwareUpdate.h Plugin Interface Methods
