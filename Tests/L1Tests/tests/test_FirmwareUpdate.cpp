@@ -22,6 +22,7 @@
 #include <fstream>
 #include "FirmwareUpdate.h"
 #include "FirmwareUpdateImplementation.h"
+#include "FirmwareUpdateImplementation.cpp"
 #include "ServiceMock.h"
 #include "IarmBusMock.h"
 #include "FactoriesImplementation.h"
@@ -150,6 +151,8 @@ protected:
     virtual ~FirmwareUpdateTest() override
     {
         TEST_LOG("FirmwareUpdateTest Destructor");
+
+        isFlashingInProgress = false;
 
         plugin->Deinitialize(&service);
 
