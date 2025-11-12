@@ -242,20 +242,20 @@ TEST_F(FirmwareUpdateTest, RegisteredMethods)
 }
 
 
-// TEST_F(FirmwareUpdateTest, UpdateFirmware_PostFlash_ValidPCI_Success)
-// {
+TEST_F(FirmwareUpdateTest, UpdateFirmware_PostFlash_ValidPCI_Success)
+{
 
-//     createTestFirmwareFile();
+    createTestFirmwareFile();
 
-//     std::ofstream deviceProps("/etc/device.properties");
-//     deviceProps << "DEVICE_TYPE=mediaclient" << std::endl;
-//     deviceProps.close();
+    std::ofstream deviceProps("/etc/device.properties");
+    deviceProps << "DEVICE_TYPE=mediaclient" << std::endl;
+    deviceProps.close();
 
-//     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/test_firmware.bin\",\"firmwareType\":\"PCI\"}"), response));
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/test_firmware.bin\",\"firmwareType\":\"PCI\"}"), response));
 
-//     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-//     std::remove("/etc/device.properties");
-// }
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    std::remove("/etc/device.properties");
+}
 
 
 // TEST_F(FirmwareUpdateTest, UpdateFirmware_PostFlash_ValidDRI_Success)
