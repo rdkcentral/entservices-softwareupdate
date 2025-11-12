@@ -65,11 +65,6 @@ static void safeRemoveFile(const char* filepath) {
     }
 }
 
-// Overload for string objects
-static void safeRemoveFile(const std::string& filepath) {
-    safeRemoveFile(filepath.c_str());
-}
-
 // Helper function to safely execute system commands with proper error checking
 // Suppresses Coverity CHECKED_RETURN warnings in test setup code
 static int safeSystemCall(const char* command) {
