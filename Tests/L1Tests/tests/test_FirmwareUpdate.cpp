@@ -35,6 +35,7 @@
 #include "COMLinkMock.h"
 #include "WorkerPoolImplementation.h"
 #include "WrapsMock.h"
+#include "RfcApiMock.h"
 #include "secure_wrappermock.h"
 #include "ThunderPortability.h"
 
