@@ -61,6 +61,7 @@ namespace WPEFramework {
                 LOGINFO("flashThread is still running or joinable. Joining now...");
                 flashThread.join();  // Ensure the thread has completed before main exits
             }
+            LOGINFO("isFlashingInProgress = %d", isFlashingInProgress.load());
             mShell = nullptr;
             DeinitializeIARM();
         }
@@ -583,6 +584,7 @@ namespace WPEFramework {
         uint32_t FirmwareUpdateImplementation::Configure(PluginHost::IShell* shell)
         {
             LOGINFO("Configuring FirmwareUpdateImplementation");
+            LOGINFO("isFlashingInProgress = %d", isFlashingInProgress.load());
             uint32_t result = Core::ERROR_NONE;
             ASSERT(shell != nullptr);
             mShell = shell;
