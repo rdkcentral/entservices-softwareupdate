@@ -463,9 +463,9 @@ jobs:
           -DRDK_SERVICES_L1_TEST=ON
           -DUSE_THUNDER_R4=ON
           -DHIDE_NON_EXTERNAL_SYMBOLS=OFF
-          -DPLUGIN_FIRMWAREUPDATE=OFF
-          -DPLUGIN_MAINTENANCEMANAGER=ON
-          -DPLUGIN_PACKAGER=ON
+          -DPLUGIN_FIRMWAREUPDATE=ON
+          -DPLUGIN_MAINTENANCEMANAGER=OFF
+          -DPLUGIN_PACKAGER=OFF
           &&
           cmake --build build/entservices-softwareupdate -j8
           &&
