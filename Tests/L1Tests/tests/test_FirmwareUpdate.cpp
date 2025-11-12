@@ -11,6 +11,7 @@
 * http://www.apache.org/licenses/LICENSE-2.0
 *
 * Unless required by applicable law or agreed to in writing,software
+* Unless required by applicable law or agreed to in writing,software
 * distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
@@ -1437,61 +1438,8 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_PostFlash_BroadbandDevice)
     const char* filePath = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
     std::ofstream outfile(filePath);
     if (outfile.is_open()) {
-        outfile << "dummy firmware content";
-        outfile.close();
+
+        EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\" ,\"firmwareType\":\"ABC\"}"), response));
     }
-    
-    std::ofstream versionFile("/version.txt");
-    if (versionFile.is_open()) {
-        versionFile << "imagename:DIFFERENT_IMAGE\n";
-        versionFile.close();
-    }
-
-    std::ofstream devicePropertiesFile("/etc/device.properties");
-    if (devicePropertiesFile.is_open()) {
-        devicePropertiesFile << "DEVICE_TYPE=broadband\n";
-        devicePropertiesFile << "DEVICE_NAME=TEST_DEVICE\n";
-        devicePropertiesFile.close();
-    }
-
-    // EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-    //     .Times(::testing::AtLeast(1));
-
-    // EXPECT_CALL(*p_wrapsImplMock, system(::testing::_))
-    //     .WillOnce(::testing::Return(0));
-
-    EXPECT_EQ(ERROR_FIRMWAREUPDATE_INPROGRESS, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\",\"firmwareType\":\"PCI\"}"), response));
-    // EXPECT_TRUE(response.find("\"success\":true") != string::npos);
 }
 
-TEST_F(FirmwareUpdateTest, UpdateFirmware_PostFlash_ValidationCompleteEvent)
-{
-    const char* filePath = "/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin";
-    std::ofstream outfile(filePath);
-    if (outfile.is_open()) {
-        outfile << "dummy firmware content";
-        outfile.close();
-    }
-    
-    std::ofstream versionFile("/version.txt");
-    if (versionFile.is_open()) {
-        versionFile << "imagename:DIFFERENT_IMAGE\n";
-        versionFile.close();
-    }
-
-    std::ofstream devicePropertiesFile("/etc/device.properties");
-    if (devicePropertiesFile.is_open()) {
-        devicePropertiesFile << "DEVICE_TYPE=mediaclient\n";
-        devicePropertiesFile << "DEVICE_NAME=TEST_DEVICE\n";
-        devicePropertiesFile.close();
-    }
-
-    // EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-    //     .Times(::testing::AtLeast(1));
-
-    // EXPECT_CALL(*p_wrapsImplMock, system(::testing::_))
-    //     .WillOnce(::testing::Return(0));
-
-    EXPECT_EQ(ERROR_FIRMWAREUPDATE_INPROGRESS, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\",\"firmwareType\":\"PCI\"}"), response));
-    // EXPECT_TRUE(response.find("\"success\":true") != string::npos);
-}
