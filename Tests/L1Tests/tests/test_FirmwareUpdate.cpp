@@ -85,6 +85,29 @@ extern std::string readProperty(std::string filename, std::string property, std:
 #define WRITE_RFC_SUCCESS 1
 #define WRITE_RFC_FAILURE -1
 
+class NotificationHandlerMock : public Exchange::IFirmwareUpdate::INotification {
+private:
+    mutable std::atomic<uint32_t> m_refCount{1};
+
+public:
+    NotificationHandlerMock() = default;
+    virtual ~NotificationHandlerMock() = default;
+
+    MOCK_METHOD(void, OnUpdateStateChange, (const Exchange::IFirmwareUpdate::State state,
+                                          const Exchange::IFirmwareUpdate::SubState substate), (override));
+    MOCK_METHOD(void, OnFlashingStateChange, (const uint32_t percentageComplete), (override));
+
+    void AddRef() const override {
+        m_refCount.fetch_add(1, std::memory_order_relaxed);
+    }
+    uint32_t Release() const override {
+        uint32_t count = m_refCount.fetch_sub(1, std::memory_order_acq_rel);
+        // Don't actually delete in tests - let the test framework manage lifetime
+        return count - 1;
+    }
+    void* QueryInterface(const uint32_t interfaceNumber) override { return nullptr; }
+};
+
 class FirmwareUpdateTest : public ::testing::Test {
 protected:
     Core::ProxyType<Plugin::FirmwareUpdate> plugin;
