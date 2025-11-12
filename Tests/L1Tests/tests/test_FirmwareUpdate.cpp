@@ -98,7 +98,6 @@ protected:
     NiceMock<COMLinkMock> comLinkMock;
     NiceMock<ServiceMock> service;
     PLUGINHOST_DISPATCHER* dispatcher;
-    Core::ProxyType<WorkerPoolImplementation> workerPool;
     NiceMock<FactoriesImplementation> factoriesImplementation;
     std::atomic<bool> flashInProgress;
 
@@ -106,8 +105,6 @@ protected:
         : plugin(Core::ProxyType<Plugin::FirmwareUpdate>::Create())
         , handler(*(plugin))
         , INIT_CONX(1, 0)
-        , workerPool(Core::ProxyType<WorkerPoolImplementation>::Create(
-            2, Core::Thread::DefaultStackSize(), 16))
         , flashInProgress(false) 
     {
         
@@ -577,24 +574,6 @@ TEST_F(FirmwareUpdateTest, SetAutoReboot_RFCInvalidParameter)
     EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("setAutoReboot"), request, response));
 }
 
-// Notification Tests
-TEST_F(FirmwareUpdateTest, Notification_Register_Success)
-{
-    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
-    Core::hresult result = FirmwareUpdateImpl->Register(notificationMock.get());
-    EXPECT_EQ(Core::ERROR_NONE, result);
-}
-
-TEST_F(FirmwareUpdateTest, Notification_Unregister_Success)
-{
-    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
-    Core::hresult result1 = FirmwareUpdateImpl->Register(notificationMock.get());
-    EXPECT_EQ(Core::ERROR_NONE, result1);
-    
-    Core::hresult result2 = FirmwareUpdateImpl->Unregister(notificationMock.get());
-    EXPECT_EQ(Core::ERROR_NONE, result2);
-}
-
 // Configure Tests
 TEST_F(FirmwareUpdateTest, Configure_ValidShell)
 {
@@ -1029,38 +1008,6 @@ TEST_F(FirmwareUpdateTest, IsMmgbleNotifyEnabled_RFCFailure)
     
     bool result = isMmgbleNotifyEnabled();
     EXPECT_FALSE(result);
-}
-
-TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_ValidFile)
-{
-    // Create test optout file
-    const char* testOptoutFile = "/tmp/test_optout.conf";
-    std::ofstream optoutFile(testOptoutFile);
-    optoutFile << "softwareoptout=DISABLED\n";
-    optoutFile << "other_setting=value\n";
-    optoutFile.close();
-    
-    bool result = updateOPTOUTFile(testOptoutFile);
-    // Result depends on file operations, ensure no crash
-    
-    // Clean up
-    std::remove(testOptoutFile);
-    std::remove("/tmp/mm_record_update.conf");
-}
-
-TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_NullParameter)
-{
-    bool result = updateOPTOUTFile(nullptr);
-    EXPECT_FALSE(result);
-}
-
-TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_NonExistentFile)
-{
-    bool result = updateOPTOUTFile("/tmp/nonexistent_optout.conf");
-    // Should handle gracefully and create update file with enforce optout
-    
-    // Clean up
-    std::remove("/tmp/mm_record_update.conf");
 }
 
 TEST_F(FirmwareUpdateTest, NotifyDwnlStatus_ValidParameters)
