@@ -35,6 +35,7 @@
 #include "COMLinkMock.h"
 #include "RfcApiMock.h"
 #include "WrapsMock.h"
+#include "WorkerPoolImplementation.h"
 #include "secure_wrappermock.h"
 #include "ThunderPortability.h"
 
@@ -98,6 +99,8 @@ protected:
     NiceMock<COMLinkMock> comLinkMock;
     NiceMock<ServiceMock> service;
     PLUGINHOST_DISPATCHER* dispatcher;
+    Core::ProxyType<WorkerPoolImplementation> workerPool;
+    std::unique_ptr<NotificationHandlerMock> notificationMock;
     NiceMock<FactoriesImplementation> factoriesImplementation;
     std::atomic<bool> flashInProgress;
 
@@ -105,6 +108,9 @@ protected:
         : plugin(Core::ProxyType<Plugin::FirmwareUpdate>::Create())
         , handler(*(plugin))
         , INIT_CONX(1, 0)
+        , workerPool(Core::ProxyType<WorkerPoolImplementation>::Create(
+            2, Core::Thread::DefaultStackSize(), 16))
+        , notificationMock(std::make_unique<NotificationHandlerMock>())
         , flashInProgress(false) 
     {
         
@@ -139,6 +145,9 @@ protected:
 #endif /*USE_THUNDER_R4 */
 
         PluginHost::IFactories::Assign(&factoriesImplementation);
+
+		Core::IWorkerPool::Assign(&(*workerPool));
+        workerPool->Run();
 
         dispatcher = static_cast<PLUGINHOST_DISPATCHER*>(
         plugin->QueryInterface(PLUGINHOST_DISPATCHER_ID));
@@ -176,6 +185,9 @@ protected:
         if (FirmwareUpdateImpl.IsValid()) {
             FirmwareUpdateImpl.Release();
         }
+
+		Core::IWorkerPool::Assign(nullptr);
+        workerPool.Release();
 
         Wraps::setImpl(nullptr);
         if (p_wrapsImplMock != nullptr)
