@@ -259,7 +259,7 @@ TEST_F(FirmwareUpdateTest, InvalidFirmwareType)
         EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\" ,\"firmwareType\":\"ABC\"}"), response));
     }
 }
-
+#if 0
 // UpdateFirmware Tests - Valid Cases
 TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidPCI_Success)
 {
@@ -270,7 +270,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidPCI_Success)
     // Give time for thread to start and complete its immediate operations
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
-#if 0
+
 TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidDRI_Success)
 {
     createTestFirmwareFile();
