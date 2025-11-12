@@ -33,7 +33,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "COMLinkMock.h"
-#include "WorkerPoolImplementation.h"
+#include "RfcApiMock.h"
 #include "WrapsMock.h"
 #include "secure_wrappermock.h"
 #include "ThunderPortability.h"
@@ -91,6 +91,7 @@ protected:
     DECL_CORE_JSONRPC_CONX connection;
     Core::JSONRPC::Message message;
     string response;    
+    RfcApiImplMock   *p_rfcApiImplMock = nullptr ;
     WrapsImplMock  *p_wrapsImplMock   = nullptr ;
     IarmBusImplMock  *p_iarmBusImplMock   = nullptr;
     Core::ProxyType<Plugin::FirmwareUpdateImplementation> FirmwareUpdateImpl;
@@ -112,7 +113,11 @@ protected:
         
     	p_wrapsImplMock  = new testing::NiceMock <WrapsImplMock>;
     	Wraps::setImpl(p_wrapsImplMock);
-	p_iarmBusImplMock  = new NiceMock <IarmBusImplMock>;
+
+		p_rfcApiImplMock  = new testing::NiceMock <RfcApiImplMock>;
+        RfcApi::setImpl(p_rfcApiImplMock);
+		
+	    p_iarmBusImplMock  = new NiceMock <IarmBusImplMock>;
     	IarmBus::setImpl(p_iarmBusImplMock);
 
         ON_CALL(service, COMLink())
@@ -137,9 +142,6 @@ protected:
 #endif /*USE_THUNDER_R4 */
 
         PluginHost::IFactories::Assign(&factoriesImplementation);
-
-        Core::IWorkerPool::Assign(&(*workerPool));
-        workerPool->Run();
 
         dispatcher = static_cast<PLUGINHOST_DISPATCHER*>(
         plugin->QueryInterface(PLUGINHOST_DISPATCHER_ID));
@@ -178,9 +180,6 @@ protected:
             FirmwareUpdateImpl.Release();
         }
 
-        Core::IWorkerPool::Assign(nullptr);
-        workerPool.Release();
-
         Wraps::setImpl(nullptr);
         if (p_wrapsImplMock != nullptr)
         {
@@ -188,14 +187,21 @@ protected:
             p_wrapsImplMock = nullptr;
         }
 
-        PluginHost::IFactories::Assign(nullptr);
-	IarmBus::setImpl(nullptr);
+		RfcApi::setImpl(nullptr);
+        if (p_rfcApiImplMock != nullptr)
+        {
+            delete p_rfcApiImplMock;
+            p_rfcApiImplMock = nullptr;
+        }
+
+		IarmBus::setImpl(nullptr);
         if (p_iarmBusImplMock != nullptr)
         {
             delete p_iarmBusImplMock;
             p_iarmBusImplMock = nullptr;
         }
 
+        PluginHost::IFactories::Assign(nullptr);
 	}
 
     void TearDown() override {
@@ -384,26 +390,6 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_EmptyJSON)
 {
     EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{}"), response));
 }
-#if 0
-TEST_F(FirmwareUpdateTest, UpdateFirmware_MalformedJSON)
-{
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"" + TEST_FIRMWARE_TYPE_PCI + "\"";
-    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
-}
-
-TEST_F(FirmwareUpdateTest, UpdateFirmware_BoundaryFilePath)
-{
-    string boundaryPath = "/tmp/a";
-    std::ofstream outfile(boundaryPath);
-    outfile << "Test content";
-    outfile.close();
-    
-    string request = "{\"firmwareFilepath\":\"" + boundaryPath + "\",\"firmwareType\":\"" + TEST_FIRMWARE_TYPE_PCI + "\"}";
-    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    
-    std::remove(boundaryPath.c_str());
-}
-#endif
 
 // GetUpdateState Tests
 TEST_F(FirmwareUpdateTest, GetUpdateState_Initial)
@@ -527,12 +513,7 @@ TEST_F(FirmwareUpdateTest, GetUpdateState_WithParameters)
 {
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("getUpdateState"), _T("{\"extraParam\":\"ignored\"}"), response));
 }
-#if 0
-TEST_F(FirmwareUpdateTest, GetUpdateState_MalformedJSON)
-{
-    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("getUpdateState"), _T("{"), response));
-}
-#endif
+
 // SetAutoReboot Tests
 TEST_F(FirmwareUpdateTest, SetAutoReboot_EnableTrue)
 {
@@ -565,24 +546,7 @@ TEST_F(FirmwareUpdateTest, SetAutoReboot_RFCFailure)
     string request = "{\"enable\":true}";
     EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("setAutoReboot"), request, response));
 }
-#if 0
-TEST_F(FirmwareUpdateTest, SetAutoReboot_MissingParameter)
-{
-    EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("setAutoReboot"), _T("{}"), response));
-}
 
-TEST_F(FirmwareUpdateTest, SetAutoReboot_InvalidParameterType)
-{
-    string request = "{\"enable\":\"true\"}";
-    EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("setAutoReboot"), request, response));
-}
-
-TEST_F(FirmwareUpdateTest, SetAutoReboot_NullParameter)
-{
-    string request = "{\"enable\":null}";
-    EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("setAutoReboot"), request, response));
-}
-#endif
 TEST_F(FirmwareUpdateTest, SetAutoReboot_ExtraParameters)
 {
     EXPECT_CALL(*p_rfcApiImplMock, setRFCParameter(::testing::_, ::testing::_, ::testing::StrEq("true"), ::testing::_))
@@ -592,18 +556,7 @@ TEST_F(FirmwareUpdateTest, SetAutoReboot_ExtraParameters)
     string request = "{\"enable\":true,\"extraParam\":\"ignored\"}";
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("setAutoReboot"), request, response));
 }
-#if 0
-TEST_F(FirmwareUpdateTest, SetAutoReboot_MalformedJSON)
-{
-    string request = "{\"enable\":true";
-    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("setAutoReboot"), request, response));
-}
 
-TEST_F(FirmwareUpdateTest, SetAutoReboot_EmptyJSON)
-{
-    EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("setAutoReboot"), _T(""), response));
-}
-#endif
 TEST_F(FirmwareUpdateTest, SetAutoReboot_RFCTimeout)
 {
     EXPECT_CALL(*p_rfcApiImplMock, setRFCParameter(::testing::_, ::testing::_, ::testing::_, ::testing::_))
@@ -631,17 +584,7 @@ TEST_F(FirmwareUpdateTest, Notification_Register_Success)
     Core::hresult result = FirmwareUpdateImpl->Register(notificationMock.get());
     EXPECT_EQ(Core::ERROR_NONE, result);
 }
-#if 0
-TEST_F(FirmwareUpdateTest, Notification_Register_AlreadyConnected)
-{
-    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
-    Core::hresult result1 = FirmwareUpdateImpl->Register(notificationMock.get());
-    EXPECT_EQ(Core::ERROR_NONE, result1);
-    
-    Core::hresult result2 = FirmwareUpdateImpl->Register(notificationMock.get());
-    EXPECT_EQ(Core::ERROR_ALREADY_CONNECTED, result2);
-}
-#endif
+
 TEST_F(FirmwareUpdateTest, Notification_Unregister_Success)
 {
     ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
@@ -651,14 +594,7 @@ TEST_F(FirmwareUpdateTest, Notification_Unregister_Success)
     Core::hresult result2 = FirmwareUpdateImpl->Unregister(notificationMock.get());
     EXPECT_EQ(Core::ERROR_NONE, result2);
 }
-#if 0
-TEST_F(FirmwareUpdateTest, Notification_Unregister_NotConnected)
-{
-    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
-    Core::hresult result = FirmwareUpdateImpl->Unregister(notificationMock.get());
-    EXPECT_EQ(Core::ERROR_UNKNOWN_KEY, result);
-}
-#endif
+
 // Configure Tests
 TEST_F(FirmwareUpdateTest, Configure_ValidShell)
 {
@@ -786,57 +722,7 @@ TEST_F(FirmwareUpdateTest, DispatchAndUpdateEvent_EmptyStates)
     ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
     FirmwareUpdateImpl->dispatchAndUpdateEvent("", "");
 }
-#if 0
-// Edge Cases and Boundary Tests
-TEST_F(FirmwareUpdateTest, MultipleSimultaneousUpdates)
-{
-    createTestFirmwareFile();
-    
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"" + TEST_FIRMWARE_TYPE_PCI + "\"}";
-    
-    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    
-    // Try to start another update while first is in progress
-    EXPECT_EQ(Core::ERROR_GENERAL, handler.Invoke(connection, _T("updateFirmware"), request, response));
-}
 
-
-TEST_F(FirmwareUpdateTest, UpdateFirmware_FilePermissions)
-{
-    createTestFirmwareFile();
-    
-    // Remove read permissions
-    chmod(TEST_FIRMWARE_PATH.c_str(), 0000);
-    
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"" + TEST_FIRMWARE_TYPE_PCI + "\"}";
-    EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    
-    // Restore permissions for cleanup
-    chmod(TEST_FIRMWARE_PATH.c_str(), 0644);
-}
-
-TEST_F(FirmwareUpdateTest, UpdateFirmware_ZeroSizeFile)
-{
-    std::ofstream outfile(TEST_FIRMWARE_PATH);
-    outfile.close();
-    
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"" + TEST_FIRMWARE_TYPE_PCI + "\"}";
-    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
-}
-
-TEST_F(FirmwareUpdateTest, UpdateFirmware_SymbolicLink)
-{
-    createTestFirmwareFile();
-    
-    string linkPath = "/tmp/firmware_link.bin";
-    symlink(TEST_FIRMWARE_PATH.c_str(), linkPath.c_str());
-    
-    string request = "{\"firmwareFilepath\":\"" + linkPath + "\",\"firmwareType\":\"" + TEST_FIRMWARE_TYPE_PCI + "\"}";
-    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    
-    unlink(linkPath.c_str());
-}
-#endif
 TEST_F(FirmwareUpdateTest, SetAutoReboot_RapidToggle)
 {
     EXPECT_CALL(*p_rfcApiImplMock, setRFCParameter(::testing::_, ::testing::_, ::testing::_, ::testing::_))
@@ -853,14 +739,7 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_PathTraversal)
     string request = "{\"firmwareFilepath\":\"" + maliciousPath + "\",\"firmwareType\":\"" + TEST_FIRMWARE_TYPE_PCI + "\"}";
     EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), request, response));
 }
-#if 0
-TEST_F(FirmwareUpdateTest, UpdateFirmware_DeviceFile)
-{
-    string devicePath = "/dev/null";
-    string request = "{\"firmwareFilepath\":\"" + devicePath + "\",\"firmwareType\":\"" + TEST_FIRMWARE_TYPE_PCI + "\"}";
-    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
-}
-#endif
+
 TEST_F(FirmwareUpdateTest, Stress_MultipleGetUpdateState)
 {
     for (int i = 0; i < 10; i++) {
@@ -902,31 +781,7 @@ TEST_F(FirmwareUpdateTest, EventManager_NullParameters)
     eventManager("test", nullptr);
     eventManager(nullptr, nullptr);
 }
-#if 0
-TEST_F(FirmwareUpdateTest, GetDevicePropertyData_ValidProperty)
-{
-    // Create a test device.properties file
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestDevice\n";
-    propFile << "MODEL_NUM=TEST123\n";
-    propFile.close();
-    
-    char outData[64];
-    
-    // Test reading existing property
-    int result = getDevicePropertyData("DEVICE_TYPE", outData, sizeof(outData));
-    EXPECT_EQ(UTILS_SUCCESS, result);
-    EXPECT_STREQ("mediaclient", outData);
-    
-    // Test reading another property
-    result = getDevicePropertyData("DEVICE_NAME", outData, sizeof(outData));
-    EXPECT_EQ(UTILS_SUCCESS, result);
-    EXPECT_STREQ("TestDevice", outData);
-    
-    std::remove("/tmp/device.properties");
-}
-#endif
+
 TEST_F(FirmwareUpdateTest, GetDevicePropertyData_InvalidProperty)
 {
     // Create a test device.properties file
@@ -959,20 +814,7 @@ TEST_F(FirmwareUpdateTest, GetDevicePropertyData_NullParameters)
     result = getDevicePropertyData("DEVICE_TYPE", outData, 0);
     EXPECT_EQ(UTILS_FAIL, result);
 }
-#if 0
-TEST_F(FirmwareUpdateTest, IsMediaClientDevice_True)
-{
-    // Create a test device.properties file with mediaclient
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile.close();
-    
-    bool result = isMediaClientDevice();
-    EXPECT_TRUE(result);
-    
-    std::remove("/tmp/device.properties");
-}
-#endif
+
 TEST_F(FirmwareUpdateTest, IsMediaClientDevice_False)
 {
     // Create a test device.properties file with non-mediaclient type
@@ -1063,17 +905,7 @@ TEST_F(FirmwareUpdateTest, UpdateFWDownloadStatus_NullParameters)
     result = updateFWDownloadStatus(&fwdls, nullptr, "user");
     EXPECT_EQ(FAILURE, result);
 }
-#if 0
-TEST_F(FirmwareUpdateTest, UpdateFWDownloadStatus_DisableUpdate)
-{
-    struct FWDownloadStatus fwdls;
-    memset(&fwdls, 0, sizeof(fwdls));
-    
-    // Test with disabled stats update
-    int result = updateFWDownloadStatus(&fwdls, "yes", "user");
-    EXPECT_EQ(SKIP, result);
-}
-#endif
+
 TEST_F(FirmwareUpdateTest, ReadRFCProperty_ValidProperty)
 {
     char type[] = "Device";
@@ -1250,20 +1082,7 @@ TEST_F(FirmwareUpdateTest, NotifyDwnlStatus_NullParameters)
     result = notifyDwnlStatus("TestKey", nullptr, RFC_STRING);
     EXPECT_EQ(WRITE_RFC_FAILURE, result);
 }
-#if 0
-TEST_F(FirmwareUpdateTest, UnsetStateRed_FileExists)
-{
-    // Create test state red flag file
-    std::ofstream stateRedFile("/tmp/state_red");
-    stateRedFile << "state red active";
-    stateRedFile.close();
-    
-    unsetStateRed();
-    
-    // File should be removed
-    EXPECT_FALSE(Utils::fileExists("/tmp/state_red"));
-}
-#endif
+
 TEST_F(FirmwareUpdateTest, UnsetStateRed_NoFile)
 {
     // Ensure file doesn't exist
@@ -1363,23 +1182,7 @@ TEST_F(FirmwareUpdateTest, CopyFileToDirectory_NonExistentSource)
     bool result = copyFileToDirectory("/tmp/nonexistent.bin", "/tmp");
     EXPECT_FALSE(result);
 }
-#if 0
-TEST_F(FirmwareUpdateTest, CopyFileToDirectory_EmptySourceFile)
-{
-    // Create empty source file
-    const char* sourceFile = "/tmp/empty_source.bin";
-    std::ofstream src(sourceFile);
-    src.close();
-    
-    const char* destDir = "/tmp/test_dest_dir";
-    
-    bool result = copyFileToDirectory(sourceFile, destDir);
-    EXPECT_FALSE(result); // Should fail for empty files
-    
-    // Clean up
-    std::remove(sourceFile);
-}
-#endif
+
 TEST_F(FirmwareUpdateTest, FirmwareStatus_WriteMode)
 {
     std::string state = "FLASHING_STARTED";
@@ -1465,31 +1268,7 @@ TEST_F(FirmwareUpdateTest, ReadProperty_NonExistentFile)
     std::string result = readProperty("/tmp/nonexistent.properties", "property", ":");
     EXPECT_EQ("", result);
 }
-#if 0
-// Additional FlashImage and PostFlash coverage tests
-TEST_F(FirmwareUpdateTest, FlashImage_MediaClientSuccess)
-{
-    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
-    
-    // Create test device.properties for mediaclient
-    std::ofstream propFile("/tmp/device.properties");
-    propFile << "DEVICE_TYPE=mediaclient\n";
-    propFile << "DEVICE_NAME=TestDevice\n";
-    propFile.close();
-    
-    createTestFirmwareFile();
-    
-    // Mock IARM calls for success path
-    EXPECT_CALL(*p_iarmBusImplMock, IARM_Bus_BroadcastEvent(::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(IARM_RESULT_SUCCESS));
-    
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
-    EXPECT_GE(result, 0);
-    
-    std::remove("/tmp/device.properties");
-}
-#endif
+
 TEST_F(FirmwareUpdateTest, FlashImage_BroadbandDevice)
 {
     ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
@@ -1974,5 +1753,3 @@ TEST_F(FirmwareUpdateTest, PostFlash_MaintenanceManager_OptoutUpdate)
     std::remove("/tmp/maintenance_mgr_record.conf");
     std::remove("/tmp/device.properties");
 }
-
-
