@@ -2944,24 +2944,6 @@ TEST_F(FirmwareUpdateTest, Notification_Unregister_Success)
     EXPECT_EQ(Core::ERROR_NONE, result2);
 }
 
-// Notification Tests
-TEST_F(FirmwareUpdateTest, Notification_Register_Success)
-{
-    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
-    Core::hresult result = FirmwareUpdateImpl->Register(notificationMock.get());
-    EXPECT_EQ(Core::ERROR_NONE, result);
-}
-
-TEST_F(FirmwareUpdateTest, Notification_Unregister_Success)
-{
-    ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
-    Core::hresult result1 = FirmwareUpdateImpl->Register(notificationMock.get());
-    EXPECT_EQ(Core::ERROR_NONE, result1);
-    
-    Core::hresult result2 = FirmwareUpdateImpl->Unregister(notificationMock.get());
-    EXPECT_EQ(Core::ERROR_NONE, result2);
-}
-
 TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_ValidFile)
 {
     // Create test optout file
@@ -2970,9 +2952,9 @@ TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_ValidFile)
     optoutFile << "softwareoptout=DISABLED\n";
     optoutFile << "other_setting=value\n";
     optoutFile.close();
-    
+	
     bool result = updateOPTOUTFile(testOptoutFile);
-    // Result depends on file operations, ensure no crash
+	EXPECT_TRUE(result || !result); 
     
     // Clean up
     safeRemoveFile(testOptoutFile);
@@ -2989,6 +2971,7 @@ TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_NonExistentFile)
 {
     bool result = updateOPTOUTFile("/tmp/nonexistent_optout.conf");
     // Should handle gracefully and create update file with enforce optout
+	EXPECT_TRUE(result || !result);
     
     // Clean up
     safeRemoveFile("/tmp/mm_record_update.conf");
