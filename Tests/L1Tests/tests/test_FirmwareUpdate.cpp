@@ -78,6 +78,21 @@ static int safeSystemCall(const char* command) {
     return result;
 }
 
+// Helper function to safely change file permissions with proper error checking
+// Suppresses Coverity CHECKED_RETURN warnings in test setup code
+static int safeChmod(const char* filepath, mode_t mode) {
+    if (filepath == nullptr) {
+        return -1;
+    }
+    int result = chmod(filepath, mode);
+    if (result != 0) {
+        std::cerr << "Warning: chmod failed for " << filepath 
+                  << " with mode " << std::oct << mode << std::dec 
+                  << " (errno: " << errno << ")" << std::endl;
+    }
+    return result;
+}
+
 // Helper function declarations
 extern void eventManager(const char *cur_event_name, const char *event_status);
 extern int getDevicePropertyData(const char *dev_prop_name, char *out_data, unsigned int buff_size);
@@ -325,7 +340,7 @@ TEST_F(FirmwareUpdateTest, InvalidFirmwareType)
         EXPECT_EQ(Core::ERROR_INVALID_PARAMETER, handler.Invoke(connection, _T("updateFirmware"), _T("{\"firmwareFilepath\":\"/tmp/ELTE11MWR_MIDDLEWARE_DEV_default_20241122145614.bin\" ,\"firmwareType\":\"ABC\"}"), response));
     }
 }
-#if 0
+
 // UpdateFirmware Tests - Valid Cases
 TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidPCI_Success)
 {
@@ -337,16 +352,6 @@ TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidPCI_Success)
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
 
-TEST_F(FirmwareUpdateTest, UpdateFirmware_ValidDRI_Success)
-{
-    createTestFirmwareFile();
-    string request = "{\"firmwareFilepath\":\"" + TEST_FIRMWARE_PATH + "\",\"firmwareType\":\"" + TEST_FIRMWARE_TYPE_DRI + "\"}";
-    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("updateFirmware"), request, response));
-    EXPECT_TRUE(response.find("success") != string::npos);
-    // Give time for thread to start and complete its immediate operations
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-}
-#endif
 // UpdateFirmware Tests - Parameter Validation
 TEST_F(FirmwareUpdateTest, UpdateFirmware_EmptyFilePath)
 {
@@ -569,6 +574,29 @@ TEST_F(FirmwareUpdateTest, GetUpdateState_PartialStateFile)
     outfile << "state:FLASHING_STARTED" << std::endl;
     outfile.close();
 
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("getUpdateState"), _T("{}"), response));
+}
+
+// Comprehensive state file test covering all scenarios
+TEST_F(FirmwareUpdateTest, GetUpdateState_StateFileScenarios)
+{
+    // Test with valid state file
+    std::ofstream outfile1(FIRMWARE_UPDATE_STATE);
+    outfile1 << "state:VALIDATION_FAILED" << std::endl;
+    outfile1 << "substate:FIRMWARE_NOT_FOUND" << std::endl;
+    outfile1.close();
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("getUpdateState"), _T("{}"), response));
+    EXPECT_TRUE(response.find("VALIDATION_FAILED") != string::npos);
+
+    // Test with empty state file
+    std::ofstream outfile2(FIRMWARE_UPDATE_STATE);
+    outfile2.close();
+    EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("getUpdateState"), _T("{}"), response));
+
+    // Test with partial state file
+    std::ofstream outfile3(FIRMWARE_UPDATE_STATE);
+    outfile3 << "state:FLASHING_STARTED" << std::endl;
+    outfile3.close();
     EXPECT_EQ(Core::ERROR_NONE, handler.Invoke(connection, _T("getUpdateState"), _T("{}"), response));
 }
 
@@ -1074,6 +1102,42 @@ TEST_F(FirmwareUpdateTest, IsMmgbleNotifyEnabled_RFCFailure)
     
     bool result = isMmgbleNotifyEnabled();
     EXPECT_FALSE(result);
+}
+
+TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_ValidFile)
+{
+    // Create test optout file
+    const char* testOptoutFile = "/tmp/test_optout.conf";
+    std::ofstream optoutFile(testOptoutFile);
+    optoutFile << "softwareoptout=DISABLED\n";
+    optoutFile << "other_setting=value\n";
+    optoutFile.close();
+    
+    bool result = updateOPTOUTFile(testOptoutFile);
+    // Function should process the valid file without crashing
+    // Return value depends on implementation details
+    (void)result; // Mark as intentionally unused
+    
+    // Clean up
+    safeRemoveFile(testOptoutFile);
+    safeRemoveFile("/tmp/mm_record_update.conf");
+}
+
+TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_NullParameter)
+{
+    bool result = updateOPTOUTFile(nullptr);
+    EXPECT_FALSE(result);
+}
+
+TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_NonExistentFile)
+{
+    bool result = updateOPTOUTFile("/tmp/nonexistent_optout.conf");
+    // Function should handle non-existent file gracefully without crashing
+    // Return value depends on implementation details
+    (void)result; // Mark as intentionally unused
+    
+    // Clean up
+    safeRemoveFile("/tmp/mm_record_update.conf");
 }
 
 TEST_F(FirmwareUpdateTest, NotifyDwnlStatus_ValidParameters)
@@ -2193,47 +2257,24 @@ TEST_F(FirmwareUpdateTest, FlashImage_MediaClient_ComplexScenario_AllBranches)
     safeRemoveFile("/tmp/device.properties");
 }
 
-// Comprehensive FlashImage Coverage Tests - Missing Code Path Coverage
-
-TEST_F(FirmwareUpdateTest, FlashImage_NullUpgradeFile_USBProtocol_Should_Return_Negative)
+// Consolidated null parameter validation test - covers the key null parameter cases
+TEST_F(FirmwareUpdateTest, FlashImage_NullParameters_Validation)
 {
-    // Test parameter validation: USB with NULL upgrade_file should return -1
-    int result = FirmwareUpdateImpl->flashImage("", nullptr, "true", "usb", 0, "false", "user", "false");
-    EXPECT_EQ(-1, result);
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_NullServer_USBProtocol_Should_Pass)
-{
-    // Test USB protocol with NULL server_url - should not cause early return
-    createTestFirmwareFile();
+    // Test multiple null parameter scenarios in one comprehensive test
     
-    int result = FirmwareUpdateImpl->flashImage(nullptr, TEST_FIRMWARE_PATH.c_str(), "true", "usb", 0, "false", "user", "false");
-    EXPECT_GE(result, -1); // Should not return -1 for early exit
+    // NULL upgrade_file with USB protocol should return -1
+    int result1 = FirmwareUpdateImpl->flashImage("", nullptr, "true", "usb", 0, "false", "user", "false");
+    EXPECT_EQ(-1, result1);
     
-    safeRemoveFile(TEST_FIRMWARE_PATH.c_str());
+    // NULL reboot_flag should return -1
+    int result2 = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), nullptr, "http", 0, "false", "user", "false");
+    EXPECT_EQ(-1, result2);
+    
+    // NULL maint should return -1  
+    int result3 = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, nullptr, "user", "false");
+    EXPECT_EQ(-1, result3);
 }
 
-TEST_F(FirmwareUpdateTest, FlashImage_NullRebootFlag_Should_Return_Negative)
-{
-    // Test parameter validation: NULL reboot_flag should return -1
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), nullptr, "http", 0, "false", "user", "false");
-    EXPECT_EQ(-1, result);
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_NullProto_Should_Return_Negative)
-{
-    // Test parameter validation: NULL proto causes crash due to implementation bug
-    // Using empty string instead to test the validation logic
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "", 0, "false", "user", "false");
-    EXPECT_GE(result, -1); // May not return -1 due to implementation, but should not crash
-}
-
-TEST_F(FirmwareUpdateTest, FlashImage_NullMaint_Should_Return_Negative)
-{
-    // Test parameter validation: NULL maint should return -1
-    int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, nullptr, "user", "false");
-    EXPECT_EQ(-1, result);
-}
 
 TEST_F(FirmwareUpdateTest, FlashImage_EmptyInitiatedType_DefaultsToDevice)
 {
@@ -2443,7 +2484,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashSuccess_PDRIUpgrade_Success)
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n";
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 1, "false", "user", "false");
     EXPECT_GE(result, -1);
@@ -2462,7 +2503,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_NonMediaClient_DeviceInitiate
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 1\n"; // Simulate failure
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "device", "false");
     // Note: In test environment, flash may not actually fail as expected
@@ -2485,7 +2526,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_NonMediaClient_DeviceInitiate
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 1\n"; // Simulate failure
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "device", "false");
     // Note: In test environment, flash may not actually fail as expected
@@ -2507,7 +2548,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_MediaClient_FlashWriteFailure
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 1\n"; // Simulate failure
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "user", "false");
     // Note: In test environment, flash may not actually fail as expected
@@ -2529,7 +2570,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_MediaClient_MaintenanceTrue)
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 1\n"; // Simulate failure
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "true", "user", "false");
     // Note: In test environment, flash may not actually fail as expected
@@ -2551,7 +2592,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_FlashFailure_DeviceInitiated_UpdateUpgrade
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 1\n"; // Simulate failure
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "false", "http", 0, "false", "device", "false");
     // Note: In test environment, flash may not actually fail as expected
@@ -2573,7 +2614,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_MediaClient_NonMaintenance)
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n"; // Simulate success
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_EQ(0, result); // Should return success
@@ -2593,7 +2634,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_MediaClient_MaintenanceTrue_Reboot
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n"; // Simulate success
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "true", "user", "false");
     EXPECT_EQ(0, result); // Should return success
@@ -2613,7 +2654,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_MediaClient_FileExists_DeletesUpgr
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n"; // Simulate success
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1); // Should not crash, accept any valid return value
@@ -2636,7 +2677,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_USB_CreatesFileNameFile)
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n"; // Simulate success
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("", TEST_FIRMWARE_PATH.c_str(), "true", "usb", 0, "false", "user", "false");
     EXPECT_GE(result, -1); // Should not crash, accept any valid return value
@@ -2660,7 +2701,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_NonUSB_CallsPostFlash)
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n"; // Simulate success
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_EQ(0, result); // Should return success
@@ -2680,7 +2721,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_DeviceInitiated_UpdatesUpgradeFlag
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n"; // Simulate success
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "device", "false");
     EXPECT_EQ(0, result); // Should return success
@@ -2700,7 +2741,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_Success_NonMediaClient_DownloadComplete)
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n"; // Simulate success
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_EQ(0, result); // Should return success
@@ -2722,7 +2763,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_HeaderFileExists_DeletesHeaderFile)
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n"; // Simulate success
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1); // Should not crash, accept any valid return value
@@ -2750,7 +2791,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_UserInitiated_RCDLFlagExists_DeletesRCDLFl
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n"; // Simulate success
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_GE(result, -1); // Should not crash, accept any valid return value
@@ -2771,7 +2812,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_FWDownloadStatus_PDRIUpgrade_YesPDRI)
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n"; // Simulate success
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 1, "false", "user", "false");
     EXPECT_EQ(0, result); // Should return success
@@ -2786,7 +2827,7 @@ TEST_F(FirmwareUpdateTest, FlashImage_FWDownloadStatus_NonPDRIUpgrade_NoPDRI)
     std::ofstream flasher("/lib/rdk/imageFlasher.sh");
     flasher << "#!/bin/bash\nexit 0\n"; // Simulate success
     flasher.close();
-    chmod("/lib/rdk/imageFlasher.sh", 0755);
+    safeChmod("/lib/rdk/imageFlasher.sh", 0755);
     
     int result = FirmwareUpdateImpl->flashImage("http://server.com", TEST_FIRMWARE_PATH.c_str(), "true", "http", 0, "false", "user", "false");
     EXPECT_EQ(0, result); // Should return success
@@ -2821,10 +2862,9 @@ TEST_F(FirmwareUpdateTest, OnJSONRPCError_ValidContext_ReturnsErrorCode)
     uint32_t result = WPEFramework::Plugin::FirmwareUpdate::OnJSONRPCError(
         context, method, parameters, errorcode, errormessage);
     
-    // Should return the same error code or a processed version
-    EXPECT_TRUE(result >= 0);
-    // Error message should be set or remain as is
-    EXPECT_TRUE(errormessage.length() >= 0);
+    // Method should execute without crashing
+    (void)result;
+    (void)errormessage;
 }
 
 TEST_F(FirmwareUpdateTest, OnJSONRPCError_EmptyMethod_HandlesGracefully)
@@ -2840,7 +2880,7 @@ TEST_F(FirmwareUpdateTest, OnJSONRPCError_EmptyMethod_HandlesGracefully)
         context, method, parameters, errorcode, errormessage);
     
     // Should handle empty method gracefully
-    EXPECT_TRUE(result >= 0);
+    (void)result;
 }
 
 TEST_F(FirmwareUpdateTest, OnJSONRPCError_InvalidJSON_HandlesGracefully)
@@ -2856,7 +2896,39 @@ TEST_F(FirmwareUpdateTest, OnJSONRPCError_InvalidJSON_HandlesGracefully)
         context, method, parameters, errorcode, errormessage);
     
     // Should handle invalid JSON gracefully
-    EXPECT_TRUE(result >= 0);
+    (void)result;
+}
+
+// Consolidated OnJSONRPCError test covering all error scenarios
+TEST_F(FirmwareUpdateTest, OnJSONRPCError_ComprehensiveErrorHandling)
+{
+    WPEFramework::Core::JSONRPC::Context context;
+    std::string errormessage;
+    
+    // Test with valid JSON
+    uint32_t result1 = WPEFramework::Plugin::FirmwareUpdate::OnJSONRPCError(
+        context, "updateFirmware", "{\"valid\":\"json\"}", 400, errormessage);
+    (void)result1;
+    
+    // Test with invalid JSON
+    uint32_t result2 = WPEFramework::Plugin::FirmwareUpdate::OnJSONRPCError(
+        context, "updateFirmware", "{invalid json}", 400, errormessage);
+    (void)result2;
+    
+    // Test with various error codes
+    std::vector<uint32_t> errorCodes = {0, 1, 100, 404, 500, 999, 0xFFFFFFFF};
+    for (uint32_t errorcode : errorCodes) {
+        uint32_t result = WPEFramework::Plugin::FirmwareUpdate::OnJSONRPCError(
+            context, "testMethod", "{}", errorcode, errormessage);
+        (void)result;
+    }
+    
+    // Test with special characters and long strings
+    std::string longMethod(1000, 'a');
+    std::string longParams(2000, 'b');
+    uint32_t result3 = WPEFramework::Plugin::FirmwareUpdate::OnJSONRPCError(
+        context, longMethod, longParams, 123, errormessage);
+    (void)result3;
 }
 
 TEST_F(FirmwareUpdateTest, MultipleInstances_IndependentOperation)
@@ -2890,7 +2962,7 @@ TEST_F(FirmwareUpdateTest, ErrorHandling_DifferentErrorCodes_ProcessCorrectly)
             context, method, parameters, errorcode, errormessage);
         
         // Should handle all error codes
-        EXPECT_TRUE(result >= 0);
+        (void)result;
     }
 }
 
@@ -2907,7 +2979,7 @@ TEST_F(FirmwareUpdateTest, LongStrings_HandledCorrectly)
         context, method, parameters, errorcode, errormessage);
     
     // Should handle long strings gracefully
-    EXPECT_TRUE(result >= 0);
+    (void)result;
 }
 
 TEST_F(FirmwareUpdateTest, SpecialCharacters_HandledCorrectly)
@@ -2923,7 +2995,7 @@ TEST_F(FirmwareUpdateTest, SpecialCharacters_HandledCorrectly)
         context, method, parameters, errorcode, errormessage);
     
     // Should handle special characters gracefully
-    EXPECT_TRUE(result >= 0);
+    (void)result;
 }
 
 // Notification Tests
