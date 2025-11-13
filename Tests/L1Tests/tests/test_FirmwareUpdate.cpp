@@ -2843,9 +2843,7 @@ TEST_F(FirmwareUpdateTest, Information_ReturnsValidString)
     ASSERT_TRUE(plugin.IsValid());
     
     std::string info = plugin->Information();
-    
-    // Should return a valid string (empty or with content)
-    EXPECT_TRUE(info.length() >= 0);
+
     // Information typically contains plugin details
     EXPECT_TRUE(info.empty() || info.find_first_not_of(" \t\n\r") != std::string::npos);
 }
@@ -2939,9 +2937,7 @@ TEST_F(FirmwareUpdateTest, MultipleInstances_IndependentOperation)
     // Test information retrieval multiple times
     std::string info1 = plugin->Information();
     std::string info2 = plugin->Information();
-    
-    EXPECT_TRUE(info1.length() >= 0);
-    EXPECT_TRUE(info2.length() >= 0);
+
     // Information should be consistent
     EXPECT_EQ(info1, info2);
 }
