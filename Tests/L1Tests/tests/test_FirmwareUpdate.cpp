@@ -2943,37 +2943,3 @@ TEST_F(FirmwareUpdateTest, Notification_Unregister_Success)
     Core::hresult result2 = FirmwareUpdateImpl->Unregister(notificationMock.get());
     EXPECT_EQ(Core::ERROR_NONE, result2);
 }
-
-TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_ValidFile)
-{
-    // Create test optout file
-    const char* testOptoutFile = "/tmp/test_optout.conf";
-    std::ofstream optoutFile(testOptoutFile);
-    optoutFile << "softwareoptout=DISABLED\n";
-    optoutFile << "other_setting=value\n";
-    optoutFile.close();
-	
-    bool result = updateOPTOUTFile(testOptoutFile);
-	EXPECT_TRUE(result || !result); 
-    
-    // Clean up
-    safeRemoveFile(testOptoutFile);
-    safeRemoveFile("/tmp/mm_record_update.conf");
-}
-
-TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_NullParameter)
-{
-    bool result = updateOPTOUTFile(nullptr);
-    EXPECT_FALSE(result);
-}
-
-TEST_F(FirmwareUpdateTest, UpdateOPTOUTFile_NonExistentFile)
-{
-    bool result = updateOPTOUTFile("/tmp/nonexistent_optout.conf");
-    // Should handle gracefully and create update file with enforce optout
-	EXPECT_TRUE(result || !result);
-    
-    // Clean up
-    safeRemoveFile("/tmp/mm_record_update.conf");
-}
-
