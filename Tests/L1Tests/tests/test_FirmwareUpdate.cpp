@@ -103,9 +103,11 @@ static int safeChmod(const char* filepath, mode_t mode) {
 }
 
 // Helper function to create unique temporary test directories
-// Returns path like "/tmp/fwupdate_test_<pid>_<random>/"
+// Returns path like "/tmp/fwupdate_test_<pid>_<timestamp>/"
 static std::string createTestTempDir() {
-    std::string tempDir = "/tmp/fwupdate_test_" + std::to_string(getpid()) + "_" + std::to_string(rand()) + "/";
+    auto now = std::chrono::high_resolution_clock::now();
+    auto timestamp = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+    std::string tempDir = "/tmp/fwupdate_test_" + std::to_string(getpid()) + "_" + std::to_string(timestamp) + "/";
     safeSystemCall(("mkdir -p " + tempDir).c_str());
     return tempDir;
 }
