@@ -1456,7 +1456,7 @@ TEST_F(FirmwareUpdateTest, PostFlash_PDRIUpgrade_NoReboot)
 
 TEST_F(FirmwareUpdateTest, PostFlash_MaintenanceMode_CriticalReboot)
 {
-	/ Use temporary directory instead of root level
+	// Use temporary directory instead of root level
     std::string tempDir = createTestTempDir();
     std::string tempRebootScript = tempDir + "rebootNow.sh";
 	
