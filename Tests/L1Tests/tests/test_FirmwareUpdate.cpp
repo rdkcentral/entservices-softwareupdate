@@ -57,11 +57,20 @@ namespace {
 // Helper function to safely remove files with proper error checking
 // Suppresses Coverity CHECKED_RETURN warnings in test cleanup code
 static void safeRemoveFile(const char* filepath) {
-    if (filepath != nullptr) {
-        int result = std::remove(filepath);
-        // In test code, we generally don't need to handle file removal failures
-        // as they're cleanup operations, but we check the result to satisfy Coverity
-        (void)result; // Explicitly mark result as intentionally unused to avoid warnings
+    if (filepath == nullptr) {
+        return;
+    }
+    
+    int result = std::remove(filepath);
+    if (result != 0) {
+        int err = errno;
+        // ENOENT (file not found) is acceptable - file already cleaned up
+        // Other errors may indicate test pollution or permission issues
+        if (err != ENOENT) {
+            std::cerr << "Warning: Failed to remove file '" << filepath 
+                      << "' - errno: " << err << " (" << strerror(err) << ")" 
+                      << std::endl;
+        }
     }
 }
 
@@ -124,6 +133,8 @@ extern std::string readProperty(std::string filename, std::string property, std:
 #define WRITE_RFC_SUCCESS 1
 #define WRITE_RFC_FAILURE -1
 
+// This mock uses non-standard COM lifetime behavior for testing purposes.
+// The Release() method does NOT delete the object when refcount reaches zero.
 class NotificationHandlerMock : public Exchange::IFirmwareUpdate::INotification {
 private:
     mutable std::atomic<uint32_t> m_refCount{1};
@@ -132,6 +143,10 @@ public:
     NotificationHandlerMock() = default;
     virtual ~NotificationHandlerMock() = default;
 
+    // Prevent accidental copying which could violate lifetime assumptions
+    NotificationHandlerMock(const NotificationHandlerMock&) = delete;
+    NotificationHandlerMock& operator=(const NotificationHandlerMock&) = delete;
+
     MOCK_METHOD(void, OnUpdateStateChange, (const Exchange::IFirmwareUpdate::State state,
                                           const Exchange::IFirmwareUpdate::SubState substate), (override));
     MOCK_METHOD(void, OnFlashingStateChange, (const uint32_t percentageComplete), (override));
@@ -139,12 +154,16 @@ public:
     void AddRef() const override {
         m_refCount.fetch_add(1, std::memory_order_relaxed);
     }
+
     uint32_t Release() const override {
         uint32_t count = m_refCount.fetch_sub(1, std::memory_order_acq_rel);
         // Don't actually delete in tests - let the test framework manage lifetime
         return count - 1;
     }
     void* QueryInterface(const uint32_t interfaceNumber) override { return nullptr; }
+
+    // Helper for debugging reference count issues in tests
+    uint32_t GetRefCount() const { return m_refCount.load(std::memory_order_relaxed);}
 };
 
 class FirmwareUpdateTest : public ::testing::Test {
@@ -164,7 +183,6 @@ protected:
     Core::ProxyType<WorkerPoolImplementation> workerPool;
     std::unique_ptr<NotificationHandlerMock> notificationMock;
     NiceMock<FactoriesImplementation> factoriesImplementation;
-    std::atomic<bool> flashInProgress;
 
     FirmwareUpdateTest()
         : plugin(Core::ProxyType<Plugin::FirmwareUpdate>::Create())
@@ -173,16 +191,15 @@ protected:
         , workerPool(Core::ProxyType<WorkerPoolImplementation>::Create(
             2, Core::Thread::DefaultStackSize(), 16))
         , notificationMock(std::make_unique<NotificationHandlerMock>())
-        , flashInProgress(false) 
     {
         
-    	p_wrapsImplMock  = new testing::NiceMock <WrapsImplMock>;
+    	p_wrapsImplMock = new testing::NiceMock <WrapsImplMock>;
     	Wraps::setImpl(p_wrapsImplMock);
 
-		p_rfcApiImplMock  = new testing::NiceMock <RfcApiImplMock>;
+		p_rfcApiImplMock = new testing::NiceMock <RfcApiImplMock>;
         RfcApi::setImpl(p_rfcApiImplMock);
 		
-	    p_iarmBusImplMock  = new NiceMock <IarmBusImplMock>;
+	    p_iarmBusImplMock = new NiceMock <IarmBusImplMock>;
     	IarmBus::setImpl(p_iarmBusImplMock);
 
         ON_CALL(service, COMLink())
@@ -279,12 +296,9 @@ protected:
         safeRemoveFile(FIRMWARE_UPDATE_STATE);
         safeRemoveFile(TEST_FIRMWARE_PATH.c_str());
         createTestFirmwareFile();
-        flashInProgress = false;
     }
 
     void TearDown() override {
-        // Give time for any background operations to complete
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         safeRemoveFile(FIRMWARE_UPDATE_STATE);
         safeRemoveFile(TEST_FIRMWARE_PATH.c_str());
     }
@@ -696,9 +710,8 @@ TEST_F(FirmwareUpdateTest, FlashImage_ValidParameters)
 TEST_F(FirmwareUpdateTest, FlashImage_NullParameters)
 {
     ASSERT_TRUE(FirmwareUpdateImpl.IsValid());
-    // Note: Cannot pass nullptr for proto due to implementation bug (strcmp before null check)
-    // Test with nullptr for other parameters that are safely checked first
-    int result = FirmwareUpdateImpl->flashImage(nullptr, nullptr, nullptr, "http", 0, nullptr, nullptr, nullptr);
+    // Test null handling for all parameters, including proto (should not crash; should return -1)
+    int result = FirmwareUpdateImpl->flashImage(nullptr, nullptr, nullptr, nullptr, 0, nullptr, nullptr, nullptr);
     EXPECT_EQ(-1, result);
 }
 
