@@ -768,9 +768,19 @@ namespace WPEFramework {
                 fileWithoutExtension = name;
             }
 
-            if (fileWithoutExtension == currentFlashedImage)
-            {
+			// Read currently running image from /tmp/currently_running_image_name
+			std::ifstream runningImgFile("/tmp/currently_running_image_name");
+			std::string currentRunningImage;
+			if (runningImgFile.is_open()) {
+			    std::getline(runningImgFile, currentRunningImage);
+			    runningImgFile.close();
+			    SWUPDATEINFO("currentRunningImage : %s", currentRunningImage.c_str());
+			} else {
+			    SWUPDATEERR("Failed to read /tmp/currently_running_image_name");
+			}
 
+			if (fileWithoutExtension == currentFlashedImage || name == currentRunningImage) 	
+            {
                 SWUPDATEERR("FW version of the active image and the image to be upgraded are the same. No upgrade required. imagename : %s" ,name.c_str());
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|No upgrade needed\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|No upgrade needed\n");
