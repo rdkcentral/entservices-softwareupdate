@@ -61,6 +61,7 @@ namespace WPEFramework {
                 LOGINFO("flashThread is still running or joinable. Joining now...");
                 flashThread.join();  // Ensure the thread has completed before main exits
             }
+            LOGINFO("isFlashingInProgress = %d", isFlashingInProgress.load());
             mShell = nullptr;
             DeinitializeIARM();
         }
@@ -583,6 +584,7 @@ namespace WPEFramework {
         uint32_t FirmwareUpdateImplementation::Configure(PluginHost::IShell* shell)
         {
             LOGINFO("Configuring FirmwareUpdateImplementation");
+            LOGINFO("isFlashingInProgress = %d", isFlashingInProgress.load());
             uint32_t result = Core::ERROR_NONE;
             ASSERT(shell != nullptr);
             mShell = shell;
@@ -701,6 +703,9 @@ namespace WPEFramework {
 
         Core::hresult FirmwareUpdateImplementation::UpdateFirmware(const string& firmwareFilepath , const string& firmwareType , Result &result ) 
         {
+            LOGINFO("[%s:%d] Entering UpdateFirmware function", __FUNCTION__, __LINE__);
+            LOGINFO("[%s:%d] Parameters - firmwareFilepath: '%s', firmwareType: '%s'", __FUNCTION__, __LINE__, firmwareFilepath.c_str(), firmwareType.c_str());
+            
             Core::hresult status = Core::ERROR_GENERAL;
             std::string state =  "";
             std::string substate =  "";
@@ -709,17 +714,22 @@ namespace WPEFramework {
             string dri = (firmwareType == "DRI") ? "yes" : "no";
             string initiated_type = "user"; //default is user now .Based on Future implementation it will change.
 
+            LOGINFO("[%s:%d] Firmware type determined as DRI: %s, initiated_type: %s", __FUNCTION__, __LINE__, dri.c_str(), initiated_type.c_str());
+
             if(firmwareFilepath == "")
             {
+                LOGINFO("[%s:%d] Validation failed - firmwareFilepath is empty", __FUNCTION__, __LINE__);
                 SWUPDATEERR("firmwareFilepath is empty");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareFilepath is empty\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
                 status = Core::ERROR_INVALID_PARAMETER;
+                LOGINFO("[%s:%d] Returning with status: Core::ERROR_INVALID_PARAMETER", __FUNCTION__, __LINE__);
                 return status;
             }
             else if (!(Utils::fileExists(firmwareFilepath.c_str()))) {
+                LOGINFO("[%s:%d] Validation failed - firmwareFile does not exist at path: %s", __FUNCTION__, __LINE__, firmwareFilepath.c_str());
                 SWUPDATEERR("firmwareFile is not present %s",firmwareFilepath.c_str());
                 SWUPDATEERR("Local image Download Failed"); //Existing marker
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
@@ -727,36 +737,49 @@ namespace WPEFramework {
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareFile is not present\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
                 status = Core::ERROR_INVALID_PARAMETER;
+                LOGINFO("[%s:%d] Returning with status: Core::ERROR_INVALID_PARAMETER", __FUNCTION__, __LINE__);
                 return status;
             }
 
+            LOGINFO("[%s:%d] File validation passed - firmware file exists", __FUNCTION__, __LINE__);
+
             if(firmwareType !=""){
+                LOGINFO("[%s:%d] Validating firmwareType: '%s'", __FUNCTION__, __LINE__, firmwareType.c_str());
                 if (firmwareType != "PCI" && firmwareType != "DRI") {
+                    LOGINFO("[%s:%d] Validation failed - Invalid firmwareType (must be 'PCI' or 'DRI')", __FUNCTION__, __LINE__);
                     SWUPDATEERR("firmwareType must be either 'PCI' or 'DRI'.");
                     snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                     snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                     snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareType must be either 'PCI' or 'DRI'.\n");
                     updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
                     status = Core::ERROR_INVALID_PARAMETER;
+                    LOGINFO("[%s:%d] Returning with status: Core::ERROR_INVALID_PARAMETER", __FUNCTION__, __LINE__);
                     return status;
                 }
+                LOGINFO("[%s:%d] FirmwareType validation passed", __FUNCTION__, __LINE__);
             }
             else
             {
+                LOGINFO("[%s:%d] Validation failed - firmwareType is empty", __FUNCTION__, __LINE__);
                 SWUPDATEERR("firmwareType is empty");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|firmwareType is empty\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
                 status = Core::ERROR_INVALID_PARAMETER;
+                LOGINFO("[%s:%d] Returning with status: Core::ERROR_INVALID_PARAMETER", __FUNCTION__, __LINE__);
                 return status;
             }
 
             string name = firmwareFilepath.substr(firmwareFilepath.find_last_of("/\\") + 1);
             string path = firmwareFilepath.substr(0, firmwareFilepath.find_last_of("/\\") + 1);
 
+            LOGINFO("[%s:%d] Extracted filename: '%s', path: '%s'", __FUNCTION__, __LINE__, name.c_str(), path.c_str());
+
             string currentFlashedImage = readProperty("/version.txt","imagename", ":") ;
             SWUPDATEINFO("currentFlashedImage : %s",currentFlashedImage.c_str());
+            LOGINFO("[%s:%d] Current flashed image: '%s'", __FUNCTION__, __LINE__, currentFlashedImage.c_str());
+            
             std::string fileWithoutExtension ="";
             // Find the position of the last '.'
             size_t dotPos = name.find_last_of('.');
@@ -768,40 +791,55 @@ namespace WPEFramework {
                 fileWithoutExtension = name;
             }
 
+            LOGINFO("[%s:%d] Firmware filename without extension: '%s'", __FUNCTION__, __LINE__, fileWithoutExtension.c_str());
+
             if (fileWithoutExtension == currentFlashedImage)
             {
-
+                LOGINFO("[%s:%d] Version check failed - firmware version matches current version, no upgrade needed", __FUNCTION__, __LINE__);
                 SWUPDATEERR("FW version of the active image and the image to be upgraded are the same. No upgrade required. imagename : %s" ,name.c_str());
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|No upgrade needed\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|No upgrade needed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|No upgrade needed\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
                 status = ERROR_FIRMWAREUPDATE_UPTODATE;
+                LOGINFO("[%s:%d] Returning with status: ERROR_FIRMWAREUPDATE_UPTODATE", __FUNCTION__, __LINE__);
                 return status;
             }
 
+            LOGINFO("[%s:%d] Version check passed - firmware version differs from current version", __FUNCTION__, __LINE__);
+
 
             // Ensure only one flashing operation happens at a time
+            LOGINFO("[%s:%d] Checking if flashing operation is already in progress", __FUNCTION__, __LINE__);
             bool expected = false;
             if (!isFlashingInProgress.compare_exchange_strong(expected, true)) {
+                LOGINFO("[%s:%d] Flashing operation blocked - another operation is already in progress", __FUNCTION__, __LINE__);
                 SWUPDATEERR("Error: Flashing is already in progress. Cannot start a new operation.");
                 snprintf(fwdls.status, sizeof(fwdls.status), "Status|Failure\n");
                 snprintf(fwdls.FwUpdateState, sizeof(fwdls.FwUpdateState), "FwUpdateState|Failed\n");
                 snprintf(fwdls.failureReason, sizeof(fwdls.failureReason), "FailureReason|Flashing is already in progress\n");
                 updateFWDownloadStatus(&fwdls, dri.c_str(),initiated_type.c_str());
                 status = ERROR_FIRMWAREUPDATE_INPROGRESS;
+                LOGINFO("[%s:%d] Returning with status: ERROR_FIRMWAREUPDATE_INPROGRESS", __FUNCTION__, __LINE__);
                 return status;
             }
 
+            LOGINFO("[%s:%d] Flashing operation lock acquired successfully", __FUNCTION__, __LINE__);
+
             if (flashThread.joinable()) {
+                LOGINFO("[%s:%d] Previous flashThread is joinable, waiting for it to complete", __FUNCTION__, __LINE__);
                 SWUPDATEINFO("flashThread is still running or joinable. Joining now...");
                 flashThread.join();  // Ensure the thread has completed before main exits
+                LOGINFO("[%s:%d] Previous flashThread joined successfully", __FUNCTION__, __LINE__);
             }
+            
             // Start a new flashing thread
+            LOGINFO("[%s:%d] Starting new flash thread with firmware: '%s', type: '%s'", __FUNCTION__, __LINE__, firmwareFilepath.c_str(), firmwareType.c_str());
             flashThread = std::thread(&WPEFramework::Plugin::FirmwareUpdateImplementation::flashImageThread, this, firmwareFilepath, firmwareType);
             result.success = true;
             status =Core::ERROR_NONE;
 
+            LOGINFO("[%s:%d] UpdateFirmware completed successfully, returning with status: Core::ERROR_NONE", __FUNCTION__, __LINE__);
             return status;
         }
 
