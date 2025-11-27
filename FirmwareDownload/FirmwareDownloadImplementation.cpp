@@ -125,7 +125,7 @@ namespace WPEFramework
                         ++index;
                     }
                     break;
- 
+
                 default:
                     LOGWARN("Event[%u] not handled", event);
                     break;

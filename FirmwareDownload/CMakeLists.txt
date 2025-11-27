@@ -20,7 +20,7 @@ set(PLUGIN_NAME FirmwareDownload)
 set(MODULE_NAME ${NAMESPACE}${PLUGIN_NAME})
 set(PLUGIN_IMPLEMENTATION ${MODULE_NAME}Implementation)
 
-set(PLUGIN_SYSTEMMODE_AUTOSTART "false" CACHE STRING "Automatically start FirmwareDownload plugin")
+set(PLUGIN_FIRMWAREDOWNLOAD_AUTOSTART "false" CACHE STRING "Automatically start FirmwareDownload plugin")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -59,8 +59,7 @@ set_target_properties(${PLUGIN_IMPLEMENTATION} PROPERTIES
 target_link_libraries(${PLUGIN_IMPLEMENTATION}
     PRIVATE
         CompileSettingsDebug::CompileSettingsDebug
-        ${NAMESPACE}Plugins::${NAMESPACE}Plugins
-         )
+        ${NAMESPACE}Plugins::${NAMESPACE}Plugins)
 
 install(TARGETS ${PLUGIN_IMPLEMENTATION}
     DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/${STORAGE_DIRECTORY}/plugins)

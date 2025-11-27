@@ -37,7 +37,6 @@ namespace WPEFramework
                 FirmwareDownloadImplementation();
                 ~FirmwareDownloadImplementation() override;
 
-                // We do not allow this plugin to be copied !!
                 FirmwareDownloadImplementation(const FirmwareDownloadImplementation&) = delete;
                 FirmwareDownloadImplementation& operator=(const FirmwareDownloadImplementation&) = delete;
 
@@ -50,7 +49,7 @@ namespace WPEFramework
                 {
                     FIRMWAREDOWNLOAD_EVT_ONFIRMWAREAVAILABLE
                 };
- 
+
             class EXTERNAL Job : public Core::IDispatch {
             protected:
                 Job(FirmwareDownloadImplementation* firmwareDownloadImplementation, Event event, JsonObject &params)
@@ -73,7 +72,7 @@ namespace WPEFramework
                 }
 
             public:
-                static Core::ProxyType<Core::IDispatch> Create(FirmwareDownloadImplementation* firmwareDownloadImplementation, Event event, JsonObject  params ) {
+                static Core::ProxyType<Core::IDispatch> Create(FirmwareDownloadImplementation* firmwareDownloadImplementation, Event event, JsonObject params ) {
 #ifndef USE_THUNDER_R4
                     return (Core::proxy_cast<Core::IDispatch>(Core::ProxyType<Job>::Create(firmwareDownloadImplementation, event, params)));
 #else
@@ -94,22 +93,22 @@ namespace WPEFramework
             virtual Core::hresult Register(Exchange::IFirmwareDownload::INotification *notification ) override ;
             virtual Core::hresult Unregister(Exchange::IFirmwareDownload::INotification *notification ) override;
 
-	    Core::hresult GetDownloadedFirmwareInfo(string& currentFWVersion, string& downloadedFWVersion, string& downloadedFWLocation, bool& isRebootDeferred)override;
-	    Core::hresult GetFirmwareDownloadPercent( FirmwareDownloadPercent& firmwareDownloadPercent) override;
-	    Core::hresult SearchFirmware() override;
-	    Core::hresult GetDownloadState( FirmwareDownloadState& downloadState) override;
-	    Core::hresult GetDownloadFailureReason( DownloadFailureReason& downloadFailureReason) override;
+            Core::hresult GetDownloadedFirmwareInfo(string& currentFWVersion, string& downloadedFWVersion, string& downloadedFWLocation, bool& isRebootDeferred) override;
+            Core::hresult GetFirmwareDownloadPercent( FirmwareDownloadPercent& firmwareDownloadPercent) override;
+            Core::hresult SearchFirmware() override;
+            Core::hresult GetDownloadState( FirmwareDownloadState& downloadState) override;
+            Core::hresult GetDownloadFailureReason( DownloadFailureReason& downloadFailureReason) override;
 
 
         private:
             mutable Core::CriticalSection _adminLock;
             PluginHost::IShell* _service;
             std::list<Exchange::IFirmwareDownload::INotification*> _firmwareDownloadNotification;
+            static FirmwareDownloadImplementation* _instance;
 
             void dispatchEvent(Event, const JsonObject &params);
             void Dispatch(Event event, const JsonObject params);
         public:
-            static FirmwareDownloadImplementation* _instance;
             void OnFirmwareAvailable (int searchStatus, string serverResponse, bool firmwareAvailable, string firmwareVersion, bool rebootImmediately);
 
             friend class Job;

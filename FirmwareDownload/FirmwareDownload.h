@@ -102,6 +102,6 @@ namespace WPEFramework
                     uint32_t _connectionId{};
                     Exchange::IFirmwareDownload* _firmwareDownload{};
                     Core::Sink<Notification> _firmwareDownloadNotification;
-       };
+        };
     } // namespace Plugin
 } // namespace WPEFramework
