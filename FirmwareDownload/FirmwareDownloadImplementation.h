@@ -99,7 +99,6 @@ namespace WPEFramework
             Core::hresult GetDownloadState( FirmwareDownloadState& downloadState) override;
             Core::hresult GetDownloadFailureReason( DownloadFailureReason& downloadFailureReason) override;
 
-
         private:
             mutable Core::CriticalSection _adminLock;
             PluginHost::IShell* _service;
