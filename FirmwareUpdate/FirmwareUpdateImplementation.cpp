@@ -434,13 +434,9 @@ namespace WPEFramework {
                 std::thread timerThread(&WPEFramework::Plugin::FirmwareUpdateImplementation::startProgressTimer, this);
 	            dispatchAndUpdateEvent(_FLASHING_STARTED,"");
 
-                if (file == NULL) {
-                    SWUPDATEERR("%s: Invalid file path - no directory separator found in upgrade_file\n", __FUNCTION__);
-                    isFlashingInProgress = false;
-                    if (timerThread.joinable()) timerThread.join();
-                    return -1;
-                }
-                ret = v_secure_system("/lib/rdk/imageFlasher.sh '%s' '%s' '%s' '%s' '%s' '%s' >> /opt/logs/swupdate.log", proto, server_url, difw_path, file+1, rflag, uptype);                // Reset flashing status
+                ret = v_secure_system("/lib/rdk/imageFlasher.sh '%s' '%s' '%s' '%s' '%s' '%s' >> /opt/logs/swupdate.log", proto, server_url, difw_path, file+1, rflag, uptype);
+
+                // Reset flashing status
                 isFlashingInProgress = false;
 
                 // Wait for the timer thread to complete
@@ -509,11 +505,6 @@ namespace WPEFramework {
                     eventManager(FW_STATE_EVENT, FW_STATE_VALIDATION_COMPLETE);
                     FILE *fp = fopen("/opt/cdl_flashed_file_name", "w");
                     if (fp != NULL) {
-                        if (file == NULL) {
-                            SWUPDATEERR("%s: Invalid file path - no directory separator found\n", __FUNCTION__);
-                            fclose(fp);
-                            return -1;
-                        }
                         fprintf(fp, "%s\n", file+1);
                         fclose(fp);
                     }
@@ -523,10 +514,6 @@ namespace WPEFramework {
                 }	
                 else
                 {
-                    if (file == NULL) {
-                        SWUPDATEERR("%s: Invalid file path for postFlash - no directory separator found\n", __FUNCTION__);
-                        return -1;
-                    }
                     postFlash(maint, file+1, upgrade_type, reboot_flag ,initiated_type);
                     dispatchAndUpdateEvent(_FLASHING_SUCCEEDED,"");
                 }
