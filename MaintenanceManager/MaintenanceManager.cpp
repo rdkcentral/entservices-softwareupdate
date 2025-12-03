@@ -1224,8 +1224,10 @@ namespace WPEFramework
             case ACTIVATION_CONNECT:
                 ret_result = true;
                 skipFirmwareCheck = true;
+                break;
             default:
                 ret_result = true;
+				break;
             }
 
             MM_LOGINFO("ret_result: [%s] skipFirmwareCheck:[%s]", (ret_result) ? "true" : "false", (skipFirmwareCheck) ? "true" : "false");
