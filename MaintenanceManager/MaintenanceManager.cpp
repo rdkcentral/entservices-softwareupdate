@@ -1227,6 +1227,7 @@ namespace WPEFramework
                 break;
             default:
                 ret_result = true;
+				break;
             }
 
             MM_LOGINFO("ret_result: [%s] skipFirmwareCheck:[%s]", (ret_result) ? "true" : "false", (skipFirmwareCheck) ? "true" : "false");
