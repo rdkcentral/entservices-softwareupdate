@@ -31,7 +31,33 @@ git clone --branch  R4.4.3 https://github.com/rdkcentral/ThunderTools.git
 
 git clone --branch R4.4.1 https://github.com/rdkcentral/Thunder.git
 
-git clone --branch main https://github.com/rdkcentral/entservices-apis.git
+# Determine current branch name
+# Prefer GitHub Actions PR head ref (GITHUB_HEAD_REF) when available.
+# Otherwise use GITHUB_REF (refs/heads/<branch>) or git as a final fallback.
+if [ -n "${GITHUB_HEAD_REF:-}" ]; then
+  CURRENT_BRANCH="${GITHUB_HEAD_REF}"
+elif [ -n "${GITHUB_REF:-}" ]; then
+  # remove refs/heads/ prefix if present
+  CURRENT_BRANCH="${GITHUB_REF#refs/heads/}"
+else
+  # Last resort: local git branch (works when build ran on a branch checkout)
+  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
+fi
+
+echo "Using branch: ${CURRENT_BRANCH}"
+
+# Clone entservices-apis using the current branch if available, otherwise fallback to develop
+if [ ! -d "entservices-apis" ]; then
+  # check whether the remote has the requested branch before trying to clone it
+  if git ls-remote --heads https://github.com/rdkcentral/entservices-apis.git "${CURRENT_BRANCH}" | grep -q "refs/heads/${CURRENT_BRANCH}"; then
+    git clone --branch "${CURRENT_BRANCH}" https://github.com/rdkcentral/entservices-apis.git
+  else
+    echo "Branch ${CURRENT_BRANCH} not found in entservices-apis, falling back to 'develop'"
+    git clone --branch develop https://github.com/rdkcentral/entservices-apis.git
+  fi
+fi
+
+#git clone --branch main https://github.com/rdkcentral/entservices-apis.git
 
 git clone https://$GITHUB_TOKEN@github.com/rdkcentral/entservices-testframework.git
 
