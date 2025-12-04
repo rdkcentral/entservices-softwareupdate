@@ -807,6 +807,8 @@ namespace WPEFramework {
 
         Core::hresult FirmwareUpdateImplementation::GetUpdateState(GetUpdateStateResult& getUpdateStateResult ) 
         {
+			LOGINFO("Hello Tester! This is for Premerge CI STBT-51349_Dev_IA_V3 testing");
+			
             Core::hresult status = Core::ERROR_GENERAL;    
             std::string strState = "";
             std::string strSubState = "";
