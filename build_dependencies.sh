@@ -31,20 +31,20 @@ git clone --branch  R4.4.3 https://github.com/rdkcentral/ThunderTools.git
 
 git clone --branch R4.4.1 https://github.com/rdkcentral/Thunder.git
 
-CURRENT_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
-CURRENT_BRANCH="${CURRENT_BRANCH:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")}"
+#CURRENT_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+#CURRENT_BRANCH="${CURRENT_BRANCH:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")}"
 
-echo "Using branch: ${CURRENT_BRANCH}"
+#echo "Using branch: ${CURRENT_BRANCH}"
 
 # Clone entservices-apis using the current branch if available, otherwise fallback to main
-if git ls-remote --heads https://github.com/rdkcentral/entservices-apis.git "${CURRENT_BRANCH}" | grep -q "refs/heads/${CURRENT_BRANCH}"; then
-  git clone --branch "${CURRENT_BRANCH}" https://github.com/rdkcentral/entservices-apis.git
-else
-  echo "Branch ${CURRENT_BRANCH} not found in entservices-apis, falling back to 'main'"
-  git clone --branch main https://github.com/rdkcentral/entservices-apis.git
-fi
+#if git ls-remote --heads https://github.com/rdkcentral/entservices-apis.git "${CURRENT_BRANCH}" | grep -q "refs/heads/${CURRENT_BRANCH}"; then
+#  git clone --branch "${CURRENT_BRANCH}" https://github.com/rdkcentral/entservices-apis.git
+#else
+#  echo "Branch ${CURRENT_BRANCH} not found in entservices-apis, falling back to 'main'"
+#  git clone --branch main https://github.com/rdkcentral/entservices-apis.git
+#fi
 
-#git clone --branch main https://github.com/rdkcentral/entservices-apis.git
+git clone --branch feature/RDKEMW-6475 https://github.com/rdkcentral/entservices-apis.git
 
 git clone https://$GITHUB_TOKEN@github.com/rdkcentral/entservices-testframework.git
 
