@@ -118,22 +118,25 @@ TEST_F(MaintenanceManagerTest, getMaintenanceStartTime_json_rpc)
         MaintenanceManagerConfFile << "start_min=\"30\"\n";
         MaintenanceManagerConfFile << "tz_mode=\"UTC\"\n"; 
         MaintenanceManagerConfFile.close();
-        
-        std::ifstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
-        if (!MaintenanceManagerConfFile) {
-            std::cerr << "Failed to open /opt/rdk_maintenance.conf for reading." << std::endl;
-        }
-
+    }
+    
+    std::ifstream verifyFile("/opt/rdk_maintenance.conf");
+    if (!verifyFile) {
+        std::cerr << "Failed to open /opt/rdk_maintenance.conf for reading." << std::endl;
+    } else {
         std::string line;
-        while (std::getline(MaintenanceManagerConfFile, line)) {
+        while (std::getline(verifyFile, line)) {
             std::cout << line << std::endl;
         }
+        verifyFile.close();
+    }
+       
     status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params1, results1);
     ASSERT_EQ(results1["success"].Boolean(), true);
     ASSERT_EQ(status, Core::ERROR_NONE);
-    }
-
+    
 }
+
 //getMaintenanceActivityStatus jsonRPC
 TEST_F(MaintenanceManagerTest,getMaintenanceActivityStatus)
 {
