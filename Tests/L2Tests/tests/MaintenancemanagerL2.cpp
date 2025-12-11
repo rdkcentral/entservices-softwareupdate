@@ -166,7 +166,7 @@ TEST_F(MaintenanceManagerTest,stopMaintenance)
 {
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params1, results1;
-    sleep(2);
+
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
     ASSERT_EQ(results1["success"].Boolean(), true);
     ASSERT_EQ(status, Core::ERROR_NONE);
@@ -180,7 +180,6 @@ TEST_F(MaintenanceManagerTest, startMaintenance_active_maintenance)
     ASSERT_EQ(status, Core::ERROR_GENERAL);
     ASSERT_EQ(results1["success"].Boolean(), false);
 
-    sleep(2);
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
     ASSERT_EQ(results1["maintenanceStatus"].String(), "MAINTENANCE_STARTED");
     ASSERT_EQ(results1["isRebootPending"].Boolean(), false);
