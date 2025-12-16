@@ -1,6 +1,6 @@
 #!/bin/bash
 
-chmod +x maintenance.sh
+
 URL="http://127.0.0.1:9998/jsonrpc"
 AUTH_HEADER="Authorization: Bearer"
 LOG_FILE="/opt/logs/maintenance.log"
