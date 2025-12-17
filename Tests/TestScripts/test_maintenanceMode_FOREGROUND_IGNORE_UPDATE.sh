@@ -62,6 +62,7 @@ echo -e "\n"
 
 # ---------------------------------------------------------
 # 3. Trigger Maintenance Mode
+# Maintenance should not be running
 # ---------------------------------------------------------
 echo "STEP 3: Triggering startMaintenance..."
 
