@@ -39,6 +39,28 @@ echo "Response: $GET_RESPONSE"
 echo -e "\n"
 
 # ---------------------------------------------------------
+# 2A Verify GET_RESPONSE matches EXPECTED_MODE and EXPECTED_OPTOUT
+# ---------------------------------------------------------
+
+# Extract values from JSON response
+REPORTED_MODE=$(echo "$GET_RESPONSE" | grep -o '"maintenanceMode":"[^"]*"' | cut -d':' -f2 | tr -d '"')
+REPORTED_OPTOUT=$(echo "$GET_RESPONSE" | grep -o '"optOut":"[^"]*"' | cut -d':' -f2 | tr -d '"')
+
+echo "Extracted maintenanceMode: $REPORTED_MODE"
+echo "Extracted optOut: $REPORTED_OPTOUT"
+
+# Compare both values
+if [[ "$REPORTED_MODE" == "$EXPECTED_MODE" ]] && [[ "$REPORTED_OPTOUT" == "$EXPECTED_OPTOUT" ]]; then
+    echo "Verification: PASS — maintenanceMode and optOut match expected values."
+else
+    echo "Verification: FAIL"
+    echo "Expected maintenanceMode: $EXPECTED_MODE, Got: $REPORTED_MODE"
+    echo "Expected optOut: $EXPECTED_OPTOUT, Got: $REPORTED_OPTOUT"
+fi
+
+echo -e "\n"
+
+# ---------------------------------------------------------
 # 3. Trigger Maintenance Mode
 # ---------------------------------------------------------
 echo "STEP 3: Triggering startMaintenance..."
