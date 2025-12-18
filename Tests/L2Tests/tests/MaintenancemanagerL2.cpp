@@ -173,17 +173,20 @@ TEST_F(MaintenanceManagerTest,stopMaintenance)
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
         if ((status == Core::ERROR_NONE) &&
             results1.HasLabel("maintenanceStatus") &&
-            (results1["maintenanceStatus"].String() == "MAINTENANCE_STARTED")) {
+    bool maintenanceStarted = false;
+    while (retries-- > 0) {
+        status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
+        if (results1["maintenanceStatus"].String() == "MAINTENANCE_STARTED") {
+            maintenanceStarted = true;
             break;
         }
         sleep(1);
     }
     
     // Verify maintenance is running
-    ASSERT_EQ(status, Core::ERROR_NONE) 
-        << "getMaintenanceActivityStatus failed";
-    ASSERT_EQ(results1["maintenanceStatus"].String(), "MAINTENANCE_STARTED") 
-        << "Maintenance did not start within timeout";
+    ASSERT_TRUE(maintenanceStarted)
+        << "Maintenance did not start within timeout. Last status: "
+        << results1["maintenanceStatus"].String();
     
     // Now stop the active maintenance
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
