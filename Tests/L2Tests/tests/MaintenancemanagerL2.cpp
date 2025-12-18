@@ -166,6 +166,7 @@ TEST_F(MaintenanceManagerTest,stopMaintenance)
 {
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params1, results1;
+    bool maintenanceStarted = false;
     
     // Wait for maintenance to actually start (with timeout)
     int retries = 10;  // 10 seconds max
@@ -173,10 +174,7 @@ TEST_F(MaintenanceManagerTest,stopMaintenance)
         status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
         if ((status == Core::ERROR_NONE) &&
             results1.HasLabel("maintenanceStatus") &&
-    bool maintenanceStarted = false;
-    while (retries-- > 0) {
-        status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
-        if (results1["maintenanceStatus"].String() == "MAINTENANCE_STARTED") {
+            results1["maintenanceStatus"].String() == "MAINTENANCE_STARTED") {
             maintenanceStarted = true;
             break;
         }
