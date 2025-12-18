@@ -468,7 +468,7 @@ jobs:
           -DPLUGIN_MAINTENANCEMANAGER=ON
           -DPLUGIN_PACKAGER=ON
           &&
-          cmake --build build/entservices-softwareupdate -j8
+          cmake --build build/entservices-softwareupdate
           &&
           cmake --install build/entservices-softwareupdate
 
