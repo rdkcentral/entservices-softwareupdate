@@ -426,7 +426,7 @@ jobs:
           -DDS_FOUND=ON
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           &&
-          cmake --build build/entservices-softwareupdate -j8
+          cmake --build build/entservices-softwareupdate
           &&
           cmake --install build/entservices-softwareupdate
 
