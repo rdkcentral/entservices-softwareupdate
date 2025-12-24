@@ -26,7 +26,7 @@ QueryInterface:
 _userSettingsPlugin = _service->QueryInterface<WPEFramework::Exchange::IUserSettings>();
 ```
 
-SHOULD not use JSON-RPC or LinkType for inter-plugin communication, as they introduce unnecessary overhead.
+should not use JSON-RPC or LinkType for inter-plugin communication, as they introduce unnecessary overhead.
 
 ### Incorrect Example
 
@@ -151,7 +151,7 @@ void RegisterWithTarget(const string& callsign, PluginHost::IShell* plugin) {
 }
 ```
 
-If the notifying plugin supports only JSON-RPC, then use a specialized smart link type when subscribing to its events. This method allows the framework to efficiently handle Plugin statechange events.
+If the notifying plugin supports only JSON-RPC, then use a specialized smart link type when subscribing to its events. This method allows the framework to efficiently handle Plugin state change events.
 
 ### Example
 

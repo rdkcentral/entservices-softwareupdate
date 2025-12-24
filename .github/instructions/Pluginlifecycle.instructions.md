@@ -33,7 +33,7 @@ const string HdcpProfile::Initialize(PluginHost::IShell* service) {
 }
 ```
 
-- Plugin should register your listener object twice:
+- The plugin should register its listener object twice:
 
   - Framework Service (_service): Use _service->Register(listener) to receive general plugin state change notifications (like ACTIVATED/DEACTIVATED).
 
@@ -252,7 +252,7 @@ void HdcpProfile::Deinitialize(PluginHost::IShell* service) {
 
 ### Deactivated
 
-Each plugin should implement the deactivated method. In Deactivated, it should be checked if remote connectionId matches your plugin's connectionId. If it matches your plugin's connectionId, the plugin should submit a deactivation job to handle the out-of-process failure gracefully.
+Each plugin should implement the Deactivated method. In Deactivated, it should be checked if remote connectionId matches your plugin's connectionId. If it matches your plugin's connectionId, the plugin should submit a deactivation job to handle the out-of-process failure gracefully.
 
 ### Example
 
