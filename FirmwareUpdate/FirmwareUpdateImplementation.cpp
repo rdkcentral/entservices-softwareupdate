@@ -19,6 +19,9 @@
 
 #include "FirmwareUpdateImplementation.h"
 
+#define TR181_FW_DELAY_REBOOT "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.AutoReboot.fwDelayReboot"
+#define MAX_REBOOT_DELAY 86400 /* 24Hr = 86400 sec */
+
 std::atomic<bool> isFlashingInProgress(false);
 std::mutex flashMutex;
 std::mutex logMutex;
@@ -836,6 +839,39 @@ namespace WPEFramework {
             return status;
         }
 
+        Core::hresult FirmwareUpdateImplementation::SetFirmwareRebootDelay (const uint32_t delaySeconds, bool& success)
+        {
+             bool result = false;
+             Core::hresult status = Core::ERROR_GENERAL;
+
+             /* we can delay with max 24 Hrs = 86400 sec */
+             if (delaySeconds > 0 && delaySeconds <= MAX_REBOOT_DELAY ){
+
+                  std::string delay_in_sec = std::to_string(delaySeconds);
+                  const char * set_rfc_val = delay_in_sec.c_str();
+
+                  LOGINFO("set_rfc_value %s\n",set_rfc_val);
+
+                  /*set tr181Set command from here*/
+                  WDMP_STATUS rfcStatus = setRFCParameter((char*)"thunderapi",
+                  TR181_FW_DELAY_REBOOT, set_rfc_val, WDMP_INT);
+
+                  if ( WDMP_SUCCESS == rfcStatus){
+                      result=true;
+                      status = Core::ERROR_NONE;
+                      LOGINFO("Success Setting setFirmwareRebootDelay value\n");
+                  }
+                  else {
+                      LOGINFO("Failed Setting setFirmwareRebootDelay value %s\n",getRFCErrorString(rfcStatus));
+                  }
+             }
+             else {
+                 /* we didnt get a valid Auto Reboot delay */
+                 LOGERR("Invalid setFirmwareRebootDelay Value Max.Value is 86400 sec\n");
+             }
+             success = result;
+             return status;
+         }
         /*
          * @brief This function Enable/Disable the AutoReboot Feature (COMRPC).
          * This will internally set the tr181 AutoReboot.Enable to True/False.
