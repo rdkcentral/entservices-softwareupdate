@@ -118,22 +118,25 @@ TEST_F(MaintenanceManagerTest, getMaintenanceStartTime_json_rpc)
         MaintenanceManagerConfFile << "start_min=\"30\"\n";
         MaintenanceManagerConfFile << "tz_mode=\"UTC\"\n"; 
         MaintenanceManagerConfFile.close();
-        
-        std::ifstream MaintenanceManagerConfFile("/opt/rdk_maintenance.conf");
-        if (!MaintenanceManagerConfFile) {
-            std::cerr << "Failed to open /opt/rdk_maintenance.conf for reading." << std::endl;
-        }
-
+    }
+    
+    std::ifstream verifyFile("/opt/rdk_maintenance.conf");
+    if (!verifyFile) {
+        std::cerr << "Failed to open /opt/rdk_maintenance.conf for reading." << std::endl;
+    } else {
         std::string line;
-        while (std::getline(MaintenanceManagerConfFile, line)) {
+        while (std::getline(verifyFile, line)) {
             std::cout << line << std::endl;
         }
+        verifyFile.close();
+    }
+       
     status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceStartTime", params1, results1);
     ASSERT_EQ(results1["success"].Boolean(), true);
     ASSERT_EQ(status, Core::ERROR_NONE);
-    }
-
+    
 }
+
 //getMaintenanceActivityStatus jsonRPC
 TEST_F(MaintenanceManagerTest,getMaintenanceActivityStatus)
 {
@@ -163,9 +166,30 @@ TEST_F(MaintenanceManagerTest,stopMaintenance)
 {
     uint32_t status = Core::ERROR_GENERAL;
     JsonObject params1, results1;
+    bool maintenanceStarted = false;
+    
+    // Wait for maintenance to actually start (with timeout)
+    int retries = 10;  // 10 seconds max
+    while (retries-- > 0) {
+        status = InvokeServiceMethod("org.rdk.MaintenanceManager","getMaintenanceActivityStatus",params1, results1);
+        if ((status == Core::ERROR_NONE) &&
+            results1.HasLabel("maintenanceStatus") &&
+            results1["maintenanceStatus"].String() == "MAINTENANCE_STARTED") {
+            maintenanceStarted = true;
+            break;
+        }
+        sleep(1);
+    }
+    
+    // Verify maintenance is running
+    ASSERT_TRUE(maintenanceStarted)
+        << "Maintenance did not start within timeout. Last status: "
+        << results1["maintenanceStatus"].String();
+    
+    // Now stop the active maintenance
     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
-    ASSERT_EQ(results1["success"].Boolean(), true);
     ASSERT_EQ(status, Core::ERROR_NONE);
+    ASSERT_EQ(results1["success"].Boolean(), true);
 }
 
 //startMaintenance jsonPRC Test on an active Maintenance Cycle
