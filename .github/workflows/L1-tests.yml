@@ -138,7 +138,7 @@ jobs:
         with:
           repository: rdkcentral/entservices-softwareupdate
           path: entservices-softwareupdate
-          ref: Test_Workflow
+          ref: feature/workflow-test
 
       - name: Checkout googletest
         uses: actions/checkout@v3
