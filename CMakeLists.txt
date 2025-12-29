@@ -55,10 +55,6 @@ if(PLUGIN_PACKAGER)
     add_subdirectory(Packager)
 endif()
 
-if(PLUGIN_FIRMWAREUPDATE)
-    add_subdirectory(FirmwareUpdate)
-endif()
-
 if(PLUGIN_MAINTENANCEMANAGER)
     add_subdirectory(MaintenanceManager)
 endif()
