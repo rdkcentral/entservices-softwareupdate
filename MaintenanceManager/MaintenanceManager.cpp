@@ -415,7 +415,8 @@ namespace WPEFramework
                         MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
                         g_listen_to_deviceContextUpdate = true;
                         MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
-                        task_thread.wait(wailck, []{ return !g_listen_to_deviceContextUpdate; });
+                        // Compilation fix: Capture [this] to access non-static member variable
+                        task_thread.wait(wailck, [this]{ return !g_listen_to_deviceContextUpdate; });
                     }
                     else if (!internetConnectStatus && activation_status == "activated")
                     {
@@ -2129,7 +2130,8 @@ namespace WPEFramework
             ptm->tm_sec = start_time_in_sec % 60;
 
             int start_epoch = timegm(ptm);
-            if (start_epoch - rawtime < 10)
+            // Compilation fix: Use now_time_t instead of rawtime (variable renamed in Issue #234 Y2K38 fix)
+            if (start_epoch - now_time_t < 10)
             {
                 start_epoch += 86399;
             }

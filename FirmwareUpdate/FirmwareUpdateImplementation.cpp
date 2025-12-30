@@ -1484,7 +1484,8 @@ std::string GetCurrentTimestamp() {
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
     std::ostringstream oss;
-    // Use gmtime_r (thread-safe) if available, fallback to gmtime
+    // Issue #231: Y2K38_SAFETY - Use gmtime_r (thread-safe) for 64-bit time handling
+    // gmtime_r is reentrant and safe for multi-threaded environments
     #ifdef _POSIX_C_SOURCE
     struct tm tm_buf;
     gmtime_r(&in_time_t, &tm_buf);
@@ -1492,7 +1493,8 @@ std::string GetCurrentTimestamp() {
     #else
     oss << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dT%H:%M:%S");
     #endif
-        << "." << std::setfill('0') << std::setw(3) << millis.count()
+    // Compilation fix: Chain output stream operator to oss
+    oss << "." << std::setfill('0') << std::setw(3) << millis.count()
         << "Z";
     return oss.str();
 }
