@@ -364,8 +364,6 @@ namespace WPEFramework {
             if (codebig == nullptr || *codebig == '\0') {
                 codebig = "false";
             }
-            // Issue #181: Check for NULL before dereferencing to prevent potential crash
-            // Move null check before any dereference operation
             if (server_url == nullptr || *server_url == '\0') {
                 server_url = "empty";
             }
