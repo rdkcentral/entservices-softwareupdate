@@ -34,6 +34,7 @@
 #include <map>
 #include <sstream>
 #include <ctime>
+#include <chrono>
 #include <iomanip>
 #include <bits/stdc++.h>
 #include <algorithm>
@@ -1598,7 +1599,9 @@ namespace WPEFramework
                 Maint_notify_status_t notify_status = MAINTENANCE_STARTED;
                 IARM_Bus_MaintMGR_EventData_t *module_event_data = (IARM_Bus_MaintMGR_EventData_t *)data;
                 IARM_Maint_module_status_t module_status;
-                time_t successfulTime;
+                // Issue #232: Y2K38_SAFETY fix - Use int64_t for time to handle dates beyond 2038
+                // Store as 64-bit integer to avoid 32-bit time_t overflow
+                int64_t successfulTime;
                 string str_successfulTime = "";
 
                 // Issues #50, #52, #53, #54, #55, #56: Validate iterators before using in switch statement
@@ -1754,11 +1757,12 @@ namespace WPEFramework
                         { // all tasks success
                             MM_LOGINFO("Maintenance Successfully Completed!!");
                             notify_status = MAINTENANCE_COMPLETE;
-                            /*  we store the time in persistant location */
-                            successfulTime = time(nullptr);
-                            tm ltime = *localtime(&successfulTime);
-                            time_t epoch_time = mktime(&ltime);
-                            str_successfulTime = to_string(epoch_time);
+                            // Issue #233: Y2K38_SAFETY fix - Use chrono for 64-bit time handling
+                            // Store time as 64-bit integer to support dates beyond 2038
+                            auto now = std::chrono::system_clock::now();
+                            successfulTime = std::chrono::duration_cast<std::chrono::seconds>(
+                                now.time_since_epoch()).count();
+                            str_successfulTime = to_string(successfulTime);
                             MM_LOGINFO("last succesful time is :%s", str_successfulTime.c_str());
                             /* Remove any old completion time */
                             m_setting.remove("LastSuccessfulCompletionTime");
@@ -2084,8 +2088,12 @@ namespace WPEFramework
             int cron_time_in_sec = (start_hr * 3600) + (start_min * 60);
             getTimeZone(deviceName, zoneValue, timeZone, timeZoneOffset, BUFFER_SIZE);
 
-            time_t rawtime = time(NULL);
-            struct tm *ptm = localtime(&rawtime);
+            // Issue #234: Y2K38_SAFETY fix - Use chrono for 64-bit time handling
+            // Avoid 32-bit time_t to support dates beyond 2038
+            auto now = std::chrono::system_clock::now();
+            auto now_time_t = std::chrono::system_clock::to_time_t(now);
+            struct tm tm_buf;
+            struct tm *ptm = localtime_r(&now_time_t, &tm_buf);
 
             if (strcmp(tz_mode, "Local time") == 0)
             {

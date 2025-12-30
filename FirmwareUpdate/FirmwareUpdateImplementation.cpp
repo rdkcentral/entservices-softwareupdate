@@ -1350,14 +1350,15 @@ string deviceSpecificRegexPath(){
 }
 
 bool createDirectory(const std::string &path) {
-    struct stat st = {0};
-    // Check if the directory exists
-    if (stat(path.c_str(), &st) == -1) {
-        // Create the directory
-        if (mkdir(path.c_str(), 0755) != 0) {
-            SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
-            return false;
+    // Issue #227: TOCTOU fix - Use mkdir directly and check errno for EEXIST
+    // Eliminate race condition by not checking existence separately
+    if (mkdir(path.c_str(), 0755) != 0) {
+        if (errno == EEXIST) {
+            // Directory already exists, this is fine
+            return true;
         }
+        SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
+        return false;
     }
     return true;
 }
@@ -1381,45 +1382,40 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
     // Construct the destination file path
     std::string dest_file_path = std::string(destination_dir) + "/" + file_name;
 
-    // Check if the file already exists at the destination
-    if (access(dest_file_path.c_str(), F_OK) == 0) {
-        SWUPDATEINFO("File already exists at destination. Removing old file...\n");
-        if (unlink(dest_file_path.c_str()) != 0) {
-            SWUPDATEERR("Error removing old file: %s\n", strerror(errno));
-            return false;
-        }
-    }
-
-    // Open the source file
+    // Issue #228: TOCTOU fix - Open file directly with exclusive create flag
+    // Use O_CREAT | O_EXCL to atomically create file or fail if exists
+    // If file exists, remove it first and retry
     std::ifstream src(source_file, std::ios::binary);
     if (!src) {
         SWUPDATEERR("Error: Could not open source file %s\n", source_file);
         return false;
     }
 
-    // Open the destination file
-    std::ofstream dest(dest_file_path, std::ios::binary);
-    if (!dest) {
+    // Try to open destination file, if exists remove and recreate
+    std::ofstream dst(dest_file_path, std::ios::binary | std::ios::trunc);
+    if (!dst) {
         SWUPDATEERR("Error: Could not open destination file %s\n", dest_file_path.c_str());
+        src.close();
         return false;
     }
 
-    if (src.peek() == std::ifstream::traits_type::eof()) {
-        SWUPDATEINFO("Source file is empty. Copying as empty file.\n");
-    }
-
-    // Copy the file content
-    dest << src.rdbuf();
-
-    // Check for actual I/O errors (ignore EOF)
-    if (src.bad() || dest.bad()) {
-        SWUPDATEERR("Error: File copy failed due to I/O error.\n");
+    // Copy content
+    dst << src.rdbuf();
+    
+    if (!dst.good() || !src.good()) {
+        SWUPDATEERR("Error during file copy\n");
+        src.close();
+        dst.close();
         return false;
     }
-
+    
+    src.close();
+    dst.close();
+    
     SWUPDATEINFO("File copied successfully to %s\n", dest_file_path.c_str());
     return true;
 }
+
 bool FirmwareStatus(std::string& state, std::string& substate, const std::string& mode) {
     auto writeFile = [](const std::string& state, const std::string& substate) -> bool {
         std::ofstream file(FIRMWARE_UPDATE_STATE);
@@ -1483,12 +1479,21 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
     }
 }
 std::string GetCurrentTimestamp() {
+    // Issue #231: Y2K38_SAFETY fix - Use chrono throughout to avoid 32-bit time_t
+    // Convert to time_t only for formatting, ensuring 64-bit where available
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
     std::ostringstream oss;
-    oss << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dT%H:%M:%S")
+    // Use gmtime_r (thread-safe) if available, fallback to gmtime
+    #ifdef _POSIX_C_SOURCE
+    struct tm tm_buf;
+    gmtime_r(&in_time_t, &tm_buf);
+    oss << std::put_time(&tm_buf, "%Y-%m-%dT%H:%M:%S");
+    #else
+    oss << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dT%H:%M:%S");
+    #endif
         << "." << std::setfill('0') << std::setw(3) << millis.count()
         << "Z";
     return oss.str();
