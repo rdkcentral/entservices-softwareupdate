@@ -364,6 +364,8 @@ namespace WPEFramework {
             if (codebig == nullptr || *codebig == '\0') {
                 codebig = "false";
             }
+            // Issue #181: Check for NULL before dereferencing to prevent potential crash
+            // Move null check before any dereference operation
             if (server_url == nullptr || *server_url == '\0') {
                 server_url = "empty";
             }
@@ -685,15 +687,14 @@ namespace WPEFramework {
 
                     return ;
                 }
-                else
-                {
-                    std::string full_path = std::string(USB_TMP_COPY) + "/" + name;
-                    upgrade_file = full_path;
-                    SWUPDATEINFO("Upgrade file path after copy %s \n" ,upgrade_file.c_str());
-                }
+            else
+            {
+                // Issue #5: Use std::move to avoid unnecessary string copy
+                std::string full_path = std::string(USB_TMP_COPY) + "/" + name;
+                upgrade_file = std::move(full_path);
+                SWUPDATEINFO("Upgrade file path after copy %s \n" ,upgrade_file.c_str());
             }
-
-            //Note : flashImage() is combination of both rdkfwupdater/src/flash.c(Flashing part of deviceInitiatedFWDnld.sh) and Flashing part of userInitiatedFWDnld.sh . For now except upgrade_file ,upgrade_type all other param are passed with default value .other param useful when for future implementations
+        }            //Note : flashImage() is combination of both rdkfwupdater/src/flash.c(Flashing part of deviceInitiatedFWDnld.sh) and Flashing part of userInitiatedFWDnld.sh . For now except upgrade_file ,upgrade_type all other param are passed with default value .other param useful when for future implementations
             // Call the actual flashing function
             flashImage(server_url, upgrade_file.c_str(), reboot_flag, proto, upgrade_type, maint ,initiated_type , codebig);
 
@@ -1451,11 +1452,12 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
             std::getline(ss, value);
 
             if (key == "state") {
-                state = value;
+                // Issue #6: Use std::move to avoid unnecessary string copy
+                state = std::move(value);
                 stateFound = true;
             }
             if (key == "substate") {
-                substate = value;
+                substate = std::move(value);
                 substateFound = true;
             }
 

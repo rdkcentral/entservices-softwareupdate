@@ -38,9 +38,10 @@ public:
      * @brief    : Constructor.
      * @return   : nil.
      */
+    // Issue #16: Use std::move to avoid unnecessary string copy
     cSettings(std::string file)
     {
-        filename = file;
+        filename = std::move(file);
         if (!readFromFile()) {
             /* File not present; create a new one assuming a fresh partition. */
             std::fstream fs;
@@ -139,9 +140,10 @@ public:
          * work around is to assign a null value to the key and handle it
          * accordingly.
          */
+        // Issue #17: Use std::move to avoid unnecessary string copy
         data[key.c_str()] = "";
         data.Remove(key.c_str());
-        if (!contains(key)) {
+        if (!contains(std::move(key))) {
             if (writeToFile()) {
                 status = true;
             } else {
