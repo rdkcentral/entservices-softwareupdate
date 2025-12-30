@@ -22,7 +22,8 @@
 std::atomic<bool> isFlashingInProgress(false);
 std::mutex flashMutex;
 std::mutex logMutex;
-void startProgressTimer() ;
+// Removed stray non-member forward declaration of startProgressTimer() to avoid confusion
+// (member function FirmwareUpdateImplementation::startProgressTimer() is defined later in this file)
 namespace WPEFramework {
     namespace Plugin {
         SERVICE_REGISTRATION(FirmwareUpdateImplementation, 1, 0);
@@ -697,7 +698,8 @@ namespace WPEFramework {
             // Call the actual flashing function
             flashImage(server_url, upgrade_file.c_str(), reboot_flag, proto, upgrade_type, maint ,initiated_type , codebig);
 
-        }
+            } // End of if(std::string(proto) == "usb") block
+        } // End of flashImageThread function
 
         Core::hresult FirmwareUpdateImplementation::UpdateFirmware(const string& firmwareFilepath , const string& firmwareType , Result &result ) 
         {
