@@ -685,14 +685,15 @@ namespace WPEFramework {
 
                     return ;
                 }
-            else
-            {
-                // Issue #5: Use std::move to avoid unnecessary string copy
-                std::string full_path = std::string(USB_TMP_COPY) + "/" + name;
-                upgrade_file = std::move(full_path);
-                SWUPDATEINFO("Upgrade file path after copy %s \n" ,upgrade_file.c_str());
-            }
-        }            //Note : flashImage() is combination of both rdkfwupdater/src/flash.c(Flashing part of deviceInitiatedFWDnld.sh) and Flashing part of userInitiatedFWDnld.sh . For now except upgrade_file ,upgrade_type all other param are passed with default value .other param useful when for future implementations
+                else
+                {
+                    // Issue #5: Use std::move to avoid unnecessary string copy
+                    std::string full_path = std::string(USB_TMP_COPY) + "/" + name;
+                    upgrade_file = std::move(full_path);
+                    SWUPDATEINFO("Upgrade file path after copy %s \n" ,upgrade_file.c_str());
+                }
+
+            //Note : flashImage() is combination of both rdkfwupdater/src/flash.c(Flashing part of deviceInitiatedFWDnld.sh) and Flashing part of userInitiatedFWDnld.sh . For now except upgrade_file ,upgrade_type all other param are passed with default value .other param useful when for future implementations
             // Call the actual flashing function
             flashImage(server_url, upgrade_file.c_str(), reboot_flag, proto, upgrade_type, maint ,initiated_type , codebig);
 
