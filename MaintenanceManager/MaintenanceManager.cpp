@@ -2344,9 +2344,10 @@ namespace WPEFramework
                     m_setting.remove("background_flag");
                     (BACKGROUND_MODE == new_mode) ? bg_flag = "true" : bg_flag = "false";
                     // Issue #12: Use std::move to avoid unnecessary string copy
+                    // Fix USE_AFTER_MOVE: Log before moving, since new_mode is used after move
+                    MM_LOGINFO("Maintenance mode changed from %s to %s", old_mode.c_str(), new_mode.c_str());
                     g_currentMode = std::move(new_mode);
                     m_setting.setValue("background_flag", std::move(bg_flag));
-                    MM_LOGINFO("Maintenance mode changed from %s to %s", old_mode.c_str(), new_mode.c_str());
                 }
                 else
                 {
@@ -2365,10 +2366,11 @@ namespace WPEFramework
                         {
                             MM_LOGINFO("IARM_Bus_BroadcastEvent is success and value=%d", mode);
                             // Issue #13: Use std::move to avoid unnecessary string copy
-                            g_currentMode = std::move(new_mode);
+                            // Fix USE_AFTER_MOVE: Compare before moving, since new_mode is used after move
                             /* remove any older one */
                             m_setting.remove("background_flag");
                             (BACKGROUND_MODE == new_mode) ? bg_flag = "true" : bg_flag = "false";
+                            g_currentMode = std::move(new_mode);
                             m_setting.setValue("background_flag", std::move(bg_flag));
                         }
                         else
