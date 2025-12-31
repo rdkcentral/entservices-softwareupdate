@@ -1449,13 +1449,13 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
             std::getline(ss, value);
 
             if (key == "state") {
-                // Issue #6 Fix: Direct assignment instead of move - value is loop-local
-                // std::move() is unnecessary and creates USE_AFTER_MOVE risk
                 state = value;
                 stateFound = true;
             }
             if (key == "substate") {
-                substate = value;
+				// Issue #6 Fix: Direct assignment instead of move - value is loop-local
+                // std::move() is unnecessary and creates USE_AFTER_MOVE risk
+                substate = std::move(value);
                 substateFound = true;
             }
 
