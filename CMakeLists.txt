@@ -59,9 +59,6 @@ if(PLUGIN_MAINTENANCEMANAGER)
     add_subdirectory(MaintenanceManager)
 endif()
 
-if(PLUGIN_FIRMWAREDOWNLOAD)
-    add_subdirectory(FirmwareDownload)
-endif()
 
 if(WPEFRAMEWORK_CREATE_IPKG_TARGETS)
     set(CPACK_GENERATOR "DEB")
