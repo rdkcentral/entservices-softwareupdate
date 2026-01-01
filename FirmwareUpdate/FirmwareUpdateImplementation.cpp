@@ -1418,6 +1418,8 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
 }
 
 bool FirmwareStatus(std::string& state, std::string& substate, const std::string& mode) {
+    // Issues #175, #176: PW.PARAMETER_HIDDEN - False positive (intentional lambda parameter shadowing)
+    // Lambda explicitly takes parameters, not capturing from outer scope - this is standard C++ pattern
     auto writeFile = [](const std::string& state, const std::string& substate) -> bool {
         std::ofstream file(FIRMWARE_UPDATE_STATE);
         if (!file.is_open()) {
@@ -1432,6 +1434,8 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
         return true;
     };
 
+    // Issues #177, #178: PW.PARAMETER_HIDDEN - False positive (intentional lambda parameter shadowing)
+    // Lambda explicitly takes parameters, not capturing from outer scope - this is standard C++ pattern
     auto readFile = [](std::string& state, std::string& substate) -> bool {
         std::ifstream file(FIRMWARE_UPDATE_STATE);
         if (!file.is_open()) {

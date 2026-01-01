@@ -2617,6 +2617,9 @@ namespace WPEFramework
                     MM_LOGINFO("Sending SIGUSR1 signal to %s", taskname);
                     k_ret = kill(pid_num, SIGUSR1);
                 }
+                // Issue #230: UNUSED_VALUE fix - Added 'else' to prevent k_ret value overwrite
+                // Without 'else', the rfcMgr kill() result was lost when execution fell through to the next if-else block
+                else
 #endif
                 if (strstr(taskname, "rdkvfwupgrader"))
                 {
