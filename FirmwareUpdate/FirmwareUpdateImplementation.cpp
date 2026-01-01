@@ -693,14 +693,13 @@ namespace WPEFramework {
                     upgrade_file = std::move(full_path);
                     SWUPDATEINFO("Upgrade file path after copy %s \n" ,upgrade_file.c_str());
                 }
+			}
 
             //Note : flashImage() is combination of both rdkfwupdater/src/flash.c(Flashing part of deviceInitiatedFWDnld.sh) and Flashing part of userInitiatedFWDnld.sh . For now except upgrade_file ,upgrade_type all other param are passed with default value .other param useful when for future implementations
             // Call the actual flashing function
             flashImage(server_url, upgrade_file.c_str(), reboot_flag, proto, upgrade_type, maint ,initiated_type , codebig);
 
-            } // End of if(std::string(proto) == "usb") block
-        } // End of flashImageThread function
-
+		}
         Core::hresult FirmwareUpdateImplementation::UpdateFirmware(const string& firmwareFilepath , const string& firmwareType , Result &result ) 
         {
             Core::hresult status = Core::ERROR_GENERAL;
