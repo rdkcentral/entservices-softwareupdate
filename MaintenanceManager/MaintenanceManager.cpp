@@ -410,11 +410,11 @@ namespace WPEFramework
 
                     if (!whoAmIStatus && activation_status != "activated")
                     {
-                        // Issue #1: Condition variable wait without loop - spurious wakeups not handled
-                        // Fix: Use predicate-based wait to properly handle spurious wakeups
                         MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
                         g_listen_to_deviceContextUpdate = true;
                         MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
+						// Issue #1: Condition variable wait without loop - spurious wakeups not handled
+                        // Fix: Use predicate-based wait to properly handle spurious wakeups
                         // Compilation fix: Capture [this] to access non-static member variable
                         task_thread.wait(wailck, [this]{ return !g_listen_to_deviceContextUpdate; });
                     }
@@ -613,7 +613,6 @@ namespace WPEFramework
                         JsonObject params;
                         JsonObject joGetResult;
 
-                        // Issue #7: JsonObject copy optimization opportunity in JSONRPC call
                         thunder_client->Invoke<JsonObject, JsonObject>(5000, "getDeviceInitializationContext", params, joGetResult);
                         if (joGetResult.HasLabel("success") && joGetResult["success"].Boolean())
                         {
@@ -621,6 +620,7 @@ namespace WPEFramework
                             if (joGetResult.HasLabel(kDeviceInitializationContext))
                             {
                                 MM_LOGINFO("%s found in the response", kDeviceInitializationContext);
+								// Issue #7: JsonObject copy optimization opportunity in JSONRPC call
                                 success = setDeviceInitializationContext(joGetResult);
                             }
                             else
@@ -1605,7 +1605,6 @@ namespace WPEFramework
                 int64_t successfulTime;
                 string str_successfulTime = "";
 
-                // Issues #50, #52, #53, #54, #55, #56: Validate iterators before using in switch statement
                 auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
                 auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
                 auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
@@ -1624,6 +1623,7 @@ namespace WPEFramework
                         switch (module_status)
                         {
                             case MAINT_RFC_COMPLETE:
+								// Issues #50, #52, #53, #54, #55, #56: Validate iterators before using in switch statement
                                 if (task_status_RFC != m_task_map.end() && task_status_RFC->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event RFC_COMPLETE");
@@ -2514,12 +2514,12 @@ namespace WPEFramework
                 MM_LOGINFO("Stopping maintenance activities");
                 // Set the condition flag m_abort_flag to true
                 m_abort_flag = true;
-                // Issues #47, #48, #49: Validate iterators before dereferencing to prevent undefined behavior
                 auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
                 auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
                 auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
 
-                task_status[0] = (task_status_RFC != m_task_map.end()) ? task_status_RFC->second : false;
+                // Issues #47, #48, #49: Validate iterators before dereferencing to prevent undefined behavior
+				task_status[0] = (task_status_RFC != m_task_map.end()) ? task_status_RFC->second : false;
                 task_status[1] = (task_status_SWUPDATE != m_task_map.end()) ? task_status_SWUPDATE->second : false;
                 task_status[2] = (task_status_LOGUPLOAD != m_task_map.end()) ? task_status_LOGUPLOAD->second : false;
 
