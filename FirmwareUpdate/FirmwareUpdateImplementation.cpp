@@ -22,8 +22,7 @@
 std::atomic<bool> isFlashingInProgress(false);
 std::mutex flashMutex;
 std::mutex logMutex;
-// Removed stray non-member forward declaration of startProgressTimer() to avoid confusion
-// (member function FirmwareUpdateImplementation::startProgressTimer() is defined later in this file)
+void startProgressTimer() ;
 namespace WPEFramework {
     namespace Plugin {
         SERVICE_REGISTRATION(FirmwareUpdateImplementation, 1, 0);
