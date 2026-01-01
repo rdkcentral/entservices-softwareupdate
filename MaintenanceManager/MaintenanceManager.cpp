@@ -621,7 +621,7 @@ namespace WPEFramework
                             {
                                 MM_LOGINFO("%s found in the response", kDeviceInitializationContext);
 								// Issue #7: JsonObject copy optimization opportunity in JSONRPC call
-                                success = setDeviceInitializationContext(joGetResult);
+                                success = setDeviceInitializationContext(std::move(joGetResult));
                             }
                             else
                             {
