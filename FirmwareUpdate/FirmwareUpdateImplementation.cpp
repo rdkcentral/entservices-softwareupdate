@@ -698,6 +698,7 @@ namespace WPEFramework {
             // Call the actual flashing function
             flashImage(server_url, upgrade_file.c_str(), reboot_flag, proto, upgrade_type, maint ,initiated_type , codebig);
 		}
+
         Core::hresult FirmwareUpdateImplementation::UpdateFirmware(const string& firmwareFilepath , const string& firmwareType , Result &result ) 
         {
             Core::hresult status = Core::ERROR_GENERAL;
