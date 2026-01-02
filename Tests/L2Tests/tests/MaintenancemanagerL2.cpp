@@ -25,15 +25,8 @@ using namespace WPEFramework;
 class MaintenanceManagerTest : public L2TestMocks {
 protected:
     virtual ~MaintenanceManagerTest() override;
-
-public:
-    MaintenanceManagerTest();
-};
-
-
-MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
-    
-    std::ofstream devicePropertiesFile("/etc/device.properties");
+    void SetUp() override {
+        std::ofstream devicePropertiesFile("/etc/device.properties");
     if (devicePropertiesFile.is_open()) {
         devicePropertiesFile << "WHOAMI_SUPPORT=true";
         devicePropertiesFile.close();
@@ -59,13 +52,28 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     EXPECT_EQ(Core::ERROR_NONE, status);
     status =ActivateService("org.rdk.AuthService");
     EXPECT_EQ(Core::ERROR_NONE, status);
+    }
+    void TearDown() override {
+    uint32_t status = Core::ERROR_GENERAL;
+    sleep(5);
+    status = DeactivateService("org.rdk.MaintenanceManager");
+    }
+
+public:
+    MaintenanceManagerTest();
+};
+
+
+MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
+    #if 0
+    
+    #endif
 }
 
 MaintenanceManagerTest::~MaintenanceManagerTest() {
-    uint32_t status = Core::ERROR_GENERAL;
-    sleep(2);
-    status = DeactivateService("org.rdk.MaintenanceManager");
+  
 }
+
 
 TEST_F(MaintenanceManagerTest,Unsolicited_Maintenance)
 {
