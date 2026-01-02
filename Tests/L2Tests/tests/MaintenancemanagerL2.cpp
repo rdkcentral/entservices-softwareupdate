@@ -57,6 +57,13 @@ protected:
     uint32_t status = Core::ERROR_GENERAL;
     sleep(5);
     status = DeactivateService("org.rdk.MaintenanceManager");
+    EXPECT_EQ(Core::ERROR_NONE, status);
+     status = DeactivateService("org.rdk.Network");
+    EXPECT_EQ(Core::ERROR_NONE, status);
+    status = DeactivateService("org.rdk.SecManager");
+    EXPECT_EQ(Core::ERROR_NONE, status);
+    status = DeactivateService("org.rdk.AuthService");
+    EXPECT_EQ(Core::ERROR_NONE, status);
     }
 
 public:
