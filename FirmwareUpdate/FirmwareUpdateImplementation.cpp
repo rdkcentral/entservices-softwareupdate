@@ -692,13 +692,13 @@ namespace WPEFramework {
                     upgrade_file = std::move(full_path);
                     SWUPDATEINFO("Upgrade file path after copy %s \n" ,upgrade_file.c_str());
                 }
-			}
+            }
 
             //Note : flashImage() is combination of both rdkfwupdater/src/flash.c(Flashing part of deviceInitiatedFWDnld.sh) and Flashing part of userInitiatedFWDnld.sh . For now except upgrade_file ,upgrade_type all other param are passed with default value .other param useful when for future implementations
             // Call the actual flashing function
             flashImage(server_url, upgrade_file.c_str(), reboot_flag, proto, upgrade_type, maint ,initiated_type , codebig);
-			
-		}
+
+        }
 
         Core::hresult FirmwareUpdateImplementation::UpdateFirmware(const string& firmwareFilepath , const string& firmwareType , Result &result ) 
         {
@@ -1351,7 +1351,9 @@ string deviceSpecificRegexPath(){
 
 bool createDirectory(const std::string &path) {
     struct stat st = {0};
+    // Check if the directory exists
     if (stat(path.c_str(), &st) == -1) {
+        // Create the directory
         if (mkdir(path.c_str(), 0755) != 0) {
             SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
             return false;
@@ -1388,37 +1390,36 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
         }
     }
 
+    // Open the source file
     std::ifstream src(source_file, std::ios::binary);
     if (!src) {
         SWUPDATEERR("Error: Could not open source file %s\n", source_file);
         return false;
     }
 
-    // Try to open destination file, if exists remove and recreate
-    std::ofstream dst(dest_file_path, std::ios::binary);
-    if (!dst) {
+    // Open the destination file
+    std::ofstream dest(dest_file_path, std::ios::binary);
+    if (!dest) {
         SWUPDATEERR("Error: Could not open destination file %s\n", dest_file_path.c_str());
-        src.close();
         return false;
     }
 
-    // Copy content
-    dst << src.rdbuf();
-    
-    if (!dst.good() || !src.good()) {
-        SWUPDATEERR("Error during file copy\n");
-        src.close();
-        dst.close();
+    if (src.peek() == std::ifstream::traits_type::eof()) {
+        SWUPDATEINFO("Source file is empty. Copying as empty file.\n");
+    }
+
+    // Copy the file content
+    dest << src.rdbuf();
+
+    // Check for actual I/O errors (ignore EOF)
+    if (src.bad() || dest.bad()) {
+        SWUPDATEERR("Error: File copy failed due to I/O error.\n");
         return false;
     }
-    
-    src.close();
-    dst.close();
-    
+
     SWUPDATEINFO("File copied successfully to %s\n", dest_file_path.c_str());
     return true;
 }
-
 bool FirmwareStatus(std::string& state, std::string& substate, const std::string& mode) {
     auto writeFile = [](const std::string& state, const std::string& substate) -> bool {
         std::ofstream file(FIRMWARE_UPDATE_STATE);

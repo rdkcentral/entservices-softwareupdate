@@ -1616,7 +1616,7 @@ namespace WPEFramework
                         switch (module_status)
                         {
                             case MAINT_RFC_COMPLETE:
-                                if (task_status_RFC != m_task_map.end() && task_status_RFC->second != true)
+                                if (task_status_RFC->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event RFC_COMPLETE");
                                     break;
@@ -1630,7 +1630,7 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_FWDOWNLOAD_COMPLETE:
-                                if (task_status_SWUPDATE != m_task_map.end() && task_status_SWUPDATE->second != true)
+                                if (task_status_SWUPDATE->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_COMPLETE");
                                     break;
@@ -1644,7 +1644,7 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_LOGUPLOAD_COMPLETE:
-                                if (task_status_LOGUPLOAD != m_task_map.end() && task_status_LOGUPLOAD->second != true)
+                                if (task_status_LOGUPLOAD->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_LOGUPLOAD_COMPLETE");
                                     break;
@@ -1674,7 +1674,7 @@ namespace WPEFramework
                                 MM_LOGINFO("FW Download task aborted");
                                 break;
                             case MAINT_RFC_ERROR:
-                                if (task_status_RFC != m_task_map.end() && task_status_RFC->second != true)
+                                if (task_status_RFC->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event RFC_ERROR");
                                     break;
@@ -1688,7 +1688,7 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_LOGUPLOAD_ERROR:
-                                if (task_status_LOGUPLOAD != m_task_map.end() && task_status_LOGUPLOAD->second != true)
+                                if (task_status_LOGUPLOAD->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_LOGUPLOAD_ERROR");
                                     break;
@@ -1702,7 +1702,7 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_FWDOWNLOAD_ERROR:
-                                if (task_status_SWUPDATE != m_task_map.end() && task_status_SWUPDATE->second != true)
+                                if (task_status_SWUPDATE->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_ERROR");
                                     break;
@@ -1750,8 +1750,11 @@ namespace WPEFramework
                         { // all tasks success
                             MM_LOGINFO("Maintenance Successfully Completed!!");
                             notify_status = MAINTENANCE_COMPLETE;
-                            time(&successfulTime);
-                            str_successfulTime = to_string(successfulTime);
+                            /*  we store the time in persistant location */
+                            successfulTime = time(nullptr);
+                            tm ltime = *localtime(&successfulTime);
+                            time_t epoch_time = mktime(&ltime);
+                            str_successfulTime = to_string(epoch_time);
                             MM_LOGINFO("last succesful time is :%s", str_successfulTime.c_str());
                             /* Remove any old completion time */
                             m_setting.remove("LastSuccessfulCompletionTime");
@@ -2077,10 +2080,8 @@ namespace WPEFramework
             int cron_time_in_sec = (start_hr * 3600) + (start_min * 60);
             getTimeZone(deviceName, zoneValue, timeZone, timeZoneOffset, BUFFER_SIZE);
 
-            time_t rawtime;
-            time(&rawtime);
-            struct tm tm_buf;
-            struct tm *ptm = localtime_r(&rawtime, &tm_buf);
+            time_t rawtime = time(NULL);
+            struct tm *ptm = localtime(&rawtime);
 
             if (strcmp(tz_mode, "Local time") == 0)
             {
@@ -2329,8 +2330,6 @@ namespace WPEFramework
                     m_setting.remove("background_flag");
                     (BACKGROUND_MODE == new_mode) ? bg_flag = "true" : bg_flag = "false";
                     // Issue #12: Use std::move to avoid unnecessary string copy
-                    // Fix USE_AFTER_MOVE: Log before moving, since new_mode is used after move
-                    MM_LOGINFO("Maintenance mode changed from %s to %s", old_mode.c_str(), new_mode.c_str());
                     g_currentMode = std::move(new_mode);
                     m_setting.setValue("background_flag", std::move(bg_flag));
                 }
@@ -2351,7 +2350,6 @@ namespace WPEFramework
                         {
                             MM_LOGINFO("IARM_Bus_BroadcastEvent is success and value=%d", mode);
                             // Issue #13: Use std::move to avoid unnecessary string copy
-                            // Fix USE_AFTER_MOVE: Compare before moving, since new_mode is used after move
                             /* remove any older one */
                             m_setting.remove("background_flag");
                             (BACKGROUND_MODE == new_mode) ? bg_flag = "true" : bg_flag = "false";
@@ -2503,10 +2501,9 @@ namespace WPEFramework
                 auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
                 auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
 
-                // Issues #47, #48, #49: Validate iterators before dereferencing to prevent undefined behavior
-				task_status[0] = (task_status_RFC != m_task_map.end()) ? task_status_RFC->second : false;
-                task_status[1] = (task_status_SWUPDATE != m_task_map.end()) ? task_status_SWUPDATE->second : false;
-                task_status[2] = (task_status_LOGUPLOAD != m_task_map.end()) ? task_status_LOGUPLOAD->second : false;
+                task_status[0] = task_status_RFC->second;
+                task_status[1] = task_status_SWUPDATE->second;
+                task_status[2] = task_status_LOGUPLOAD->second;
 
                 for (i = 0; i < 3; i++)
                 {
