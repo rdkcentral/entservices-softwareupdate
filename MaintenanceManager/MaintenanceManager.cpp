@@ -1492,16 +1492,24 @@ namespace WPEFramework
 
         void MaintenanceManager::Deinitialize(PluginHost::IShell *service)
         {
+			#if !defined(GTEST_ENABLE)
+            if (m_thread.joinable()) {
+                MM_LOGINFO("Waiting for task_execution_thread to exit before deactivation...");
+                m_thread.join();
+                MM_LOGINFO("task_execution_thread exited.");
+            }
+        #endif
             if (!maintenance_deleteTimer())
             {
                 MM_LOGINFO("Failed to delete timer");
             }
+			
             MM_LOGINFO("Timer Deleted on Deinitialization.");
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             stopMaintenanceTasks();
             DeinitializeIARM();
 #endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
-
+    
             ASSERT(service == m_service);
 
             m_service->Release();
