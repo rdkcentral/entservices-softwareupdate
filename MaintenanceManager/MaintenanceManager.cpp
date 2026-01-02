@@ -412,14 +412,7 @@ namespace WPEFramework
                         MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
                         g_listen_to_deviceContextUpdate = true;
                         MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
-<<<<<<< HEAD
-						// Issue #1: Condition variable wait without loop - spurious wakeups not handled
-                        // Fix: Use predicate-based wait to properly handle spurious wakeups
-                        // Compilation fix: Capture [this] to access non-static member variable
-                        task_thread.wait(wailck, [this]{ return !g_listen_to_deviceContextUpdate; });
-=======
                         task_thread.wait(wailck);
->>>>>>> 7be6a58 (RDKEMW-11932 : Fix Coverity identified issues - entservices-softwareupdate)
                     }
                     else if (!internetConnectStatus && activation_status == "activated")
                     {
@@ -623,8 +616,7 @@ namespace WPEFramework
                             if (joGetResult.HasLabel(kDeviceInitializationContext))
                             {
                                 MM_LOGINFO("%s found in the response", kDeviceInitializationContext);
-								// Issue #7: JsonObject copy optimization opportunity in JSONRPC call
-                                success = setDeviceInitializationContext(std::move(joGetResult));
+                                success = setDeviceInitializationContext(joGetResult);
                             }
                             else
                             {
@@ -1603,9 +1595,7 @@ namespace WPEFramework
                 Maint_notify_status_t notify_status = MAINTENANCE_STARTED;
                 IARM_Bus_MaintMGR_EventData_t *module_event_data = (IARM_Bus_MaintMGR_EventData_t *)data;
                 IARM_Maint_module_status_t module_status;
-                // Issue #232: Y2K38_SAFETY fix - Use int64_t for time to handle dates beyond 2038
-                // Store as 64-bit integer to avoid 32-bit time_t overflow
-                int64_t successfulTime;
+                time_t successfulTime;
                 string str_successfulTime = "";
 
                 auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
@@ -1626,11 +1616,6 @@ namespace WPEFramework
                         switch (module_status)
                         {
                             case MAINT_RFC_COMPLETE:
-<<<<<<< HEAD
-								// Issues #50, #52, #53, #54, #55, #56: Validate iterators before using in switch statement
-=======
-                                // Issue #54: INVALIDATE_ITERATOR - Validate iterator before dereferencing
->>>>>>> 7be6a58 (RDKEMW-11932 : Fix Coverity identified issues - entservices-softwareupdate)
                                 if (task_status_RFC != m_task_map.end() && task_status_RFC->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event RFC_COMPLETE");
@@ -1645,7 +1630,6 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_FWDOWNLOAD_COMPLETE:
-                                // Issue #54: INVALIDATE_ITERATOR - Validate iterator before dereferencing
                                 if (task_status_SWUPDATE != m_task_map.end() && task_status_SWUPDATE->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_COMPLETE");
@@ -1660,7 +1644,6 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_LOGUPLOAD_COMPLETE:
-                                // Issue #54: INVALIDATE_ITERATOR - Validate iterator before dereferencing
                                 if (task_status_LOGUPLOAD != m_task_map.end() && task_status_LOGUPLOAD->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_LOGUPLOAD_COMPLETE");
@@ -1767,11 +1750,7 @@ namespace WPEFramework
                         { // all tasks success
                             MM_LOGINFO("Maintenance Successfully Completed!!");
                             notify_status = MAINTENANCE_COMPLETE;
-                            // Issue #233: Y2K38_SAFETY fix - Use chrono for 64-bit time handling
-                            // Store time as 64-bit integer to support dates beyond 2038
-                            auto now = std::chrono::system_clock::now();
-                            successfulTime = std::chrono::duration_cast<std::chrono::seconds>(
-                                now.time_since_epoch()).count();
+                            time(&successfulTime);
                             str_successfulTime = to_string(successfulTime);
                             MM_LOGINFO("last succesful time is :%s", str_successfulTime.c_str());
                             /* Remove any old completion time */
@@ -2098,12 +2077,10 @@ namespace WPEFramework
             int cron_time_in_sec = (start_hr * 3600) + (start_min * 60);
             getTimeZone(deviceName, zoneValue, timeZone, timeZoneOffset, BUFFER_SIZE);
 
-            // Issue #234: Y2K38_SAFETY fix - Use chrono for 64-bit time handling
-            // Avoid 32-bit time_t to support dates beyond 2038
-            auto now = std::chrono::system_clock::now();
-            auto now_time_t = std::chrono::system_clock::to_time_t(now);
+            time_t rawtime;
+            time(&rawtime);
             struct tm tm_buf;
-            struct tm *ptm = localtime_r(&now_time_t, &tm_buf);
+            struct tm *ptm = localtime_r(&rawtime, &tm_buf);
 
             if (strcmp(tz_mode, "Local time") == 0)
             {
@@ -2139,8 +2116,7 @@ namespace WPEFramework
             ptm->tm_sec = start_time_in_sec % 60;
 
             int start_epoch = timegm(ptm);
-            // Compilation fix: Use now_time_t instead of rawtime (variable renamed in Issue #234 Y2K38 fix)
-            if (start_epoch - now_time_t < 10)
+            if (start_epoch - rawtime < 10)
             {
                 start_epoch += 86399;
             }
@@ -2626,9 +2602,6 @@ namespace WPEFramework
                     MM_LOGINFO("Sending SIGUSR1 signal to %s", taskname);
                     k_ret = kill(pid_num, SIGUSR1);
                 }
-                // Issue #230: UNUSED_VALUE fix - Added 'else' to prevent k_ret value overwrite
-                // Without 'else', the rfcMgr kill() result was lost when execution fell through to the next if-else block
-                else
 #endif
                 if (strstr(taskname, "rdkvfwupgrader"))
                 {
