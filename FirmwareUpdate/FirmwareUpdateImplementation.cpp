@@ -1350,14 +1350,15 @@ string deviceSpecificRegexPath(){
 }
 
 bool createDirectory(const std::string &path) {
-    struct stat st = {0};
-    // Check if the directory exists
-    if (stat(path.c_str(), &st) == -1) {
-        // Create the directory
-        if (mkdir(path.c_str(), 0755) != 0) {
-            SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
-            return false;
+    // Coverity Issue #227: TOCTOU - Eliminate TOCTOU by directly calling mkdir
+    // If directory exists, mkdir fails with EEXIST which is acceptable
+    if (mkdir(path.c_str(), 0755) != 0) {
+        if (errno == EEXIST) {
+            // Directory already exists, this is not an error
+            return true;
         }
+        SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
+        return false;
     }
     return true;
 }
@@ -1381,14 +1382,8 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
     // Construct the destination file path
     std::string dest_file_path = std::string(destination_dir) + "/" + file_name;
 
-    // Check if the file already exists at the destination
-    if (access(dest_file_path.c_str(), F_OK) == 0) {
-        SWUPDATEINFO("File already exists at destination. Removing old file...\n");
-        if (unlink(dest_file_path.c_str()) != 0) {
-            SWUPDATEERR("Error removing old file: %s\n", strerror(errno));
-            return false;
-        }
-    }
+    // Coverity Issue #228: TOCTOU - Use std::ios::trunc to atomically overwrite existing file
+    // This eliminates the race condition between access() check and unlink() call
 
     // Open the source file
     std::ifstream src(source_file, std::ios::binary);
@@ -1397,8 +1392,8 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
         return false;
     }
 
-    // Open the destination file
-    std::ofstream dest(dest_file_path, std::ios::binary);
+    // Open the destination file with trunc flag to overwrite if exists
+    std::ofstream dest(dest_file_path, std::ios::binary | std::ios::trunc);
     if (!dest) {
         SWUPDATEERR("Error: Could not open destination file %s\n", dest_file_path.c_str());
         return false;
@@ -1487,10 +1482,19 @@ std::string GetCurrentTimestamp() {
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
+    // Coverity Issue #231: Y2K38_SAFETY - Use gmtime_r instead of gmtime for thread safety and proper buffer
+    struct tm tm_buf;
+    struct tm *ptm = gmtime_r(&in_time_t, &tm_buf);
+    
     std::ostringstream oss;
-    oss << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dT%H:%M:%S")
-        << "." << std::setfill('0') << std::setw(3) << millis.count()
-        << "Z";
+    if (ptm) {
+        oss << std::put_time(ptm, "%Y-%m-%dT%H:%M:%S")
+            << "." << std::setfill('0') << std::setw(3) << millis.count()
+            << "Z";
+    } else {
+        SWUPDATEERR("Error: gmtime_r failed\n");
+        return "";
+    }
     return oss.str();
 }
 
