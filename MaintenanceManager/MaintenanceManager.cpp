@@ -2516,14 +2516,21 @@ namespace WPEFramework
                 MM_LOGINFO("Stopping maintenance activities");
                 // Set the condition flag m_abort_flag to true
                 m_abort_flag = true;
-                auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
-                auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
-                auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
-
                 // Coverity Issues #47, #48, #49: INVALIDATE_ITERATOR - Validate iterators before dereferencing
-                task_status[0] = (task_status_RFC != m_task_map.end()) ? task_status_RFC->second : false;
-                task_status[1] = (task_status_SWUPDATE != m_task_map.end()) ? task_status_SWUPDATE->second : false;
-                task_status[2] = (task_status_LOGUPLOAD != m_task_map.end()) ? task_status_LOGUPLOAD->second : false;
+                auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
+                if (task_status_RFC != m_task_map.end()) {
+                    task_status[0] = task_status_RFC->second;
+                }
+
+                auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
+                if (task_status_SWUPDATE != m_task_map.end()) {
+                    task_status[1] = task_status_SWUPDATE->second;
+                }
+
+                auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
+                if (task_status_LOGUPLOAD != m_task_map.end()) {
+                    task_status[2] = task_status_LOGUPLOAD->second;
+                }
 
                 for (i = 0; i < 3; i++)
                 {
