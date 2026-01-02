@@ -1350,15 +1350,12 @@ string deviceSpecificRegexPath(){
 }
 
 bool createDirectory(const std::string &path) {
-    // Issue #227: TOCTOU fix - Use mkdir directly and check errno for EEXIST
-    // Eliminate race condition by not checking existence separately
-    if (mkdir(path.c_str(), 0755) != 0) {
-        if (errno == EEXIST) {
-            // Directory already exists, this is fine
-            return true;
+    struct stat st = {0};
+    if (stat(path.c_str(), &st) == -1) {
+        if (mkdir(path.c_str(), 0755) != 0) {
+            SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
+            return false;
         }
-        SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
-        return false;
     }
     return true;
 }
@@ -1382,9 +1379,15 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
     // Construct the destination file path
     std::string dest_file_path = std::string(destination_dir) + "/" + file_name;
 
-    // Issue #228: TOCTOU fix - Open file directly with exclusive create flag
-    // Use O_CREAT | O_EXCL to atomically create file or fail if exists
-    // If file exists, remove it first and retry
+    // Check if the file already exists at the destination
+    if (access(dest_file_path.c_str(), F_OK) == 0) {
+        SWUPDATEINFO("File already exists at destination. Removing old file...\n");
+        if (unlink(dest_file_path.c_str()) != 0) {
+            SWUPDATEERR("Error removing old file: %s\n", strerror(errno));
+            return false;
+        }
+    }
+
     std::ifstream src(source_file, std::ios::binary);
     if (!src) {
         SWUPDATEERR("Error: Could not open source file %s\n", source_file);
@@ -1392,7 +1395,7 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
     }
 
     // Try to open destination file, if exists remove and recreate
-    std::ofstream dst(dest_file_path, std::ios::binary | std::ios::trunc);
+    std::ofstream dst(dest_file_path, std::ios::binary);
     if (!dst) {
         SWUPDATEERR("Error: Could not open destination file %s\n", dest_file_path.c_str());
         src.close();
@@ -1417,8 +1420,6 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
 }
 
 bool FirmwareStatus(std::string& state, std::string& substate, const std::string& mode) {
-    // Issues #175, #176: PW.PARAMETER_HIDDEN - False positive (intentional lambda parameter shadowing)
-    // Lambda explicitly takes parameters, not capturing from outer scope - this is standard C++ pattern
     auto writeFile = [](const std::string& state, const std::string& substate) -> bool {
         std::ofstream file(FIRMWARE_UPDATE_STATE);
         if (!file.is_open()) {
@@ -1433,8 +1434,6 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
         return true;
     };
 
-    // Issues #177, #178: PW.PARAMETER_HIDDEN - False positive (intentional lambda parameter shadowing)
-    // Lambda explicitly takes parameters, not capturing from outer scope - this is standard C++ pattern
     auto readFile = [](std::string& state, std::string& substate) -> bool {
         std::ifstream file(FIRMWARE_UPDATE_STATE);
         if (!file.is_open()) {
@@ -1456,8 +1455,7 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
                 stateFound = true;
             }
             if (key == "substate") {
-				// Issue #6 Fix: Direct assignment instead of move - value is loop-local
-                // std::move() is unnecessary and creates USE_AFTER_MOVE risk
+				// Issue #6: Use std::move to avoid unnecessary string copy
                 substate = std::move(value);
                 substateFound = true;
             }
@@ -1484,24 +1482,13 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
     }
 }
 std::string GetCurrentTimestamp() {
-    // Issue #231: Y2K38_SAFETY fix - Use chrono throughout to avoid 32-bit time_t
-    // Convert to time_t only for formatting, ensuring 64-bit where available
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
     std::ostringstream oss;
-    // Issue #231: Y2K38_SAFETY - Use gmtime_r (thread-safe) for 64-bit time handling
-    // gmtime_r is reentrant and safe for multi-threaded environments
-    #ifdef _POSIX_C_SOURCE
-    struct tm tm_buf;
-    gmtime_r(&in_time_t, &tm_buf);
-    oss << std::put_time(&tm_buf, "%Y-%m-%dT%H:%M:%S");
-    #else
-    oss << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dT%H:%M:%S");
-    #endif
-    // Compilation fix: Chain output stream operator to oss
-    oss << "." << std::setfill('0') << std::setw(3) << millis.count()
+    oss << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dT%H:%M:%S")
+        << "." << std::setfill('0') << std::setw(3) << millis.count()
         << "Z";
     return oss.str();
 }

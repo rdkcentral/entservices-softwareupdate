@@ -34,7 +34,6 @@
 #include <map>
 #include <sstream>
 #include <ctime>
-#include <chrono>
 #include <iomanip>
 #include <bits/stdc++.h>
 #include <algorithm>
@@ -317,7 +316,7 @@ namespace WPEFramework
          * Register MaintenanceManager module as wpeframework plugin
          */
         MaintenanceManager::MaintenanceManager()
-            : PluginHost::JSONRPC(), m_authservicePlugin(nullptr), g_maintenance_data(nullptr) // Issue #229: Initialize pointer to prevent undefined behavior
+            : PluginHost::JSONRPC(), m_authservicePlugin(nullptr)
         {
             MaintenanceManager::_instance = this;
 
@@ -413,10 +412,14 @@ namespace WPEFramework
                         MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
                         g_listen_to_deviceContextUpdate = true;
                         MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
+<<<<<<< HEAD
 						// Issue #1: Condition variable wait without loop - spurious wakeups not handled
                         // Fix: Use predicate-based wait to properly handle spurious wakeups
                         // Compilation fix: Capture [this] to access non-static member variable
                         task_thread.wait(wailck, [this]{ return !g_listen_to_deviceContextUpdate; });
+=======
+                        task_thread.wait(wailck);
+>>>>>>> 7be6a58 (RDKEMW-11932 : Fix Coverity identified issues - entservices-softwareupdate)
                     }
                     else if (!internetConnectStatus && activation_status == "activated")
                     {
@@ -1623,7 +1626,11 @@ namespace WPEFramework
                         switch (module_status)
                         {
                             case MAINT_RFC_COMPLETE:
+<<<<<<< HEAD
 								// Issues #50, #52, #53, #54, #55, #56: Validate iterators before using in switch statement
+=======
+                                // Issue #54: INVALIDATE_ITERATOR - Validate iterator before dereferencing
+>>>>>>> 7be6a58 (RDKEMW-11932 : Fix Coverity identified issues - entservices-softwareupdate)
                                 if (task_status_RFC != m_task_map.end() && task_status_RFC->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event RFC_COMPLETE");
@@ -1638,6 +1645,7 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_FWDOWNLOAD_COMPLETE:
+                                // Issue #54: INVALIDATE_ITERATOR - Validate iterator before dereferencing
                                 if (task_status_SWUPDATE != m_task_map.end() && task_status_SWUPDATE->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_COMPLETE");
@@ -1652,6 +1660,7 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_LOGUPLOAD_COMPLETE:
+                                // Issue #54: INVALIDATE_ITERATOR - Validate iterator before dereferencing
                                 if (task_status_LOGUPLOAD != m_task_map.end() && task_status_LOGUPLOAD->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_LOGUPLOAD_COMPLETE");
