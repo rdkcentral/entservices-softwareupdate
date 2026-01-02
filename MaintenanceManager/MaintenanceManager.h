@@ -194,7 +194,6 @@ namespace WPEFramework
             string g_lastSuccessful_maint_time;
             string g_epoch_time;
 
-            IARM_Bus_MaintMGR_EventData_t *g_maintenance_data;
             Maint_notify_status_t m_notify_status;
             Maintenance_Type_t g_maintenance_type;
             static cSettings m_setting;
@@ -222,7 +221,10 @@ namespace WPEFramework
             std::map<string, DATA_TYPE> m_paramType_map;
 
             PluginHost::IShell *m_service = nullptr;
-            Exchange::IAuthService *m_authservicePlugin;
+            // Note: Member declaration order matches constructor initialization list order
+            // Compilation fix: to avoid compiler warning about initialization order (-Wreorder)
+            Exchange::IAuthService *m_authservicePlugin;  // Initialized first in constructor
+            IARM_Bus_MaintMGR_EventData_t *g_maintenance_data;  // Initialized second in constructor (Issue #229)
 
             bool isDeviceOnline();
             void task_execution_thread();
