@@ -63,10 +63,8 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
 
 MaintenanceManagerTest::~MaintenanceManagerTest() {
     uint32_t status = Core::ERROR_GENERAL;
-    status = DeactivateService("org.rdk.AuthService");
-    status = DeactivateService("org.rdk.SecManager");
-    status = DeactivateService("org.rdk.Network");
     status = DeactivateService("org.rdk.MaintenanceManager");
+    EXPECT_EQ(Core::ERROR_NONE, status);
 }
 
 TEST_F(MaintenanceManagerTest,Unsolicited_Maintenance)
