@@ -63,6 +63,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
 
 MaintenanceManagerTest::~MaintenanceManagerTest() {
     uint32_t status = Core::ERROR_GENERAL;
+    sleep(10);
     status = DeactivateService("org.rdk.MaintenanceManager");
    
 }
