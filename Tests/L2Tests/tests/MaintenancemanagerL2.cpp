@@ -63,9 +63,7 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
 
 MaintenanceManagerTest::~MaintenanceManagerTest() {
     uint32_t status = Core::ERROR_GENERAL;
-    sleep(10);
     status = DeactivateService("org.rdk.MaintenanceManager");
-   
 }
 
 TEST_F(MaintenanceManagerTest,Unsolicited_Maintenance)
@@ -214,3 +212,5 @@ TEST_F(MaintenanceManagerTest, getMaintenanceMode_json_rpc)
     status = InvokeServiceMethod("org.rdk.MaintenanceManager", "getMaintenanceMode", params1, results1);
     ASSERT_EQ(status, Core::ERROR_NONE);
 }
+
+
