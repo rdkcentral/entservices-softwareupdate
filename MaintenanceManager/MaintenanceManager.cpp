@@ -317,14 +317,7 @@ namespace WPEFramework
          * Register MaintenanceManager module as wpeframework plugin
          */
         MaintenanceManager::MaintenanceManager()
-            : PluginHost::JSONRPC(), m_authservicePlugin(nullptr),
-              // Coverity Issue #229: UNINIT_CTOR - Initialize all class members in constructor
-              m_notify_status(MAINTENANCE_IDLE),
-              g_maintenance_type(UNSOLICITED_MAINTENANCE),
-              m_abort_flag(false),
-              g_task_status(0),
-              g_unsolicited_complete(false),
-              g_maintenance_data(nullptr)
+            : PluginHost::JSONRPC(), m_authservicePlugin(nullptr)
         {
             MaintenanceManager::_instance = this;
 
