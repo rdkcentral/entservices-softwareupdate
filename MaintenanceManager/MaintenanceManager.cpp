@@ -1492,7 +1492,6 @@ namespace WPEFramework
 
         void MaintenanceManager::Deinitialize(PluginHost::IShell *service)
         {
-			#if 0
 			#if !defined(GTEST_ENABLE)
             if (m_thread.joinable()) {
                 MM_LOGINFO("Waiting for task_execution_thread to exit before deactivation...");
@@ -1500,7 +1499,6 @@ namespace WPEFramework
                 MM_LOGINFO("task_execution_thread exited.");
             }
         #endif
-			#endif
             if (!maintenance_deleteTimer())
             {
                 MM_LOGINFO("Failed to delete timer");
