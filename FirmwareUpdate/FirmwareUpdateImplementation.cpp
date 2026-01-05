@@ -1493,7 +1493,6 @@ std::string GetCurrentTimestamp() {
             << "Z";
     } else {
         SWUPDATEERR("Error: gmtime_r failed\n");
-        return "";
     }
     return oss.str();
 }
