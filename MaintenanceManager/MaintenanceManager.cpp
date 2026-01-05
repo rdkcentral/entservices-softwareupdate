@@ -1597,8 +1597,7 @@ namespace WPEFramework
                 Maint_notify_status_t notify_status = MAINTENANCE_STARTED;
                 IARM_Bus_MaintMGR_EventData_t *module_event_data = (IARM_Bus_MaintMGR_EventData_t *)data;
                 IARM_Maint_module_status_t module_status;
-                // Coverity Issue #232: Y2K38_SAFETY - Use 64-bit time to handle dates beyond 2038
-                int64_t successfulTime;
+                time_t successfulTime;
                 string str_successfulTime = "";
 
                 auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
@@ -1759,11 +1758,11 @@ namespace WPEFramework
                         { // all tasks success
                             MM_LOGINFO("Maintenance Successfully Completed!!");
                             notify_status = MAINTENANCE_COMPLETE;
-                            // Coverity Issue #233: Y2K38_SAFETY - Use chrono for 64-bit time handling
-                            auto now = std::chrono::system_clock::now();
-                            successfulTime = std::chrono::duration_cast<std::chrono::seconds>(
-                                now.time_since_epoch()).count();
-                            str_successfulTime = to_string(successfulTime);
+                            /*  we store the time in persistant location */
+                            successfulTime = time(nullptr);
+                            tm ltime = *localtime(&successfulTime);
+                            time_t epoch_time = mktime(&ltime);
+                            str_successfulTime = to_string(epoch_time);
                             MM_LOGINFO("last succesful time is :%s", str_successfulTime.c_str());
                             /* Remove any old completion time */
                             m_setting.remove("LastSuccessfulCompletionTime");
@@ -2089,11 +2088,8 @@ namespace WPEFramework
             int cron_time_in_sec = (start_hr * 3600) + (start_min * 60);
             getTimeZone(deviceName, zoneValue, timeZone, timeZoneOffset, BUFFER_SIZE);
 
-            // Coverity Issue #234: Y2K38_SAFETY - Use chrono for 64-bit time handling
-            auto now = std::chrono::system_clock::now();
-            auto now_time_t = std::chrono::system_clock::to_time_t(now);
-            struct tm tm_buf;
-            struct tm *ptm = localtime_r(&now_time_t, &tm_buf);
+            time_t rawtime = time(NULL);
+            struct tm *ptm = localtime(&rawtime);
 
             if (strcmp(tz_mode, "Local time") == 0)
             {
