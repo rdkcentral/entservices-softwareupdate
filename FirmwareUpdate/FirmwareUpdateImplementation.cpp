@@ -1482,7 +1482,7 @@ std::string GetCurrentTimestamp() {
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
     std::ostringstream oss;
-    oss << std::put_time(ptm, "%Y-%m-%dT%H:%M:%S")
+    oss << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dT%H:%M:%S")
         << "." << std::setfill('0') << std::setw(3) << millis.count()
         << "Z";
     return oss.str();
