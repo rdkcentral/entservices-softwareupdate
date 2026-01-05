@@ -1350,15 +1350,14 @@ string deviceSpecificRegexPath(){
 }
 
 bool createDirectory(const std::string &path) {
-    // Coverity Issue #227: TOCTOU - Eliminate TOCTOU by directly calling mkdir
-    // If directory exists, mkdir fails with EEXIST which is acceptable
-    if (mkdir(path.c_str(), 0755) != 0) {
-        if (errno == EEXIST) {
-            // Directory already exists, this is not an error
-            return true;
+    struct stat st = {0};
+    // Check if the directory exists
+    if (stat(path.c_str(), &st) == -1) {
+        // Create the directory
+        if (mkdir(path.c_str(), 0755) != 0) {
+            SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
+            return false;
         }
-        SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
-        return false;
     }
     return true;
 }
@@ -1482,18 +1481,10 @@ std::string GetCurrentTimestamp() {
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
-    // Coverity Issue #231: Y2K38_SAFETY - Use gmtime_r instead of gmtime for thread safety and proper buffer
-    struct tm tm_buf;
-    struct tm *ptm = gmtime_r(&in_time_t, &tm_buf);
-    
     std::ostringstream oss;
-    if (ptm) {
-        oss << std::put_time(ptm, "%Y-%m-%dT%H:%M:%S")
-            << "." << std::setfill('0') << std::setw(3) << millis.count()
-            << "Z";
-    } else {
-        SWUPDATEERR("Error: gmtime_r failed\n");
-    }
+    oss << std::put_time(ptm, "%Y-%m-%dT%H:%M:%S")
+        << "." << std::setfill('0') << std::setw(3) << millis.count()
+        << "Z";
     return oss.str();
 }
 
