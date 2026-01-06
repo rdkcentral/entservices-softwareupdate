@@ -2125,7 +2125,7 @@ namespace WPEFramework
             ptm->tm_sec = start_time_in_sec % 60;
 
             int start_epoch = timegm(ptm);
-            if (start_epoch - now_time_t < 10)
+            if (start_epoch - rawtime < 10)
             {
                 start_epoch += 86399;
             }
