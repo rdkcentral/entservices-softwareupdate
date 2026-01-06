@@ -1450,7 +1450,7 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
                 stateFound = true;
             }
             if (key == "substate") {
-				// Issue #6: Use std::move to avoid unnecessary string copy
+			// Issue #6: Use std::move to avoid unnecessary string copy
                 substate = std::move(value);
                 substateFound = true;
             }
