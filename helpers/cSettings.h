@@ -143,7 +143,7 @@ public:
         // Issue #17: Use std::move to avoid unnecessary string copy
         data[key.c_str()] = "";
         data.Remove(key.c_str());
-        if (!contains(std::move(key))) {
+        if (!contains(key)) {
             if (writeToFile()) {
                 status = true;
             } else {
