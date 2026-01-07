@@ -79,7 +79,7 @@ FirmwareUpdateTest::~FirmwareUpdateTest()
     EXPECT_EQ(Core::ERROR_NONE, status);
 
     // Allow time for singleton cleanup before next test
-    sleep(1);
+    sleep(2);
 }
 
 TEST_F(FirmwareUpdateTest,EmptyFirmwareFilepath)
