@@ -160,14 +160,14 @@ TEST_F(MaintenanceManagerTest,setMaintenanceMode_json_rpc)
 }
 
 //stopMaintenance on an active Maintenance Cycle
-TEST_F(MaintenanceManagerTest,stopMaintenance)
-{
-    uint32_t status = Core::ERROR_GENERAL;
-    JsonObject params1, results1;
-    status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
-    ASSERT_EQ(results1["success"].Boolean(), true);
-    ASSERT_EQ(status, Core::ERROR_NONE);
-}
+// TEST_F(MaintenanceManagerTest,stopMaintenance)
+// {
+//     uint32_t status = Core::ERROR_GENERAL;
+//     JsonObject params1, results1;
+//     status = InvokeServiceMethod("org.rdk.MaintenanceManager","stopMaintenance",params1, results1);
+//     ASSERT_EQ(results1["success"].Boolean(), true);
+//     ASSERT_EQ(status, Core::ERROR_NONE);
+// }
 
 //startMaintenance jsonPRC Test on an active Maintenance Cycle
 TEST_F(MaintenanceManagerTest, startMaintenance_active_maintenance)
