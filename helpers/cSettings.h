@@ -131,8 +131,9 @@ public:
      * @brief        : Remove a particular key-value pair.
      * @param1[in]   : <string> key
      * @return       : <bool> True if key is key-value pair removed, else False
+     * new fix : issues ID : 16 - COPY_INSTEAD_OF_MOVE: Changed parameter from pass-by-value to pass-by-const-reference to avoid unnecessary string copy
      */
-    bool remove(std::string key)
+    bool remove(const std::string& key)
     {
         bool status = false;
         /*

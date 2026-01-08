@@ -316,8 +316,20 @@ namespace WPEFramework
         /**
          * Register MaintenanceManager module as wpeframework plugin
          */
+        // new fix : issues ID : 229 - UNINIT_CTOR - Initialize all POD members in constructor
         MaintenanceManager::MaintenanceManager()
-            : PluginHost::JSONRPC(), m_authservicePlugin(nullptr)
+            : PluginHost::JSONRPC(), 
+              m_authservicePlugin(nullptr),
+              m_abort_flag(false),
+              g_task_status(0),
+              g_unsolicited_complete(false),
+              g_listen_to_nwevents(false),
+              g_subscribed_for_nwevents(false),
+              g_listen_to_deviceContextUpdate(false),
+              g_subscribed_for_deviceContextUpdate(false),
+              m_notify_status(MAINTENANCE_IDLE),
+              g_maintenance_type(UNSOLICITED_MAINTENANCE),
+              m_service(nullptr)
         {
             MaintenanceManager::_instance = this;
 
@@ -509,7 +521,8 @@ namespace WPEFramework
                         if (retry_count > 0 && isTaskTimerStarted)
                         {
                             MM_LOGINFO("Retry %s after %d seconds (%d retry left)\n", tasks[i].c_str(), TASK_RETRY_DELAY, retry_count);
-                            sleep(TASK_RETRY_DELAY);
+                            // new fix : issues ID : 218-222 - SLEEP - Use C++ thread-safe sleep
+                            std::this_thread::sleep_for(std::chrono::seconds(TASK_RETRY_DELAY));
                             i--; /* Decrement iterator to retry the same task again */
                             retry_count--;
                             continue;
@@ -618,7 +631,8 @@ namespace WPEFramework
                             if (joGetResult.HasLabel(kDeviceInitializationContext))
                             {
                                 MM_LOGINFO("%s found in the response", kDeviceInitializationContext);
-                                success = setDeviceInitializationContext(joGetResult);
+                                // new fix : issues ID : 15 - COPY_INSTEAD_OF_MOVE: Use std::move() to avoid unnecessary deep copy of JsonObject since joGetResult is not used after this call
+                                success = setDeviceInitializationContext(std::move(joGetResult));
                             }
                             else
                             {
@@ -647,7 +661,8 @@ namespace WPEFramework
                     if (activation_status != "activated")
                     {
                         MM_LOGINFO("%s is not active. Retry after %d seconds", secMgr_callsign, SECMGR_RETRY_INTERVAL);
-                        sleep(SECMGR_RETRY_INTERVAL);
+                        // new fix : issues ID : 223-224 - SLEEP - Use C++ thread-safe sleep
+                        std::this_thread::sleep_for(std::chrono::seconds(SECMGR_RETRY_INTERVAL));
                     }
                     else
                     {
@@ -842,11 +857,21 @@ namespace WPEFramework
          * This function is invoked when the task timer expires and processes the timeout accordingly.
          *
          * @param signo The signal number received.
+         * 
+         * new fix : issues ID : 63, 64 - MISSING_LOCK: WARNING - This signal handler accesses shared state 
+         * without locks and uses non-async-signal-safe functions (std::string, std::map, logging).
+         * This violates POSIX signal safety requirements and creates race conditions.
+         * TODO: DESIGN REFACTORING NEEDED - Replace with atomic flag pattern:
+         *   1. Set atomic<bool> flag in signal handler
+         *   2. Check flag in main thread with proper mutex locking
+         *   3. Perform actual work (map access, logging) in main thread context
+         * See suggested fix in Coverity analysis report for implementation details.
          */
         void MaintenanceManager::timer_handler(int signo)
         {
             if (signo == SIGALRM)
             {
+                // COVERITY ISSUE ID 63: Accessing currentTask (std::string) without lock - NOT SIGNAL-SAFE
                 MM_LOGERR("Timeout reached for %s. Set task to Error...", currentTask.c_str());
 
                 const char *failedTask = nullptr;
@@ -860,12 +885,14 @@ namespace WPEFramework
                         break;
                     }
                 }
+                // COVERITY ISSUE ID 63, 64: Accessing m_task_map without lock in signal handler - RACE CONDITION
                 if (failedTask && !MaintenanceManager::_instance->m_task_map[failedTask])
                 {
                     MM_LOGINFO("Ignoring Error Event for Task: %s", failedTask);
                 }
                 else if (failedTask)
                 {
+                    // COVERITY ISSUE ID 63, 64: m_task_map and g_task_status access without lock - RACE CONDITION
                     MaintenanceManager::_instance->m_task_map[failedTask] = false;
                     SET_STATUS(MaintenanceManager::_instance->g_task_status, complete_status);
                     MaintenanceManager::_instance->task_thread.notify_one();

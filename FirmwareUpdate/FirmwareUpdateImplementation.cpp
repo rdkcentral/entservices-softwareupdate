@@ -364,7 +364,10 @@ namespace WPEFramework {
             if (codebig == nullptr || *codebig == '\0') {
                 codebig = "false";
             }
-            if (server_url == nullptr || *server_url == '\0') {
+            // new fix : issues ID : 181 - REVERSE_INULL - Check for nullptr before dereferencing
+            if (server_url == nullptr) {
+                server_url = "empty";
+            } else if (*server_url == '\0') {
                 server_url = "empty";
             }
 
@@ -1350,16 +1353,20 @@ string deviceSpecificRegexPath(){
 }
 
 bool createDirectory(const std::string &path) {
-    struct stat st = {0};
-    // Check if the directory exists
-    if (stat(path.c_str(), &st) == -1) {
-        // Create the directory
-        if (mkdir(path.c_str(), 0755) != 0) {
-            SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
-            return false;
-        }
+    // new fix : issues ID : 228 - TOCTOU - Eliminate race condition by attempting mkdir directly
+    if (mkdir(path.c_str(), 0755) == 0) {
+        // Directory created successfully
+        return true;
     }
-    return true;
+    
+    if (errno == EEXIST) {
+        // Directory already exists, which is acceptable
+        return true;
+    }
+    
+    // mkdir failed for a reason other than directory already existing
+    SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
+    return false;
 }
 
 bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
@@ -1415,7 +1422,8 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
     return true;
 }
 bool FirmwareStatus(std::string& state, std::string& substate, const std::string& mode) {
-    auto writeFile = [](const std::string& state, const std::string& substate) -> bool {
+    // new fix : issues ID : 175, 176 - PW.PARAMETER_HIDDEN - Capture by reference to avoid parameter shadowing
+    auto writeFile = [&state, &substate]() -> bool {
         std::ofstream file(FIRMWARE_UPDATE_STATE);
         if (!file.is_open()) {
             SWUPDATEERR("Error opening the file for writing." );
@@ -1429,7 +1437,8 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
         return true;
     };
 
-    auto readFile = [](std::string& state, std::string& substate) -> bool {
+    // new fix : issues ID : 177, 178 - PW.PARAMETER_HIDDEN - Capture by reference to avoid parameter shadowing
+    auto readFile = [&state, &substate]() -> bool {
         std::ifstream file(FIRMWARE_UPDATE_STATE);
         if (!file.is_open()) {
             SWUPDATEERR("Error: File not found.");
@@ -1466,10 +1475,10 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
 
     // Handle the mode
     if (mode == "write") {
-        return writeFile(state, substate);
+        return writeFile();
     }
     else if (mode == "read") {
-        return readFile(state, substate);
+        return readFile();
     }
     else {
         SWUPDATEERR("Error: Invalid mode provided. Use 'read' or 'write'.");
