@@ -319,7 +319,8 @@ namespace WPEFramework
         // new fix : issues ID : 229 - UNINIT_CTOR - Initialize all POD members in constructor
         MaintenanceManager::MaintenanceManager()
             : PluginHost::JSONRPC(), 
-              m_authservicePlugin(nullptr),
+              m_notify_status(MAINTENANCE_IDLE),
+              g_maintenance_type(UNSOLICITED_MAINTENANCE),
               m_abort_flag(false),
               g_task_status(0),
               g_unsolicited_complete(false),
@@ -327,9 +328,8 @@ namespace WPEFramework
               g_subscribed_for_nwevents(false),
               g_listen_to_deviceContextUpdate(false),
               g_subscribed_for_deviceContextUpdate(false),
-              m_notify_status(MAINTENANCE_IDLE),
-              g_maintenance_type(UNSOLICITED_MAINTENANCE),
-              m_service(nullptr)
+              m_service(nullptr),
+              m_authservicePlugin(nullptr)
         {
             MaintenanceManager::_instance = this;
 
