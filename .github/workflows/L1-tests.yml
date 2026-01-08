@@ -138,7 +138,7 @@ jobs:
         with:
           repository: rdkcentral/entservices-softwareupdate
           path: entservices-softwareupdate
-          ref: develop
+          ref: L2TestPlugin_COMRPC
 
       - name: Checkout googletest
         if: steps.cache.outputs.cache-hit != 'true'
