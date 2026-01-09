@@ -135,7 +135,6 @@ jobs:
       - name: Apply patches entservices-softwareupdate
         run: |  
             cd $GITHUB_WORKSPACE/entservices-softwareupdate
-            patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Firmware_postFlash.patch
             patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Maintenancemanager.patch
             cd -
 
