@@ -22,10 +22,6 @@ set(THUNDER_PORT 9998)
 
 find_package(${NAMESPACE}Plugins REQUIRED)
 
-if(PLUGIN_FIRMWAREUPDATE)
-    set(SRC_FILES ${SRC_FILES} tests/FirmwareUpdate_L2Test.cpp)
-endif()
-
 if(PLUGIN_MAINTENANCEMANAGER)
 set(SRC_FILES ${SRC_FILES} tests/MaintenancemanagerL2.cpp)
 endif()
