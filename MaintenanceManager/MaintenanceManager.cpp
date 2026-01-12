@@ -516,9 +516,8 @@ namespace WPEFramework
                         if (retry_count > 0 && isTaskTimerStarted)
                         {
                             MM_LOGINFO("Retry %s after %d seconds (%d retry left)\n", tasks[i].c_str(), TASK_RETRY_DELAY, retry_count);
-							sleep(TASK_RETRY_DELAY);
                             // new fix : issues ID : 218-222 - SLEEP - Use C++ thread-safe sleep
-                            //std::this_thread::sleep_for(std::chrono::seconds(TASK_RETRY_DELAY));
+                            std::this_thread::sleep_for(std::chrono::seconds(TASK_RETRY_DELAY));
                             i--; /* Decrement iterator to retry the same task again */
                             retry_count--;
                             continue;
@@ -657,9 +656,8 @@ namespace WPEFramework
                     if (activation_status != "activated")
                     {
                         MM_LOGINFO("%s is not active. Retry after %d seconds", secMgr_callsign, SECMGR_RETRY_INTERVAL);
-						sleep(SECMGR_RETRY_INTERVAL);
                         // new fix : issues ID : 223-224 - SLEEP - Use C++ thread-safe sleep
-                        //std::this_thread::sleep_for(std::chrono::seconds(SECMGR_RETRY_INTERVAL));
+                        std::this_thread::sleep_for(std::chrono::seconds(SECMGR_RETRY_INTERVAL));
                     }
                     else
                     {
