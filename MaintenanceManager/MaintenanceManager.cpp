@@ -320,7 +320,6 @@ namespace WPEFramework
         MaintenanceManager::MaintenanceManager()
             : PluginHost::JSONRPC(), 
               m_notify_status(MAINTENANCE_IDLE),
-              g_maintenance_type(UNSOLICITED_MAINTENANCE),
               m_abort_flag(false),
               g_task_status(0),
               g_unsolicited_complete(false),
