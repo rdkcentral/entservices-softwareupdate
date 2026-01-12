@@ -324,11 +324,6 @@ namespace WPEFramework
               m_abort_flag(false),
               g_task_status(0),
               g_unsolicited_complete(false),
-              g_listen_to_nwevents(false),
-              g_subscribed_for_nwevents(false),
-              g_listen_to_deviceContextUpdate(false),
-              g_subscribed_for_deviceContextUpdate(false),
-              m_service(nullptr),
               m_authservicePlugin(nullptr)
         {
             MaintenanceManager::_instance = this;
