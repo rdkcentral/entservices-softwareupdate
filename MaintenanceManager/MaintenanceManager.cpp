@@ -316,7 +316,6 @@ namespace WPEFramework
         /**
          * Register MaintenanceManager module as wpeframework plugin
          */
-        // new fix : issues ID : 229 - UNINIT_CTOR - Initialize all POD members in constructor
         MaintenanceManager::MaintenanceManager()
             : PluginHost::JSONRPC(), 
               m_notify_status(MAINTENANCE_IDLE),
@@ -419,7 +418,6 @@ namespace WPEFramework
                         MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
                         g_listen_to_deviceContextUpdate = true;
                         MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
-                        // Coverity Issue #1: BAD_CHECK_OF_WAIT_COND - Use predicate-based wait to handle spurious wakeups
                         task_thread.wait(wailck, [this]{ return !g_listen_to_deviceContextUpdate; });
                     }
                     else if (!internetConnectStatus && activation_status == "activated")
@@ -515,7 +513,6 @@ namespace WPEFramework
                         if (retry_count > 0 && isTaskTimerStarted)
                         {
                             MM_LOGINFO("Retry %s after %d seconds (%d retry left)\n", tasks[i].c_str(), TASK_RETRY_DELAY, retry_count);
-                            // new fix : issues ID : 218-222 - SLEEP - Use C++ thread-safe sleep
                             std::this_thread::sleep_for(std::chrono::seconds(TASK_RETRY_DELAY));
                             i--; /* Decrement iterator to retry the same task again */
                             retry_count--;
@@ -625,7 +622,6 @@ namespace WPEFramework
                             if (joGetResult.HasLabel(kDeviceInitializationContext))
                             {
                                 MM_LOGINFO("%s found in the response", kDeviceInitializationContext);
-                                // new fix : issues ID : 15 - COPY_INSTEAD_OF_MOVE: Use std::move() to avoid unnecessary deep copy of JsonObject since joGetResult is not used after this call
                                 success = setDeviceInitializationContext(std::move(joGetResult));
                             }
                             else
@@ -655,7 +651,6 @@ namespace WPEFramework
                     if (activation_status != "activated")
                     {
                         MM_LOGINFO("%s is not active. Retry after %d seconds", secMgr_callsign, SECMGR_RETRY_INTERVAL);
-                        // new fix : issues ID : 223-224 - SLEEP - Use C++ thread-safe sleep
                         std::this_thread::sleep_for(std::chrono::seconds(SECMGR_RETRY_INTERVAL));
                     }
                     else
@@ -852,20 +847,11 @@ namespace WPEFramework
          *
          * @param signo The signal number received.
          * 
-         * new fix : issues ID : 63, 64 - MISSING_LOCK: WARNING - This signal handler accesses shared state 
-         * without locks and uses non-async-signal-safe functions (std::string, std::map, logging).
-         * This violates POSIX signal safety requirements and creates race conditions.
-         * TODO: DESIGN REFACTORING NEEDED - Replace with atomic flag pattern:
-         *   1. Set atomic<bool> flag in signal handler
-         *   2. Check flag in main thread with proper mutex locking
-         *   3. Perform actual work (map access, logging) in main thread context
-         * See suggested fix in Coverity analysis report for implementation details.
          */
         void MaintenanceManager::timer_handler(int signo)
         {
             if (signo == SIGALRM)
             {
-                // COVERITY ISSUE ID 63: Accessing currentTask (std::string) without lock - NOT SIGNAL-SAFE
                 MM_LOGERR("Timeout reached for %s. Set task to Error...", currentTask.c_str());
 
                 const char *failedTask = nullptr;
@@ -879,14 +865,12 @@ namespace WPEFramework
                         break;
                     }
                 }
-                // COVERITY ISSUE ID 63, 64: Accessing m_task_map without lock in signal handler - RACE CONDITION
                 if (failedTask && !MaintenanceManager::_instance->m_task_map[failedTask])
                 {
                     MM_LOGINFO("Ignoring Error Event for Task: %s", failedTask);
                 }
                 else if (failedTask)
                 {
-                    // COVERITY ISSUE ID 63, 64: m_task_map and g_task_status access without lock - RACE CONDITION
                     MaintenanceManager::_instance->m_task_map[failedTask] = false;
                     SET_STATUS(MaintenanceManager::_instance->g_task_status, complete_status);
                     MaintenanceManager::_instance->task_thread.notify_one();
@@ -1419,7 +1403,6 @@ namespace WPEFramework
 
                     if (strcmp(key.c_str(), "partnerId") == 0)
                     {
-                        // Issue #8: Use std::move to avoid unnecessary string copy
                         setPartnerId(std::move(paramValue));
                     }
                 }
@@ -1571,7 +1554,6 @@ namespace WPEFramework
             {
                 MM_LOGINFO("OptOut Value is not Set. Setting to NONE");
                 m_setting.remove("softwareoptout");
-                // Issue #9: Use std::move to avoid unnecessary string copy
                 OptOutmode = "NONE";
                 m_setting.setValue("softwareoptout", std::move(OptOutmode));
             }
@@ -1639,7 +1621,6 @@ namespace WPEFramework
                         switch (module_status)
                         {
                             case MAINT_RFC_COMPLETE:
-                                // Coverity Issue #50: INVALIDATE_ITERATOR - Validate iterator before dereferencing
                                 if (task_status_RFC != m_task_map.end() && task_status_RFC->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event RFC_COMPLETE");
@@ -1654,7 +1635,6 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_FWDOWNLOAD_COMPLETE:
-                                // Coverity Issue #52: INVALIDATE_ITERATOR - Validate iterator before dereferencing
                                 if (task_status_SWUPDATE != m_task_map.end() && task_status_SWUPDATE->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_COMPLETE");
@@ -1669,7 +1649,6 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_LOGUPLOAD_COMPLETE:
-                                // Coverity Issue #53: INVALIDATE_ITERATOR - Validate iterator before dereferencing
                                 if (task_status_LOGUPLOAD != m_task_map.end() && task_status_LOGUPLOAD->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_LOGUPLOAD_COMPLETE");
@@ -1700,7 +1679,6 @@ namespace WPEFramework
                                 MM_LOGINFO("FW Download task aborted");
                                 break;
                             case MAINT_RFC_ERROR:
-                                // Coverity Issue #54: INVALIDATE_ITERATOR - Validate iterator before dereferencing
                                 if (task_status_RFC != m_task_map.end() && task_status_RFC->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event RFC_ERROR");
@@ -1715,7 +1693,6 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_LOGUPLOAD_ERROR:
-                                // Coverity Issue #55: INVALIDATE_ITERATOR - Validate iterator before dereferencing
                                 if (task_status_LOGUPLOAD != m_task_map.end() && task_status_LOGUPLOAD->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_LOGUPLOAD_ERROR");
@@ -1730,7 +1707,6 @@ namespace WPEFramework
                                 }
                                 break;
                             case MAINT_FWDOWNLOAD_ERROR:
-                                // Coverity Issue #56: INVALIDATE_ITERATOR - Validate iterator before dereferencing
                                 if (task_status_SWUPDATE != m_task_map.end() && task_status_SWUPDATE->second != true)
                                 {
                                     MM_LOGINFO("Ignoring Event MAINT_FWDOWNLOAD_ERROR");
@@ -1787,7 +1763,6 @@ namespace WPEFramework
                             MM_LOGINFO("last succesful time is :%s", str_successfulTime.c_str());
                             /* Remove any old completion time */
                             m_setting.remove("LastSuccessfulCompletionTime");
-                            // Issue #10: Use std::move to avoid unnecessary string copy
                             m_setting.setValue("LastSuccessfulCompletionTime", std::move(str_successfulTime));
                         }
                         /* Check other than all success case which means we have errors */
@@ -2346,7 +2321,6 @@ namespace WPEFramework
                 MM_LOGINFO("setMaintenanceMode called: maintenanceMode=%s, optOut=%s, triggerMode=%s", new_mode.c_str(), new_optout_state.c_str(), new_trigger_mode.c_str());
 
                 std::lock_guard<std::mutex> guard(m_callMutex); // Add Mutex
-                // Issue #11: Use std::move to avoid unnecessary string copy
                 g_triggerMode = std::move(new_trigger_mode); // Update inside mutex lock
 
                 /* check if maintenance is on progress or not */
@@ -2358,7 +2332,6 @@ namespace WPEFramework
                     /* remove any older one */
                     m_setting.remove("background_flag");
                     (BACKGROUND_MODE == new_mode) ? bg_flag = "true" : bg_flag = "false";
-                    // Issue #12: Use std::move to avoid unnecessary string copy
                     g_currentMode = std::move(new_mode);
                     m_setting.setValue("background_flag", std::move(bg_flag));
                 }
@@ -2378,7 +2351,6 @@ namespace WPEFramework
                         if (ret_code == IARM_RESULT_SUCCESS)
                         {
                             MM_LOGINFO("IARM_Bus_BroadcastEvent is success and value=%d", mode);
-                            // Issue #13: Use std::move to avoid unnecessary string copy
                             /* remove any older one */
                             m_setting.remove("background_flag");
                             (BACKGROUND_MODE == new_mode) ? bg_flag = "true" : bg_flag = "false";
@@ -2526,7 +2498,6 @@ namespace WPEFramework
                 MM_LOGINFO("Stopping maintenance activities");
                 // Set the condition flag m_abort_flag to true
                 m_abort_flag = true;
-                // Coverity Issues #47, #48, #49: INVALIDATE_ITERATOR - Validate iterators before dereferencing
                 auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
                 if (task_status_RFC != m_task_map.end()) {
                     task_status[0] = task_status_RFC->second;
@@ -2638,7 +2609,6 @@ namespace WPEFramework
                 }
                 else
 #endif
-                // Coverity Issue #230: UNUSED_VALUE - Prevent overwriting k_ret when rdkvfwupgrader matches
                 if (strstr(taskname, "rdkvfwupgrader"))
                 {
                     MM_LOGINFO("Sending SIGUSR1 signal to %s", taskname);
