@@ -70,7 +70,6 @@ inline bool readPropertyFromFile(const char* filename, const string& property, s
                 else
                 {
                     // If it does not start with '$', set propertyValue directly
-                    // Issue #15: Use std::move to avoid unnecessary string copy
                     propertyValue = std::move(propertyContent);
                     if (!propertyValue.empty())
                     {
