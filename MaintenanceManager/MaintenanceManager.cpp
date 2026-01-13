@@ -846,7 +846,6 @@ namespace WPEFramework
          * This function is invoked when the task timer expires and processes the timeout accordingly.
          *
          * @param signo The signal number received.
-         * 
          */
         void MaintenanceManager::timer_handler(int signo)
         {
