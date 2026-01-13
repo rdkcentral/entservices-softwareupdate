@@ -689,7 +689,6 @@ namespace WPEFramework {
                 }
                 else
                 {
-                    // Issue #5: Use std::move to avoid unnecessary string copy
                     std::string full_path = std::string(USB_TMP_COPY) + "/" + name;
                     upgrade_file = std::move(full_path);
                     SWUPDATEINFO("Upgrade file path after copy %s \n" ,upgrade_file.c_str());
