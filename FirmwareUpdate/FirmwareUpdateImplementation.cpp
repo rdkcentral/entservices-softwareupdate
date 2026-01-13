@@ -364,7 +364,6 @@ namespace WPEFramework {
             if (codebig == nullptr || *codebig == '\0') {
                 codebig = "false";
             }
-            // new fix : issues ID : 181 - REVERSE_INULL - Check for nullptr before dereferencing
             if (server_url == nullptr) {
                 server_url = "empty";
             } else if (*server_url == '\0') {
@@ -1353,7 +1352,6 @@ string deviceSpecificRegexPath(){
 }
 
 bool createDirectory(const std::string &path) {
-    // new fix : issues ID : 228 - TOCTOU - Eliminate race condition by attempting mkdir directly
     if (mkdir(path.c_str(), 0755) == 0) {
         // Directory created successfully
         return true;
@@ -1422,7 +1420,6 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
     return true;
 }
 bool FirmwareStatus(std::string& state, std::string& substate, const std::string& mode) {
-    // new fix : issues ID : 175, 176 - PW.PARAMETER_HIDDEN - Capture by reference to avoid parameter shadowing
     auto writeFile = [&state, &substate]() -> bool {
         std::ofstream file(FIRMWARE_UPDATE_STATE);
         if (!file.is_open()) {
@@ -1437,7 +1434,6 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
         return true;
     };
 
-    // new fix : issues ID : 177, 178 - PW.PARAMETER_HIDDEN - Capture by reference to avoid parameter shadowing
     auto readFile = [&state, &substate]() -> bool {
         std::ifstream file(FIRMWARE_UPDATE_STATE);
         if (!file.is_open()) {
