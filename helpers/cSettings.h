@@ -38,7 +38,6 @@ public:
      * @brief    : Constructor.
      * @return   : nil.
      */
-    // Issue #16: Use std::move to avoid unnecessary string copy
     cSettings(std::string file)
     {
         filename = std::move(file);
@@ -131,7 +130,6 @@ public:
      * @brief        : Remove a particular key-value pair.
      * @param1[in]   : <string> key
      * @return       : <bool> True if key is key-value pair removed, else False
-     * new fix : issues ID : 16 - COPY_INSTEAD_OF_MOVE: Changed parameter from pass-by-value to pass-by-const-reference to avoid unnecessary string copy
      */
     bool remove(const std::string& key)
     {
@@ -141,7 +139,6 @@ public:
          * work around is to assign a null value to the key and handle it
          * accordingly.
          */
-        // Issue #17: Use std::move to avoid unnecessary string copy
         data[key.c_str()] = "";
         data.Remove(key.c_str());
         if (!contains(key)) {
