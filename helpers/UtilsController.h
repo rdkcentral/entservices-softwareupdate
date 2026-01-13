@@ -165,7 +165,6 @@ namespace Utils
 #endif /* USE_THUNDER_R4 */
     {
     public:
-        // Issue #14: Use std::move to avoid unnecessary copy of std::function
         Job(std::function<void()> work)
             : _work(std::move(work))
         {
