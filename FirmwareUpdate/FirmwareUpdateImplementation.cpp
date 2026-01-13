@@ -1385,7 +1385,6 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
     // Construct the destination file path
     std::string dest_file_path = std::string(destination_dir) + "/" + file_name;
 
-    // Coverity Issue #228: TOCTOU - Use std::ios::trunc to atomically overwrite existing file
     // This eliminates the race condition between access() check and unlink() call
 
     // Open the source file
@@ -1454,7 +1453,6 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
                 stateFound = true;
             }
             if (key == "substate") {
-			// Issue #6: Use std::move to avoid unnecessary string copy
                 substate = std::move(value);
                 substateFound = true;
             }
