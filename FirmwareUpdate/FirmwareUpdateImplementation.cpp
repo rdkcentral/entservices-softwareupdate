@@ -364,7 +364,9 @@ namespace WPEFramework {
             if (codebig == nullptr || *codebig == '\0') {
                 codebig = "false";
             }
-            if (server_url == nullptr || *server_url == '\0') {
+            if (server_url == nullptr) {
+                server_url = "empty";
+            } else if (*server_url == '\0') {
                 server_url = "empty";
             }
 
@@ -688,7 +690,7 @@ namespace WPEFramework {
                 else
                 {
                     std::string full_path = std::string(USB_TMP_COPY) + "/" + name;
-                    upgrade_file = full_path;
+                    upgrade_file = std::move(full_path);
                     SWUPDATEINFO("Upgrade file path after copy %s \n" ,upgrade_file.c_str());
                 }
             }
@@ -1349,16 +1351,19 @@ string deviceSpecificRegexPath(){
 }
 
 bool createDirectory(const std::string &path) {
-    struct stat st = {0};
-    // Check if the directory exists
-    if (stat(path.c_str(), &st) == -1) {
-        // Create the directory
-        if (mkdir(path.c_str(), 0755) != 0) {
-            SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
-            return false;
-        }
+    if (mkdir(path.c_str(), 0755) == 0) {
+        // Directory created successfully
+        return true;
     }
-    return true;
+    
+    if (errno == EEXIST) {
+        // Directory already exists, which is acceptable
+        return true;
+    }
+    
+    // mkdir failed for a reason other than directory already existing
+    SWUPDATEERR("Error creating directory: %s\n", strerror(errno));
+    return false;
 }
 
 bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
@@ -1380,14 +1385,7 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
     // Construct the destination file path
     std::string dest_file_path = std::string(destination_dir) + "/" + file_name;
 
-    // Check if the file already exists at the destination
-    if (access(dest_file_path.c_str(), F_OK) == 0) {
-        SWUPDATEINFO("File already exists at destination. Removing old file...\n");
-        if (unlink(dest_file_path.c_str()) != 0) {
-            SWUPDATEERR("Error removing old file: %s\n", strerror(errno));
-            return false;
-        }
-    }
+    // This eliminates the race condition between access() check and unlink() call
 
     // Open the source file
     std::ifstream src(source_file, std::ios::binary);
@@ -1396,8 +1394,8 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
         return false;
     }
 
-    // Open the destination file
-    std::ofstream dest(dest_file_path, std::ios::binary);
+    // Open the destination file with trunc flag to overwrite if exists
+    std::ofstream dest(dest_file_path, std::ios::binary | std::ios::trunc);
     if (!dest) {
         SWUPDATEERR("Error: Could not open destination file %s\n", dest_file_path.c_str());
         return false;
@@ -1420,7 +1418,7 @@ bool copyFileToDirectory(const char *source_file, const char *destination_dir) {
     return true;
 }
 bool FirmwareStatus(std::string& state, std::string& substate, const std::string& mode) {
-    auto writeFile = [](const std::string& state, const std::string& substate) -> bool {
+    auto writeFile = [&state, &substate]() -> bool {
         std::ofstream file(FIRMWARE_UPDATE_STATE);
         if (!file.is_open()) {
             SWUPDATEERR("Error opening the file for writing." );
@@ -1434,7 +1432,7 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
         return true;
     };
 
-    auto readFile = [](std::string& state, std::string& substate) -> bool {
+    auto readFile = [&state, &substate]() -> bool {
         std::ifstream file(FIRMWARE_UPDATE_STATE);
         if (!file.is_open()) {
             SWUPDATEERR("Error: File not found.");
@@ -1455,7 +1453,7 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
                 stateFound = true;
             }
             if (key == "substate") {
-                substate = value;
+                substate = std::move(value);
                 substateFound = true;
             }
 
@@ -1470,10 +1468,10 @@ bool FirmwareStatus(std::string& state, std::string& substate, const std::string
 
     // Handle the mode
     if (mode == "write") {
-        return writeFile(state, substate);
+        return writeFile();
     }
     else if (mode == "read") {
-        return readFile(state, substate);
+        return readFile();
     }
     else {
         SWUPDATEERR("Error: Invalid mode provided. Use 'read' or 'write'.");

@@ -40,7 +40,7 @@ public:
      */
     cSettings(std::string file)
     {
-        filename = file;
+        filename = std::move(file);
         if (!readFromFile()) {
             /* File not present; create a new one assuming a fresh partition. */
             std::fstream fs;
@@ -131,7 +131,7 @@ public:
      * @param1[in]   : <string> key
      * @return       : <bool> True if key is key-value pair removed, else False
      */
-    bool remove(std::string key)
+    bool remove(const std::string& key)
     {
         bool status = false;
         /*
