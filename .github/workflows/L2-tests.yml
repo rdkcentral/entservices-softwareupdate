@@ -135,7 +135,6 @@ jobs:
       - name: Apply patches entservices-softwareupdate
         run: |  
             cd $GITHUB_WORKSPACE/entservices-softwareupdate
-            patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Firmware_postFlash.patch
             patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Maintenancemanager.patch
             cd -
 
@@ -419,7 +418,6 @@ jobs:
           -DCMAKE_DISABLE_FIND_PACKAGE_Udev=ON
           -DCMAKE_DISABLE_FIND_PACKAGE_RFC=ON
           -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
-          -DPLUGIN_FIRMWAREUPDATE=ON
           -DPLUGIN_MAINTENANCEMANAGER=ON
           -DUSE_THUNDER_R4=ON
           -DPLUGIN_L2Tests=ON
@@ -492,7 +490,6 @@ jobs:
           -DCMAKE_DISABLE_FIND_PACKAGE_Udev=ON
           -DCMAKE_DISABLE_FIND_PACKAGE_RFC=ON
           -DCMAKE_DISABLE_FIND_PACKAGE_RBus=ON
-          -DPLUGIN_FIRMWAREUPDATE=ON
           -DPLUGIN_MAINTENANCEMANAGER=ON
           -DUSE_THUNDER_R4=ON
           -DPLUGIN_L2Tests=ON
