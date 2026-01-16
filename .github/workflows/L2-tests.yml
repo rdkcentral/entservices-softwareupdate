@@ -107,7 +107,7 @@ jobs:
         with:
           repository: rdkcentral/entservices-testframework
           path: entservices-testframework
-          ref: develop
+          ref: RDKEMW-4719_upto_date_validation_L1
           token: ${{ secrets.RDKCM_RDKE }}
           
       - name: Checkout networkmanager
