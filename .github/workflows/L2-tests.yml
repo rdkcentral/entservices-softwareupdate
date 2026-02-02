@@ -431,6 +431,13 @@ jobs:
           &&
           cmake --install build/entservices-softwareupdate
 
+      - name: Verify L2TestsSU library installation
+        run: |
+          echo "Checking if libWPEFrameworkL2TestsSU.so was installed..."
+          ls -la $GITHUB_WORKSPACE/install/usr/lib/libWPEFrameworkL2TestsSU.so || echo "ERROR: libWPEFrameworkL2TestsSU.so not found!"
+          echo "Listing all installed libraries:"
+          ls -la $GITHUB_WORKSPACE/install/usr/lib/
+
       - name: Build entservices-testframework
         run: >
           cmake
