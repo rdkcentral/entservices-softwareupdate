@@ -1077,12 +1077,16 @@ TEST_F(MaintenanceManagerTest, ServiceNotActivated) {
 
 TEST_F(MaintenanceManagerTest, checkServiceActivated) {
     plugin_->m_service = &service_;
+    plugin_->m_authservicePlugin = &iauthservice_;
     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.AuthService"))
         .Times(::testing::AtLeast(1))
         .WillRepeatedly(::testing::Return(&service_));
     EXPECT_CALL(service_, State())
         .Times(::testing::AtLeast(1))
         .WillRepeatedly(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+    EXPECT_CALL(iauthservice_, GetActivationStatus(::testing::_))
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(Core::ERROR_NONE));
 
     std::string result = plugin_->checkActivatedStatus();
     EXPECT_EQ(result, "");
