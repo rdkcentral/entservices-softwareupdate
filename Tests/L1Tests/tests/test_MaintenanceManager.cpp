@@ -1081,7 +1081,8 @@ TEST_F(MaintenanceManagerTest, checkServiceActivated) {
         .Times(::testing::AtLeast(1))
         .WillRepeatedly(::testing::Return(&service_));
     EXPECT_CALL(service_, State())
-        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(PluginHost::IShell::state::ACTIVATED));
 
     std::string result = plugin_->checkActivatedStatus();
     EXPECT_EQ(result, "");
@@ -1107,7 +1108,8 @@ TEST_F(MaintenanceManagerTest, getActivatedstatussuccess) {
           .Times(::testing::AtLeast(1))
           .WillRepeatedly(::testing::Return(&service_));
     EXPECT_CALL(service_, State())
-        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(PluginHost::IShell::state::ACTIVATED));
     bool result = plugin_->getActivatedStatus(skipCheck);
     EXPECT_TRUE(result);
     EXPECT_FALSE(skipCheck);
