@@ -700,7 +700,29 @@ namespace WPEFramework
 
             string query = "token=" + token;
             Core::SystemInfo::SetEnvironment(_T("THUNDER_ACCESS"), _T(SERVER_DETAILS));
-            thunder_client = new WPEFramework::JSONRPC::LinkType<Core::JSON::IElement>(callsign, "", false, query);
+            //thunder_client = new WPEFramework::JSONRPC::LinkType<Core::JSON::IElement>(callsign, "", false, query);
+			try
+            {
+                thunder_client = new WPEFramework::JSONRPC::LinkType<Core::JSON::IElement>(callsign, "", false, query);
+                if (thunder_client == nullptr)
+                {
+                    MM_LOGERR("Failed to create thunder client for %s", callsign);
+                }
+                else
+                {
+                    MM_LOGINFO("Successfully created thunder client for %s", callsign);
+                }
+            }
+            catch (const std::exception& e)
+            {
+                MM_LOGERR("Exception occurred while creating thunder client for %s: %s", callsign, e.what());
+                thunder_client = nullptr;
+            }
+            catch (...)
+            {
+                MM_LOGERR("Unknown exception occurred while creating thunder client for %s", callsign);
+                thunder_client = nullptr;
+            }
             return thunder_client;
         }
 
