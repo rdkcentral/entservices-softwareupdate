@@ -2450,6 +2450,8 @@ namespace WPEFramework
                 /* we set this to false */
                 g_is_critical_maintenance = "false";
 
+                m_statusMutex.unlock();
+
                 /* if there is any active thread, join it before executing the tasks from startMaintenance
                  * especially when device is in offline mode*/
                 if (m_thread.joinable())
@@ -2472,8 +2474,8 @@ namespace WPEFramework
             else
             {
                 MM_LOGINFO("Already a maintenance is in Progress. Please wait for it to complete !!");
+                m_statusMutex.unlock();
             }
-            m_statusMutex.unlock();
 #if defined(ENABLE_JOURNAL_LOGGING)
             MM_RETURN_RESPONSE(result);
 #endif
