@@ -80,6 +80,11 @@ else()
     target_compile_definitions(${MODULE_NAME} PRIVATE TASK_TIMEOUT=3600) # default value
 endif()
 
+# Enable test thread exception injection (for verifying catch-block recovery paths)
+if (ENABLE_TEST_THREAD_EXCEPTION)
+    target_compile_definitions(${MODULE_NAME} PRIVATE ENABLE_TEST_THREAD_EXCEPTION=ON)
+endif()
+
 # Include and link for signal, csignal, time, ctime headers
 target_link_libraries(${MODULE_NAME} PRIVATE pthread rt)
 

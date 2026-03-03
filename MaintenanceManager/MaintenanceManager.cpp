@@ -1574,7 +1574,21 @@ namespace WPEFramework
             m_statusMutex.unlock();
 
 #if !defined(GTEST_ENABLE)
-            m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+            try
+            {
+#ifdef ENABLE_TEST_THREAD_EXCEPTION
+                MM_TEST_THROW_THREAD_EXCEPTION();
+#endif
+                m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+            }
+            catch (const std::exception &e)
+            {
+                MM_LOGERR("Failed to create task execution thread in Bootup: [%s] %s", typeid(e).name(), e.what());
+                g_unsolicited_complete = true;
+                m_statusMutex.lock();
+                MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
+                m_statusMutex.unlock();
+            }
 #endif
         }
 
@@ -2439,6 +2453,8 @@ namespace WPEFramework
                 /* we set this to false */
                 g_is_critical_maintenance = "false";
 
+                m_statusMutex.unlock();
+
                 /* if there is any active thread, join it before executing the tasks from startMaintenance
                  * especially when device is in offline mode*/
                 if (m_thread.joinable())
@@ -2447,15 +2463,25 @@ namespace WPEFramework
                     MM_LOGINFO("Thread joined successfully");
                 }
 
-                m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
-
-                result = true;
+                try
+                {
+#ifdef ENABLE_TEST_THREAD_EXCEPTION
+                    MM_TEST_THROW_THREAD_EXCEPTION();
+#endif
+                    m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+                    result = true;
+                }
+                catch (const std::exception &e)
+                {
+                    MM_LOGERR("Failed to create task execution thread in startMaintenance: [%s] %s", typeid(e).name(), e.what());
+                    result = false;
+                }
             }
             else
             {
                 MM_LOGINFO("Already a maintenance is in Progress. Please wait for it to complete !!");
+                m_statusMutex.unlock();
             }
-            m_statusMutex.unlock();
 #if defined(ENABLE_JOURNAL_LOGGING)
             MM_RETURN_RESPONSE(result);
 #endif
