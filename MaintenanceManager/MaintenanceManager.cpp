@@ -1574,7 +1574,14 @@ namespace WPEFramework
             m_statusMutex.unlock();
 
 #if !defined(GTEST_ENABLE)
-            m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+            try
+            {
+                m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+            }
+            catch (const std::system_error &e)
+            {
+                MM_LOGERR("Failed to create task execution thread on bootup: %s (code %d)", e.what(), e.code().value());
+            }
 #endif
         }
 
@@ -2447,9 +2454,16 @@ namespace WPEFramework
                     MM_LOGINFO("Thread joined successfully");
                 }
 
-                m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
-
-                result = true;
+                try
+                {
+                    m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+                    result = true;
+                }
+                catch (const std::system_error &e)
+                {
+                    MM_LOGERR("Failed to create task execution thread in startMaintenance: %s (code %d)", e.what(), e.code().value());
+                    result = false;
+                }
             }
             else
             {
