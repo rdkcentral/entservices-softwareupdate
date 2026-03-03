@@ -1576,6 +1576,9 @@ namespace WPEFramework
 #if !defined(GTEST_ENABLE)
             try
             {
+#ifdef ENABLE_TEST_THREAD_EXCEPTION
+                MM_TEST_THROW_THREAD_EXCEPTION();
+#endif
                 m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
             }
             catch (const std::exception &e)
@@ -2462,6 +2465,9 @@ namespace WPEFramework
 
                 try
                 {
+#ifdef ENABLE_TEST_THREAD_EXCEPTION
+                    MM_TEST_THROW_THREAD_EXCEPTION();
+#endif
                     m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
                     result = true;
                 }
