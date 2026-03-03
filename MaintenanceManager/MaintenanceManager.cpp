@@ -1578,9 +1578,13 @@ namespace WPEFramework
             {
                 m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
             }
-            catch (const std::system_error &e)
+            catch (const std::exception &e)
             {
-                MM_LOGERR("Failed to create task execution thread on bootup: %s (code %d)", e.what(), e.code().value());
+                MM_LOGERR("Failed to create task execution thread in Bootup: [%s] %s", typeid(e).name(), e.what());
+                g_unsolicited_complete = true;
+                m_statusMutex.lock();
+                MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
+                m_statusMutex.unlock();
             }
 #endif
         }
@@ -2459,9 +2463,9 @@ namespace WPEFramework
                     m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
                     result = true;
                 }
-                catch (const std::system_error &e)
+                catch (const std::exception &e)
                 {
-                    MM_LOGERR("Failed to create task execution thread in startMaintenance: %s (code %d)", e.what(), e.code().value());
+                    MM_LOGERR("Failed to create task execution thread in startMaintenance: [%s] %s", typeid(e).name(), e.what());
                     result = false;
                 }
             }
