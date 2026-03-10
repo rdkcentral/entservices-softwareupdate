@@ -1603,5 +1603,140 @@ TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {
     plugin_->m_service = &service_;    
     plugin_->InitializeIARM();
 }
-#endif
+
+/* -----------------------------------------------------------------------
+ * L1 tests for the startMaintenance() catch block
+ *
+ * Compiled only when ENABLE_TEST_THREAD_EXCEPTION is defined (alongside
+ * GTEST_ENABLE).  That flag makes MM_TEST_THROW_THREAD_EXCEPTION() throw
+ * a std::system_error inside the try block so the catch path is exercised
+ * without touching the real thread-creation call.
+ * ----------------------------------------------------------------------- */
+#ifdef ENABLE_TEST_THREAD_EXCEPTION
+
+/* Helper: put the plugin into the state that allows startMaintenance to
+ * proceed past the guard (MAINTENANCE_STARTED != m_notify_status &&
+ * g_unsolicited_complete). */
+static void SetupForStartMaintenance(Core::ProxyType<Plugin::MaintenanceManager>& plugin)
+{
+    Plugin::MaintenanceManager::_instance = &(*plugin);
+    plugin->g_unsolicited_complete = true;
+    plugin->setNotifyStatus(MAINTENANCE_IDLE);
+}
+
+/* 1. The JSON-RPC response reports failure when thread creation throws. */
+TEST_F(MaintenanceManagerTest, startMaintenance_ThreadException_ReturnsFailure)
+{
+    SetupForStartMaintenance(plugin_);
+
+    EXPECT_EQ(Core::ERROR_NONE,
+              handler_.Invoke(connection,
+                              _T("org.rdk.MaintenanceManager.1.startMaintenance"),
+                              _T("{}"),
+                              response_));
+    EXPECT_EQ(response_, "{\"success\":false}");
+}
+
+/* 2. onMaintenanceStatusChange(MAINTENANCE_ERROR) is called in the catch
+ *    block, so m_notify_status must be MAINTENANCE_ERROR afterwards. */
+TEST_F(MaintenanceManagerTest, startMaintenance_ThreadException_SetsMaintenanceError)
+{
+    SetupForStartMaintenance(plugin_);
+
+    handler_.Invoke(connection,
+                    _T("org.rdk.MaintenanceManager.1.startMaintenance"),
+                    _T("{}"),
+                    response_);
+
+    EXPECT_EQ(plugin_->getNotifyStatus(), MAINTENANCE_ERROR);
+}
+
+/* 3. getMaintenanceActivityStatus must reflect the MAINTENANCE_ERROR status
+ *    and isRebootPending:false (g_is_reboot_pending was set to "true" before
+ *    the throw, but the catch does NOT roll it back in this version – the
+ *    status field should show ERROR and the reboot-pending flag the actual
+ *    stored string value).
+ *    This test documents the observable API surface after the catch runs. */
+TEST_F(MaintenanceManagerTest, startMaintenance_ThreadException_ActivityStatusShowsError)
+{
+    SetupForStartMaintenance(plugin_);
+    plugin_->g_is_reboot_pending = "false"; // start with known value
+
+    handler_.Invoke(connection,
+                    _T("org.rdk.MaintenanceManager.1.startMaintenance"),
+                    _T("{}"),
+                    response_);
+
+    EXPECT_EQ(Core::ERROR_NONE,
+              handler_.Invoke(connection,
+                              _T("org.rdk.MaintenanceManager.1.getMaintenanceActivityStatus"),
+                              _T("{}"),
+                              response_));
+    /* maintenanceStatus must be ERROR; isRebootPending reflects whatever
+     * g_is_reboot_pending holds (set to "true" inside startMaintenance
+     * before the throw, so the response shows true). */
+    EXPECT_NE(response_.find("\"maintenanceStatus\":\"MAINTENANCE_ERROR\""), string::npos);
+}
+
+/* 4. g_is_critical_maintenance must be restored to its value from before
+ *    startMaintenance was called (the catch does:
+ *    g_is_critical_maintenance = std::move(prev_critical_maintenance)). */
+TEST_F(MaintenanceManagerTest, startMaintenance_ThreadException_RestoresCriticalMaintenance)
+{
+    SetupForStartMaintenance(plugin_);
+    const std::string prev = "true";
+    plugin_->g_is_critical_maintenance = prev;
+
+    handler_.Invoke(connection,
+                    _T("org.rdk.MaintenanceManager.1.startMaintenance"),
+                    _T("{}"),
+                    response_);
+
+    EXPECT_EQ(plugin_->g_is_critical_maintenance, prev);
+}
+
+/* 5. g_is_critical_maintenance should also be restored when the previous
+ *    value was "false" (the common case). */
+TEST_F(MaintenanceManagerTest, startMaintenance_ThreadException_RestoresCriticalMaintenance_WasFalse)
+{
+    SetupForStartMaintenance(plugin_);
+    plugin_->g_is_critical_maintenance = "false";
+
+    handler_.Invoke(connection,
+                    _T("org.rdk.MaintenanceManager.1.startMaintenance"),
+                    _T("{}"),
+                    response_);
+
+    EXPECT_EQ(plugin_->g_is_critical_maintenance, "false");
+}
+
+/* 6. After the catch, m_notify_status is MAINTENANCE_ERROR (not
+ *    MAINTENANCE_STARTED), so the startMaintenance guard passes on a
+ *    second call – i.e. the plugin can be retried without getting stuck. */
+TEST_F(MaintenanceManagerTest, startMaintenance_ThreadException_AllowsImmediateRetry)
+{
+    SetupForStartMaintenance(plugin_);
+
+    /* first attempt – catch fires */
+    handler_.Invoke(connection,
+                    _T("org.rdk.MaintenanceManager.1.startMaintenance"),
+                    _T("{}"),
+                    response_);
+    EXPECT_EQ(response_, "{\"success\":false}");
+
+    /* guard: MAINTENANCE_STARTED != m_notify_status && g_unsolicited_complete.
+     * m_notify_status is now MAINTENANCE_ERROR, g_unsolicited_complete is still
+     * true, so the guard should pass and the catch should fire again. */
+    handler_.Invoke(connection,
+                    _T("org.rdk.MaintenanceManager.1.startMaintenance"),
+                    _T("{}"),
+                    response_);
+    EXPECT_EQ(response_, "{\"success\":false}");
+
+    /* State should still reflect a clean catch-block outcome */
+    EXPECT_EQ(plugin_->getNotifyStatus(), MAINTENANCE_ERROR);
+}
+
+#endif /* ENABLE_TEST_THREAD_EXCEPTION */
+#endif /* GTEST_ENABLE */
 

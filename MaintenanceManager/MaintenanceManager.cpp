@@ -2475,11 +2475,8 @@ namespace WPEFramework
                 catch (const std::exception &e)
                 {
                     MM_LOGERR("Failed to create task execution thread in startMaintenance: [%s] %s", typeid(e).name(), e.what());
-                    {
-                        std::lock_guard<std::mutex> lock(m_statusMutex);
-                        g_is_critical_maintenance = std::move(prev_critical_maintenance);
-                        onMaintenanceStatusChange(MAINTENANCE_ERROR);
-                    }
+                    g_is_critical_maintenance = std::move(prev_critical_maintenance);
+                    onMaintenanceStatusChange(MAINTENANCE_ERROR);
                     result = false;
                 }
             }
