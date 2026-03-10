@@ -2476,7 +2476,6 @@ namespace WPEFramework
                 {
                     MM_LOGERR("Failed to create task execution thread in startMaintenance: [%s] %s", typeid(e).name(), e.what());
                     g_is_critical_maintenance = std::move(prev_critical_maintenance);
-                    onMaintenanceStatusChange(MAINTENANCE_ERROR);
                     result = false;
                 }
             }
