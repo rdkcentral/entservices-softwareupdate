@@ -1574,7 +1574,22 @@ namespace WPEFramework
             m_statusMutex.unlock();
 
 #if !defined(GTEST_ENABLE)
-            m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+            try
+            {
+#ifdef ENABLE_TEST_THREAD_EXCEPTION
+                MM_TEST_THROW_THREAD_EXCEPTION();
+#endif
+                m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+            }
+            catch (const std::exception &e)
+            {
+                MM_LOGERR("Failed to create task execution thread in Bootup: [%s] %s", typeid(e).name(), e.what());
+                {
+                    std::lock_guard<std::mutex> lock(m_statusMutex);
+                    g_unsolicited_complete = true;
+                    MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
+                }
+            }
 #endif
         }
 
@@ -2436,6 +2451,8 @@ namespace WPEFramework
                  * irrespective of XConf configuration */
                 g_is_reboot_pending = "true";
 
+                /* Save previous value before overwriting, for rollback on thread creation failure */
+                string prev_critical_maintenance = g_is_critical_maintenance;
                 /* we set this to false */
                 g_is_critical_maintenance = "false";
 
@@ -2447,9 +2464,20 @@ namespace WPEFramework
                     MM_LOGINFO("Thread joined successfully");
                 }
 
-                m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
-
-                result = true;
+                try
+                {
+#ifdef ENABLE_TEST_THREAD_EXCEPTION
+                    MM_TEST_THROW_THREAD_EXCEPTION();
+#endif
+                    m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+                    result = true;
+                }
+                catch (const std::exception &e)
+                {
+                    MM_LOGERR("Failed to create task execution thread in startMaintenance: [%s] %s", typeid(e).name(), e.what());
+                    g_is_critical_maintenance = std::move(prev_critical_maintenance);
+                    result = false;
+                }
             }
             else
             {
