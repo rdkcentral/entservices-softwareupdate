@@ -88,6 +88,12 @@ endif()
 # Include and link for signal, csignal, time, ctime headers
 target_link_libraries(${MODULE_NAME} PRIVATE pthread rt)
 
+find_package(Telemetry)
+if (TELEMETRY_FOUND)
+    target_link_libraries(${MODULE_NAME} PRIVATE ${TELEMETRY_LIBRARIES})
+    target_include_directories(${MODULE_NAME} PRIVATE ${TELEMETRY_INCLUDE_DIRS})
+endif()
+
 install(TARGETS ${MODULE_NAME}
         DESTINATION lib/${STORAGE_DIRECTORY}/plugins)
 
