@@ -2131,7 +2131,11 @@ namespace WPEFramework
             {
                 MM_LOGINFO("TimeZone is in Local time");
                 char cmd[128];
-                snprintf(cmd, sizeof(cmd), "TZ=%s date +%%z", zoneValue);
+                char date_str[20] = {0};
+                time_t tomorrow = rawtime + 86400; // get the time for tomorrow
+                struct tm *ptm_tomorrow = localtime(&tomorrow);
+                strftime(date_str, sizeof(date_str), "%Y-%m-%d", ptm_tomorrow);
+                snprintf(cmd, sizeof(cmd), "TZ=%s date --date=%s +%%z", zoneValue, date_str);
                 FILE *fp = popen(cmd, "r");
                 char offset[10];
                 if (fgets(offset, sizeof(offset), fp) == NULL)
