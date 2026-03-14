@@ -94,20 +94,13 @@ protected:
                 .WillByDefault(::testing::Return(dataPath));
         ON_CALL(service, COMLink())
             .WillByDefault(::testing::Return(&comLinkMock));
-#ifdef USE_THUNDER_R4
         ON_CALL(comLinkMock, Instantiate(::testing::_, ::testing::_, ::testing::_))
 			.WillByDefault(::testing::Return(&PackagerImplementation));
-#else
-	  ON_CALL(comLinkMock, Instantiate(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
-	    .WillByDefault(::testing::Return(PackagerImplementation));
-#endif /*USE_THUNDER_R4 */
         PluginHost::IFactories::Assign(&factoriesImplementation);
         EXPECT_EQ(string(""), plugin->Initialize(&service));
 
         // Ensures servicePI is correctly initialized instead of nullptr in R4.
-        #ifdef USE_THUNDER_R4
             PackagerImplementation->Configure(&service);
-        #endif
 		opkg_config->lists_dir = strdup("/tmp/test");
     }
     virtual ~PackagerInitializedTest() override
