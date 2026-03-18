@@ -2112,9 +2112,44 @@ namespace WPEFramework
                 const char *when = (maint_hhmm > current_local_hhmm) ? "today" : "tomorrow";
                 MM_LOGINFO("Current local time: %04d, Maintenance time: %04d, Scheduled for: %s", current_local_hhmm, maint_hhmm, when);
 
-                /* calculate maintenance start time in epoch,
-                 * strtol is used to avoid 32-bit overflow post-2038. */
-                snprintf(cmd, sizeof(cmd), "TZ=%s date --date='%s %02d:%02d:00' +%%s", zoneValue, when, start_hr, start_min);
+                /* Get today's local date in the target timezone as YYYY-MM-DD. */
+                char today_date_str[16] = {0};
+                snprintf(cmd, sizeof(cmd), "TZ=%s date +%%Y-%%m-%%d", zoneValue);
+                fp = popen(cmd, "r");
+                if (fp == NULL)
+                {
+                    MM_LOGERR("popen failed for date query");
+                    return -1;
+                }
+                if (fgets(today_date_str, sizeof(today_date_str), fp) == NULL)
+                {
+                    MM_LOGERR("Failed to read current local date");
+                    pclose(fp);
+                    return -1;
+                }
+                pclose(fp);
+                today_date_str[strcspn(today_date_str, "\n")] = '\0'; /* strip trailing newline */
+                MM_LOGINFO("Current local date in %s: %s", zoneValue, today_date_str);
+
+                /* Parse today's date to struct tm and advance by one day if needed. */
+                struct tm date_tm = {0};
+                sscanf(today_date_str, "%d-%d-%d", &date_tm.tm_year, &date_tm.tm_mon, &date_tm.tm_mday);
+                date_tm.tm_year -= 1900;
+                date_tm.tm_mon  -= 1;
+                date_tm.tm_isdst = -1;
+                if (strcmp(when, "tomorrow") == 0)
+                {
+                    date_tm.tm_mday += 1;
+                    mktime(&date_tm); /* normalise: updates tm_mday/mon/year in-place */
+                }
+                char scheduled_date[16];
+                snprintf(scheduled_date, sizeof(scheduled_date), "%04d-%02d-%02d", date_tm.tm_year + 1900, date_tm.tm_mon + 1, date_tm.tm_mday);
+                MM_LOGINFO("Scheduled maintenance date: %s %02d:%02d:00", scheduled_date, start_hr, start_min);
+
+                /* Calculate epoch of the maintenance time on that
+                 * specific date with date -d command in the target timezone.
+                 * strtol (not atoi) avoids 32-bit overflow post-2038. */
+                snprintf(cmd, sizeof(cmd), "TZ=%s date -d '%s %02d:%02d:00' +%%s", zoneValue, scheduled_date, start_hr, start_min);
                 fp = popen(cmd, "r");
                 if (fp == NULL)
                 {
@@ -2136,12 +2171,15 @@ namespace WPEFramework
                     return -1;
                 }
 
-                /* Safety check: if landed in the past time
-                 * query date with TZ and "tomorrow" */
+                /* Safety check: if still in the past, day + 1 and re-query explicitly */
                 if (start_epoch - (long)rawtime < 10)
                 {
-                    MM_LOGINFO("Calculated maintenance time is in the past, recalculating to avoid scheduling in the past");
-                    snprintf(cmd, sizeof(cmd), "TZ=%s date --date='tomorrow %02d:%02d:00' +%%s", zoneValue, start_hr, start_min);
+                    MM_LOGINFO("Calculated maintenance time is in the past, recalculating for next day");
+                    date_tm.tm_mday += 1;
+                    mktime(&date_tm); /* normalise overflow */
+                    char next_date[16];
+                    snprintf(next_date, sizeof(next_date), "%04d-%02d-%02d", date_tm.tm_year + 1900, date_tm.tm_mon + 1, date_tm.tm_mday);
+                    snprintf(cmd, sizeof(cmd), "TZ=%s date -d '%s %02d:%02d:00' +%%s", zoneValue, next_date, start_hr, start_min);
                     fp = popen(cmd, "r");
                     if (fp != NULL)
                     {
