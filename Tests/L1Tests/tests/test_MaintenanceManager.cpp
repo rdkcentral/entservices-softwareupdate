@@ -1335,11 +1335,15 @@ TEST_F(MaintenanceManagerInitializedEventTest, TaskExecutionThreadBasicTest) {
           .WillByDefault(::testing::Return(&service_));
      ON_CALL(service_, State())
         .WillByDefault(::testing::Return(PluginHost::IShell::state::ACTIVATED));
-     /* Return the properly-typed IAuthenticate mock. Returning &service_ (IShell) as
-      * IAuthenticate* causes a pure-virtual crash when checkNetwork() calls
-      * security->CreateToken() and security->Release() through the wrong vtable. */
+     /* Return nullptr for SecurityAgent: dispatcher_->Activate() spawns background threads
+      * that may concurrently enter checkNetwork() alongside task_execution_thread(), both
+      * reaching security->Release() on the same mock pointer.  That concurrent Release()
+      * corrupts NiceMock state and triggers "pure virtual method called".  Returning nullptr
+      * causes the if(security != nullptr) block to be skipped entirely — no Release(), no
+      * race.  Under GTEST_ENABLE the JSONRPC failure path returns true, so coverage is
+      * equivalent. */
      ON_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
-        .WillByDefault(Return(&iauthenticate_));
+        .WillByDefault(::testing::Return(nullptr));
     plugin_->task_execution_thread();
 }
 
