@@ -2183,7 +2183,7 @@ namespace WPEFramework
                     date_tm.tm_mday += 1;
                     mktime(&date_tm); /* normalise: updates tm_mday/mon/year in-place */
                 }
-                char scheduled_date[16];
+                char scheduled_date[32];
                 snprintf(scheduled_date, sizeof(scheduled_date), "%04d-%02d-%02d", date_tm.tm_year + 1900, date_tm.tm_mon + 1, date_tm.tm_mday);
                 MM_LOGINFO("Scheduled maintenance date: %s %02d:%02d:00", scheduled_date, start_hr, start_min);
 
@@ -2218,7 +2218,7 @@ namespace WPEFramework
                     MM_LOGINFO("Calculated maintenance time is in the past, recalculating for next day");
                     date_tm.tm_mday += 1;
                     mktime(&date_tm); /* normalise overflow */
-                    char next_date[16];
+                    char next_date[32];
                     snprintf(next_date, sizeof(next_date), "%04d-%02d-%02d", date_tm.tm_year + 1900, date_tm.tm_mon + 1, date_tm.tm_mday);
                     snprintf(cmd, sizeof(cmd), "TZ=%s date -d '%s %02d:%02d:00' +%%s", zoneValue, next_date, start_hr, start_min);
                     fp = popen(cmd, "r");
