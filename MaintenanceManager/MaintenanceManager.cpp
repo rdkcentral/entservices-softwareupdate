@@ -2097,11 +2097,15 @@ namespace WPEFramework
          *         Returns -1 if there is an error in reading the configuration or time zone files.
          */
         /* Validate timezone string against an allowlist of safe characters
-         * to prevent shell command injection via crafted zoneValue. */
+         * to prevent shell command injection via crafted zoneValue.
+         * An empty zoneValue is allowed -- the shell treats TZ= as system default (safe). */
         static bool IsValidTimeZone(const char* tz)
         {
-            if (tz == nullptr || *tz == '\0') {
+            if (tz == nullptr) {
                 return false;
+            }
+            if (*tz == '\0') {
+                return true;
             }
             for (const char* p = tz; *p != '\0'; ++p) {
                 unsigned char c = static_cast<unsigned char>(*p);

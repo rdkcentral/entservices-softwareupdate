@@ -1327,27 +1327,27 @@ TEST_F(MaintenanceManagerTest, isDeviceOnlinefail ) {
 
 TEST_F(MaintenanceManagerInitializedEventTest, TaskExecutionThreadBasicTest) {
      plugin_->m_service = &service_;
-     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
-          .Times(::testing::AtLeast(1))
-          .WillRepeatedly(::testing::Return(&service_));
-     EXPECT_CALL(service_, State())
-        .WillRepeatedly(::testing::Return(PluginHost::IShell::state::ACTIVATED));
- 
-     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
-        .WillRepeatedly(Return(&service_));
+     /* Use ON_CALL (not EXPECT_CALL) so background dispatcher threads querying
+      * other callsigns (e.g. org.rdk.SecManager) do not cause unexpected-call failures. */
+     ON_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
+          .WillByDefault(::testing::Return(&service_));
+     ON_CALL(service_, State())
+        .WillByDefault(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+     ON_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillByDefault(Return(&service_));
     plugin_->task_execution_thread();
 }
 
 TEST_F(MaintenanceManagerInitializedEventTest, TaskExecutionThread_NoSecurityAgent) {
     plugin_->m_service = &service_;
-
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
-        .WillRepeatedly(Return(&service_));
-    EXPECT_CALL(service_, State())
-        .WillRepeatedly(::testing::Return(PluginHost::IShell::state::ACTIVATED));
-
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
-        .WillRepeatedly(::testing::Return(nullptr));
+    /* Use ON_CALL (not EXPECT_CALL) so background dispatcher threads querying
+     * other callsigns (e.g. org.rdk.SecManager) do not cause unexpected-call failures. */
+    ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
+        .WillByDefault(Return(&service_));
+    ON_CALL(service_, State())
+        .WillByDefault(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+    ON_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+        .WillByDefault(::testing::Return(nullptr));
 
     plugin_->task_execution_thread();
 }
