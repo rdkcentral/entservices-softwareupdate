@@ -432,7 +432,6 @@ TEST_F(MaintenanceManagerTest, getMaintenanceStartTime_LocalTime_Today)
         handler_.Invoke(connection, _T("getMaintenanceStartTime"), _T("{}"), response_));
     EXPECT_EQ(response_, "{\"maintenanceStartTime\":1800000000,\"success\":true}");
 
-    fclose(p1); fclose(p2); fclose(p3);
     remove("/opt/rdk_maintenance.conf");
 }
 
@@ -460,7 +459,6 @@ TEST_F(MaintenanceManagerTest, getMaintenanceStartTime_LocalTime_Tomorrow)
         handler_.Invoke(connection, _T("getMaintenanceStartTime"), _T("{}"), response_));
     EXPECT_EQ(response_, "{\"maintenanceStartTime\":1800086400,\"success\":true}");
 
-    fclose(p1); fclose(p2); fclose(p3);
     remove("/opt/rdk_maintenance.conf");
 }
 
@@ -490,7 +488,6 @@ TEST_F(MaintenanceManagerTest, getMaintenanceStartTime_LocalTime_DST_SpringForwa
     /* The OS-resolved epoch for the nonexistent 02:21 spring-forward hour is returned */
     EXPECT_EQ(response_, "{\"maintenanceStartTime\":1804376460,\"success\":true}");
 
-    fclose(p1); fclose(p2); fclose(p3);
     remove("/opt/rdk_maintenance.conf");
 }
 
