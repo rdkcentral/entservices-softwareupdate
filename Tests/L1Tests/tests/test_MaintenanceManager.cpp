@@ -406,11 +406,13 @@ TEST_F(MaintenanceManagerTest, getMaintenanceStartTime)
 static FILE* makeFakePipe(const char* line)
 {
     char tmpPath[] = "/tmp/mmtest_XXXXXX";
+    mode_t old = umask(0077);
     int fd = mkstemp(tmpPath);
+    umask(old);
     if (fd == -1) return nullptr;
     FILE* f = fdopen(fd, "r+");
     if (f) { fwrite(line, 1, strlen(line), f); rewind(f); }
-    unlink(tmpPath);
+    if (unlink(tmpPath) != 0) { }
     return f;
 }
 
@@ -1333,8 +1335,11 @@ TEST_F(MaintenanceManagerInitializedEventTest, TaskExecutionThreadBasicTest) {
           .WillByDefault(::testing::Return(&service_));
      ON_CALL(service_, State())
         .WillByDefault(::testing::Return(PluginHost::IShell::state::ACTIVATED));
+     /* Return the properly-typed IAuthenticate mock. Returning &service_ (IShell) as
+      * IAuthenticate* causes a pure-virtual crash when checkNetwork() calls
+      * security->CreateToken() and security->Release() through the wrong vtable. */
      ON_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
-        .WillByDefault(Return(&service_));
+        .WillByDefault(Return(&iauthenticate_));
     plugin_->task_execution_thread();
 }
 
