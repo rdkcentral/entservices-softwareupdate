@@ -80,6 +80,12 @@
 #define MM_LOGERR(format, ...)  LOGERR(format, ##__VA_ARGS__)
 #endif /* end of ENABLE_JOURNAL_LOGGING */
 
+#ifdef ENABLE_TEST_THREAD_EXCEPTION
+#include <system_error>
+#define MM_TEST_THROW_THREAD_EXCEPTION() \
+    throw std::system_error(std::make_error_code(std::errc::resource_unavailable_try_again), "[TEST] Simulated thread creation failure")
+#endif
+
 /* MaintenanceManager Services Triggered Events. */
 #define EVT_ONMAINTMGRSAMPLEEVENT "onSampleEvent"
 #define EVT_ONMAINTENANCSTATUSCHANGE "onMaintenanceStatusChange" /* Maintenance Status change */
