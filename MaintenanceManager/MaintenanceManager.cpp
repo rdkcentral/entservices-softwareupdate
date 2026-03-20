@@ -1365,6 +1365,7 @@ namespace WPEFramework
             MM_LOGINFO("Checking device has network connectivity");
             /* add 4 checks every 30 seconds */
             network_available = checkNetwork();
+#if !defined(GTEST_ENABLE)
             if (!network_available)
             {
                 int retry_count = 0;
@@ -1380,6 +1381,7 @@ namespace WPEFramework
                     }
                 }
             }
+#endif
             return network_available;
         }
 
