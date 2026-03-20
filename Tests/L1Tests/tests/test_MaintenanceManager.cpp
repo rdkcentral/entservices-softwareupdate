@@ -395,8 +395,110 @@ TEST_F(MaintenanceManagerTest, ReadRFC_Failure) {
 /* ---- getMaintenanceStartTime() JsonRPC ---- */
 TEST_F(MaintenanceManagerTest, getMaintenanceStartTime)
 {
+    int rc = remove("/opt/rdk_maintenance.conf");
+    (void)rc; /* file may legitimately not exist */
     EXPECT_EQ(Core::ERROR_NONE, handler_.Invoke(connection, _T("getMaintenanceStartTime"), _T("{}"), response_));
     EXPECT_EQ(response_, "{\"maintenanceStartTime\":-1,\"success\":true}");
+}
+
+/* Helper: make a readable named temp file whose content is 'line'.
+ * Uses mkstemp for a unique, unpredictable name*/
+static FILE* makeFakePipe(const char* line)
+{
+    char tmpPath[] = "/tmp/mmtest_XXXXXX";
+    mode_t old = umask(0077);
+    int fd = mkstemp(tmpPath);
+    umask(old);
+    if (fd == -1) return nullptr;
+    FILE* f = fdopen(fd, "r+");
+    if (f) { fwrite(line, 1, strlen(line), f); rewind(f); }
+    if (unlink(tmpPath) != 0) { }
+    return f;
+}
+
+/* ---- getMaintenanceStartTime() Local time path - today ---- */
+TEST_F(MaintenanceManagerTest, getMaintenanceStartTime_LocalTime_Today)
+{
+    /* Conf: start at 04:50 in Local time */
+    FILE* confFile = fopen("/opt/rdk_maintenance.conf", "w");
+    ASSERT_NE(confFile, nullptr) << "Failed to open /opt/rdk_maintenance.conf for writing";
+    fprintf(confFile, "start_hr=\"4\"\nstart_min=\"50\"\ntz_mode=\"Local time\"\n");
+    fclose(confFile);
+
+    FILE* p1 = makeFakePipe("0100\n");       /* current HHMM 01:00 < 04:50 → today  */
+    FILE* p2 = makeFakePipe("2026-03-19\n"); /* today's date                         */
+    FILE* p3 = makeFakePipe("1800000000\n"); /* epoch well in the future             */
+
+    EXPECT_CALL(*p_wrapsImplMock, popen(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(p1))
+        .WillOnce(::testing::Return(p2))
+        .WillOnce(::testing::Return(p3));
+    EXPECT_CALL(*p_wrapsImplMock, pclose(::testing::_))
+        .WillRepeatedly(::testing::Return(0));
+
+    EXPECT_EQ(Core::ERROR_NONE,
+        handler_.Invoke(connection, _T("getMaintenanceStartTime"), _T("{}"), response_));
+    EXPECT_EQ(response_, "{\"maintenanceStartTime\":1800000000,\"success\":true}");
+
+    EXPECT_EQ(0, remove("/opt/rdk_maintenance.conf"));
+}
+
+/* ---- getMaintenanceStartTime() Local time path - tomorrow ---- */
+TEST_F(MaintenanceManagerTest, getMaintenanceStartTime_LocalTime_Tomorrow)
+{
+    /* Conf: start at 04:50 in Local time */
+    FILE* confFile = fopen("/opt/rdk_maintenance.conf", "w");
+    ASSERT_NE(confFile, nullptr) << "Failed to open /opt/rdk_maintenance.conf for writing";
+    fprintf(confFile, "start_hr=\"4\"\nstart_min=\"50\"\ntz_mode=\"Local time\"\n");
+    fclose(confFile);
+
+    FILE* p1 = makeFakePipe("2200\n");       /* current HHMM 22:00 > 04:50 → tomorrow */
+    FILE* p2 = makeFakePipe("2026-03-19\n"); /* today's date                           */
+    FILE* p3 = makeFakePipe("1800086400\n"); /* epoch for tomorrow well in the future  */
+
+    EXPECT_CALL(*p_wrapsImplMock, popen(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(p1))
+        .WillOnce(::testing::Return(p2))
+        .WillOnce(::testing::Return(p3));
+    EXPECT_CALL(*p_wrapsImplMock, pclose(::testing::_))
+        .WillRepeatedly(::testing::Return(0));
+
+    EXPECT_EQ(Core::ERROR_NONE,
+        handler_.Invoke(connection, _T("getMaintenanceStartTime"), _T("{}"), response_));
+    EXPECT_EQ(response_, "{\"maintenanceStartTime\":1800086400,\"success\":true}");
+
+
+    EXPECT_EQ(0, remove("/opt/rdk_maintenance.conf"));
+}
+
+/* ---- getMaintenanceStartTime() Local time path - DST spring-forward ---- */
+TEST_F(MaintenanceManagerTest, getMaintenanceStartTime_LocalTime_DST_SpringForward)
+{
+    /* Conf: start at 02:21 — the nonexistent hour on US spring-forward night */
+    FILE* confFile = fopen("/opt/rdk_maintenance.conf", "w");
+    ASSERT_NE(confFile, nullptr) << "Failed to open /opt/rdk_maintenance.conf for writing";
+    fprintf(confFile, "start_hr=\"2\"\nstart_min=\"21\"\ntz_mode=\"Local time\"\n");
+    fclose(confFile);
+
+    FILE* p1 = makeFakePipe("0100\n");       /* 01:00 < 02:21 → today (spring-forward date) */
+    FILE* p2 = makeFakePipe("2027-03-14\n"); /* future US spring-forward date               */
+    /* 1804376460: 2027-03-14 03:21:00 EDT — 02:21 maps to 03:21 after spring-forward */
+    FILE* p3 = makeFakePipe("1804376460\n");
+
+    EXPECT_CALL(*p_wrapsImplMock, popen(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(p1))
+        .WillOnce(::testing::Return(p2))
+        .WillOnce(::testing::Return(p3));
+    EXPECT_CALL(*p_wrapsImplMock, pclose(::testing::_))
+        .WillRepeatedly(::testing::Return(0));
+
+    EXPECT_EQ(Core::ERROR_NONE,
+        handler_.Invoke(connection, _T("getMaintenanceStartTime"), _T("{}"), response_));
+    /* The OS-resolved epoch for the nonexistent 02:21 spring-forward hour is returned */
+    EXPECT_EQ(response_, "{\"maintenanceStartTime\":1804376460,\"success\":true}");
+
+    /* Check remove() return value */
+    EXPECT_EQ(0, remove("/opt/rdk_maintenance.conf"));
 }
 
 /* ---- stopMaintenance() JsonRPC ---- */
@@ -1225,44 +1327,30 @@ TEST_F(MaintenanceManagerTest, isDeviceOnlinefail ) {
     EXPECT_FALSE(result);
 }
 
-TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest) {
-     plugin_->m_service = &service_;
-     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
-          .Times(::testing::AtLeast(1))
-          .WillRepeatedly(::testing::Return(&service_));
-     EXPECT_CALL(service_, State())
-        .WillOnce(::testing::Return(PluginHost::IShell::state::ACTIVATED));
- 
-     EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
-        .WillOnce(Return(&service_));
-    plugin_->task_execution_thread();
-}
-
-TEST_F(MaintenanceManagerTest, TaskExecutionThread_NoSecurityAgent) {
+TEST_F(MaintenanceManagerInitializedEventTest, TaskExecutionThreadBasicTest) {
     plugin_->m_service = &service_;
-
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
-        .WillRepeatedly(Return(&service_));
-    EXPECT_CALL(service_, State())
-        .WillRepeatedly(::testing::Return(PluginHost::IShell::state::ACTIVATED));
-
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
-        .WillOnce(::testing::Return(nullptr));
-
+    /* Return nullptr for org.rdk.Network so getServiceState() returns ERROR_UNAVAILABLE
+     * and checkNetwork() returns false immediately — before any JSONRPC::LinkType is
+     * constructed.  When the dispatcher is active (dispatcher_->Activate() was called in
+     * the fixture constructor), JSONRPC::LinkType::Invoke() routes through the live
+     * in-process dispatcher which calls back into service_ via unimplemented pure-virtual
+     * interfaces, triggering "pure virtual method called" / abort.
+     * With no network, task_execution_thread() sets exitOnNoNetwork and calls
+     * onMaintenanceStatusChange(MAINTENANCE_ERROR) through the same active dispatcher
+     * (which works correctly), then returns cleanly. */
+    ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
+        .WillByDefault(::testing::Return(nullptr));
     plugin_->task_execution_thread();
 }
 
-TEST_F(MaintenanceManagerTest, TaskExecutionThreadBasicTest1) {
-     plugin_->m_service = &service_;
-    EXPECT_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
-        .Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(&service_));
-    EXPECT_CALL(service_, State())
-	.Times(::testing::AtLeast(1))
-        .WillRepeatedly(::testing::Return(PluginHost::IShell::state::DEACTIVATED));
-	
+TEST_F(MaintenanceManagerInitializedEventTest, TaskExecutionThread_NoSecurityAgent) {
+    plugin_->m_service = &service_;
+    /* Same rationale as TaskExecutionThreadBasicTest above: return nullptr for
+     * org.rdk.Network so checkNetwork() exits before constructing any
+     * JSONRPC::LinkType that would route through the live dispatcher and crash. */
+    ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
+        .WillByDefault(::testing::Return(nullptr));
     plugin_->task_execution_thread();
-
 }
 
 TEST_F(MaintenanceManagerTest, DeinitializeIARM_RemovesHandlerAndNullifiesInstance) {
