@@ -452,7 +452,9 @@ namespace WPEFramework
                 m_statusMutex.unlock();
                 MM_LOGINFO("Maintenance is exiting as device is not connected to internet.");
 
+#if !defined(GTEST_ENABLE)
 				t2_event_d("SYST_ERR_MaintNetworkFail", 1);
+#endif
 				
                 if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
                 {
@@ -474,7 +476,9 @@ namespace WPEFramework
 
 			if (UNSOLICITED_MAINTENANCE != g_maintenance_type) 
 			{
+#if !defined(GTEST_ENABLE)
 				t2_event_d("SYST_INFO_SOMT", 1);
+#endif
 			}
 			
             if (!g_whoami_support_enabled && g_suppress_maintenance_enabled && skipFirmwareCheck)
