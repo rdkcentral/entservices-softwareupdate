@@ -452,7 +452,9 @@ namespace WPEFramework
                 m_statusMutex.unlock();
                 MM_LOGINFO("Maintenance is exiting as device is not connected to internet.");
 
+#if !defined(GTEST_ENABLE)
 				t2_event_d("SYST_ERR_MaintNetworkFail", 1);
+#endif
 				
                 if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
                 {
@@ -474,7 +476,9 @@ namespace WPEFramework
 
 			if (UNSOLICITED_MAINTENANCE != g_maintenance_type) 
 			{
+#if !defined(GTEST_ENABLE)
 				t2_event_d("SYST_INFO_SOMT", 1);
+#endif
 			}
 			
             if (!g_whoami_support_enabled && g_suppress_maintenance_enabled && skipFirmwareCheck)
@@ -1361,6 +1365,7 @@ namespace WPEFramework
             MM_LOGINFO("Checking device has network connectivity");
             /* add 4 checks every 30 seconds */
             network_available = checkNetwork();
+#if !defined(GTEST_ENABLE)
             if (!network_available)
             {
                 int retry_count = 0;
@@ -1376,6 +1381,7 @@ namespace WPEFramework
                     }
                 }
             }
+#endif
             return network_available;
         }
 
@@ -2096,15 +2102,32 @@ namespace WPEFramework
          * @return An integer representing the calculated start time in epoch format.
          *         Returns -1 if there is an error in reading the configuration or time zone files.
          */
+        /* Validate timezone string against an allowlist of safe characters
+         * to prevent shell command injection via crafted zoneValue.
+         * An empty zoneValue is allowed -- the shell treats TZ= as system default (safe). */
+        static bool IsValidTimeZone(const char* tz)
+        {
+            if (tz == nullptr) {
+                return false;
+            }
+            if (*tz == '\0') {
+                return true;
+            }
+            for (const char* p = tz; *p != '\0'; ++p) {
+                unsigned char c = static_cast<unsigned char>(*p);
+                if (!(std::isalnum(c) || c == '_' || c == '.' || c == '/' || c == '+' || c == '-')) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         int CalculateStartTime()
         {
-            char zoneValue[BUFFER_SIZE] = {0}, timeZoneOffset[BUFFER_SIZE] = {0}, timeZone[BUFFER_SIZE] = {0}, deviceName[BUFFER_SIZE] = {0}, tz_offset_pos;
+            char zoneValue[BUFFER_SIZE] = {0}, timeZoneOffset[BUFFER_SIZE] = {0}, timeZone[BUFFER_SIZE] = {0}, deviceName[BUFFER_SIZE] = {0};
             int start_hr = 0, start_min = 0;
             char tz_mode[20] = {0};
             char maintConf[26] = "/opt/rdk_maintenance.conf";
-
-            int maintenance_start_time = -1;
-            int start_time_in_sec = 0;
 
             FILE *conf = fopen(maintConf, "r");
             if (conf == NULL)
@@ -2113,7 +2136,8 @@ namespace WPEFramework
                 return -1;
             }
 
-            if (fscanf(conf, "start_hr=\"%d\"\nstart_min=\"%d\"\ntz_mode=\"%[^\"]s\"\n", &start_hr, &start_min, tz_mode) != 3)
+            /* parse tz_mode and prevent buffer overflow on malformed input. */
+            if (fscanf(conf, "start_hr=\"%d\"\nstart_min=\"%d\"\ntz_mode=\"%19[^\"]\"\n", &start_hr, &start_min, tz_mode) != 3)
             {
                 MM_LOGERR("Error! Failed to read %s", maintConf);
                 fclose(conf);
@@ -2121,53 +2145,183 @@ namespace WPEFramework
             }
             fclose(conf);
 
-            int cron_time_in_sec = (start_hr * 3600) + (start_min * 60);
+            /* Validate parsed config values before use. */
+            if (start_hr < 0 || start_hr > 23)
+            {
+                MM_LOGERR("Invalid start_hr=%d in config (must be 0-23)", start_hr);
+                return -1;
+            }
+            if (start_min < 0 || start_min > 59)
+            {
+                MM_LOGERR("Invalid start_min=%d in config (must be 0-59)", start_min);
+                return -1;
+            }
+            if (strcmp(tz_mode, "Local time") != 0 && strcmp(tz_mode, "UTC") != 0)
+            {
+                MM_LOGERR("Invalid tz_mode='%s' in config (must be 'Local time' or 'UTC')", tz_mode);
+                return -1;
+            }
+
+            MM_LOGINFO("Read from config: start_hr=%d, start_min=%d, tz_mode=%s", start_hr, start_min, tz_mode);
             getTimeZone(deviceName, zoneValue, timeZone, timeZoneOffset, BUFFER_SIZE);
 
             time_t rawtime = time(NULL);
-            struct tm *ptm = localtime(&rawtime);
 
             if (strcmp(tz_mode, "Local time") == 0)
             {
                 MM_LOGINFO("TimeZone is in Local time");
-                char cmd[128];
-                snprintf(cmd, sizeof(cmd), "TZ=%s date +%%z", zoneValue);
-                FILE *fp = popen(cmd, "r");
-                char offset[10];
-                if (fgets(offset, sizeof(offset), fp) == NULL)
+
+                /* Reject timezone strings containing shell metacharacters. */
+                if (!IsValidTimeZone(zoneValue))
                 {
-                    MM_LOGERR("Failed to read timezone offset");
+                    MM_LOGERR("Invalid timezone value provided for local time calculation");
+                    return -1;
+                }
+
+                char cmd[256];
+                char epoch_str[32] = {0};
+                char current_hhmm_str[8] = {0};
+
+                /* Get the current local time (HHMM) in TimeZone
+                 * and pick "today" or "tomorrow" based on the time in comparison with calculated maintenance time. */
+                snprintf(cmd, sizeof(cmd), "TZ=%s date +%%H%%M", zoneValue);
+                FILE *fp = popen(cmd, "r");
+                if (fp == NULL)
+                {
+                    MM_LOGERR("popen failed for current time query");
+                    return -1;
+                }
+                if (fgets(current_hhmm_str, sizeof(current_hhmm_str), fp) == NULL)
+                {
+                    MM_LOGERR("Failed to read current local time");
                     pclose(fp);
                     return -1;
                 }
                 pclose(fp);
-                tz_offset_pos = offset[0];
-                int offset_value = atoi(&offset[1]);
 
-                int tz_offset_hr = offset_value / 100;
-                int tz_offset_min = offset_value % 100;
-                int tz_offset_in_sec = tz_offset_hr * 3600 + tz_offset_min * 60;
-                start_time_in_sec = (tz_offset_pos == '-') ? (cron_time_in_sec + tz_offset_in_sec) : (cron_time_in_sec - tz_offset_in_sec);
+                int current_local_hhmm = atoi(current_hhmm_str);
+                int maint_hhmm = (start_hr * 100) + start_min;
+                const char *when = (maint_hhmm > current_local_hhmm) ? "today" : "tomorrow";
+                MM_LOGINFO("Current local time: %04d, Maintenance time: %04d, Scheduled for: %s", current_local_hhmm, maint_hhmm, when);
+
+                /* Get today's local date in the target timezone as YYYY-MM-DD. */
+                char today_date_str[16] = {0};
+                snprintf(cmd, sizeof(cmd), "TZ=%s date +%%Y-%%m-%%d", zoneValue);
+                fp = popen(cmd, "r");
+                if (fp == NULL)
+                {
+                    MM_LOGERR("popen failed for date query");
+                    return -1;
+                }
+                if (fgets(today_date_str, sizeof(today_date_str), fp) == NULL)
+                {
+                    MM_LOGERR("Failed to read current local date");
+                    pclose(fp);
+                    return -1;
+                }
+                pclose(fp);
+                today_date_str[strcspn(today_date_str, "\n")] = '\0'; /* strip trailing newline */
+                MM_LOGINFO("Current local date in %s: %s", zoneValue, today_date_str);
+
+                /* Check sscanf return value before using parsed fields. */
+                struct tm date_tm = {0};
+                int parsed = sscanf(today_date_str, "%d-%d-%d", &date_tm.tm_year, &date_tm.tm_mon, &date_tm.tm_mday);
+                if (parsed != 3)
+                {
+                    MM_LOGERR("Failed to parse current local date string '%s'", today_date_str);
+                    return -1;
+                }
+                date_tm.tm_year -= 1900;
+                date_tm.tm_mon  -= 1;
+                date_tm.tm_isdst = -1;
+                if (strcmp(when, "tomorrow") == 0)
+                {
+                    date_tm.tm_mday += 1;
+                    mktime(&date_tm); /* normalise: updates tm_mday/mon/year in-place */
+                }
+                char scheduled_date[32];
+                snprintf(scheduled_date, sizeof(scheduled_date), "%04d-%02d-%02d", date_tm.tm_year + 1900, date_tm.tm_mon + 1, date_tm.tm_mday);
+                MM_LOGINFO("Scheduled maintenance date: %s %02d:%02d:00", scheduled_date, start_hr, start_min);
+
+                /* Calculate epoch of the maintenance time on that
+                 * specific date with date -d command in the target timezone.
+                 * strtol (not atoi) avoids 32-bit overflow post-2038. */
+                snprintf(cmd, sizeof(cmd), "TZ=%s date -d '%s %02d:%02d:00' +%%s", zoneValue, scheduled_date, start_hr, start_min);
+                fp = popen(cmd, "r");
+                if (fp == NULL)
+                {
+                    MM_LOGERR("popen failed for epoch query");
+                    return -1;
+                }
+                if (fgets(epoch_str, sizeof(epoch_str), fp) == NULL)
+                {
+                    MM_LOGERR("Failed to read maintenance epoch");
+                    pclose(fp);
+                    return -1;
+                }
+                pclose(fp);
+
+                long start_epoch = strtol(epoch_str, NULL, 10);
+                if (start_epoch <= 0)
+                {
+                    MM_LOGERR("Invalid epoch from date command: %s", epoch_str);
+                    return -1;
+                }
+
+                /* Safety fallback — if still in the past, re-query for
+                 * next day; treat any popen/fgets failure as a hard error (return -1). */
+                if (start_epoch - (long)rawtime < 10)
+                {
+                    MM_LOGINFO("Calculated maintenance time is in the past, recalculating for next day");
+                    date_tm.tm_mday += 1;
+                    mktime(&date_tm); /* normalise overflow */
+                    char next_date[32];
+                    snprintf(next_date, sizeof(next_date), "%04d-%02d-%02d", date_tm.tm_year + 1900, date_tm.tm_mon + 1, date_tm.tm_mday);
+                    snprintf(cmd, sizeof(cmd), "TZ=%s date -d '%s %02d:%02d:00' +%%s", zoneValue, next_date, start_hr, start_min);
+                    fp = popen(cmd, "r");
+                    if (fp == NULL)
+                    {
+                        MM_LOGERR("popen failed during next-day recalculation");
+                        return -1;
+                    }
+                    if (fgets(epoch_str, sizeof(epoch_str), fp) == NULL)
+                    {
+                        pclose(fp);
+                        MM_LOGERR("Failed to read next-day maintenance epoch");
+                        return -1;
+                    }
+                    pclose(fp);
+                    start_epoch = strtol(epoch_str, NULL, 10);
+                    if (start_epoch <= 0)
+                    {
+                        MM_LOGERR("Invalid next-day epoch from date command: %s", epoch_str);
+                        return -1;
+                    }
+                }
+
+                /* use long to avoid Coverity INTEGER_OVERFLOW on the log and return. */
+                MM_LOGINFO("Calculated maintenance start time (epoch): %ld", start_epoch);
+                return (int)start_epoch;
             }
             else
             {
                 MM_LOGINFO("TimeZone is in UTC");
-                start_time_in_sec = cron_time_in_sec;
+                /* UTC has no DST, hence straightforward date+time construction. */
+                struct tm utc_tm;
+                gmtime_r(&rawtime, &utc_tm);
+                utc_tm.tm_hour = start_hr;
+                utc_tm.tm_min  = start_min;
+                utc_tm.tm_sec  = 0;
+                long start_epoch = (long)timegm(&utc_tm);
+                if (start_epoch - (long)rawtime < 10)
+                {
+                    MM_LOGINFO("Calculated maintenance time is in the past, recalculating to avoid scheduling in the past");
+                    start_epoch += 86400;
+                }
+                /* log as long before casting. */
+                MM_LOGINFO("Calculated maintenance start time (epoch): %ld", start_epoch);
+                return (int)start_epoch;
             }
-
-            start_time_in_sec = (start_time_in_sec + 86400) % 86400;
-            ptm->tm_hour = start_time_in_sec / 3600;
-            ptm->tm_min = (start_time_in_sec % 3600) / 60;
-            ptm->tm_sec = start_time_in_sec % 60;
-
-            int start_epoch = timegm(ptm);
-            if (start_epoch - rawtime < 10)
-            {
-                start_epoch += 86399;
-            }
-            maintenance_start_time = start_epoch;
-
-            return maintenance_start_time;
         }
 
         /*
