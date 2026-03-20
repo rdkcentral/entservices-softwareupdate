@@ -1328,36 +1328,28 @@ TEST_F(MaintenanceManagerTest, isDeviceOnlinefail ) {
 }
 
 TEST_F(MaintenanceManagerInitializedEventTest, TaskExecutionThreadBasicTest) {
-     plugin_->m_service = &service_;
-     /* Use ON_CALL (not EXPECT_CALL) so background dispatcher threads querying
-      * other callsigns (e.g. org.rdk.SecManager) do not cause unexpected-call failures. */
-     ON_CALL(service_, QueryInterfaceByCallsign(::testing::_,"org.rdk.Network"))
-          .WillByDefault(::testing::Return(&service_));
-     ON_CALL(service_, State())
-        .WillByDefault(::testing::Return(PluginHost::IShell::state::ACTIVATED));
-     /* Return nullptr for SecurityAgent: dispatcher_->Activate() spawns background threads
-      * that may concurrently enter checkNetwork() alongside task_execution_thread(), both
-      * reaching security->Release() on the same mock pointer.  That concurrent Release()
-      * corrupts NiceMock state and triggers "pure virtual method called".  Returning nullptr
-      * causes the if(security != nullptr) block to be skipped entirely — no Release(), no
-      * race.  Under GTEST_ENABLE the JSONRPC failure path returns true, so coverage is
-      * equivalent. */
-     ON_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
+    plugin_->m_service = &service_;
+    /* Return nullptr for org.rdk.Network so getServiceState() returns ERROR_UNAVAILABLE
+     * and checkNetwork() returns false immediately — before any JSONRPC::LinkType is
+     * constructed.  When the dispatcher is active (dispatcher_->Activate() was called in
+     * the fixture constructor), JSONRPC::LinkType::Invoke() routes through the live
+     * in-process dispatcher which calls back into service_ via unimplemented pure-virtual
+     * interfaces, triggering "pure virtual method called" / abort.
+     * With no network, task_execution_thread() sets exitOnNoNetwork and calls
+     * onMaintenanceStatusChange(MAINTENANCE_ERROR) through the same active dispatcher
+     * (which works correctly), then returns cleanly. */
+    ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
         .WillByDefault(::testing::Return(nullptr));
     plugin_->task_execution_thread();
 }
 
 TEST_F(MaintenanceManagerInitializedEventTest, TaskExecutionThread_NoSecurityAgent) {
     plugin_->m_service = &service_;
-    /* Use ON_CALL (not EXPECT_CALL) so background dispatcher threads querying
-     * other callsigns (e.g. org.rdk.SecManager) do not cause unexpected-call failures. */
+    /* Same rationale as TaskExecutionThreadBasicTest above: return nullptr for
+     * org.rdk.Network so checkNetwork() exits before constructing any
+     * JSONRPC::LinkType that would route through the live dispatcher and crash. */
     ON_CALL(service_, QueryInterfaceByCallsign(::testing::_, "org.rdk.Network"))
-        .WillByDefault(Return(&service_));
-    ON_CALL(service_, State())
-        .WillByDefault(::testing::Return(PluginHost::IShell::state::ACTIVATED));
-    ON_CALL(service_, QueryInterfaceByCallsign(::testing::_,"SecurityAgent"))
         .WillByDefault(::testing::Return(nullptr));
-
     plugin_->task_execution_thread();
 }
 
