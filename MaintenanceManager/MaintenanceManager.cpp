@@ -48,6 +48,8 @@
 #include "UtilsfileExists.h"
 #include "UtilsgetFileContent.h"
 
+#include <telemetry_busmessage_sender.h>
+
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
 #include "libIARM.h"
 #endif
@@ -449,6 +451,9 @@ namespace WPEFramework
                 MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
                 m_statusMutex.unlock();
                 MM_LOGINFO("Maintenance is exiting as device is not connected to internet.");
+
+				t2_event_d("SYST_ERR_MaintNetworkFail", 1);
+				
                 if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
                 {
                     g_unsolicited_complete = true;
@@ -466,7 +471,12 @@ namespace WPEFramework
 
             MM_LOGINFO("Reboot_Pending :%s", g_is_reboot_pending.c_str());
             MM_LOGINFO("%s", UNSOLICITED_MAINTENANCE == g_maintenance_type ? "---------------UNSOLICITED_MAINTENANCE--------------" : "=============SOLICITED_MAINTENANCE===============");
-            
+
+			if (UNSOLICITED_MAINTENANCE != g_maintenance_type) 
+			{
+				t2_event_d("SYST_INFO_SOMT", 1);
+			}
+			
             if (!g_whoami_support_enabled && g_suppress_maintenance_enabled && skipFirmwareCheck)
             {
                 /* set the task status of Firmware Download */
@@ -633,6 +643,10 @@ namespace WPEFramework
                         {
                             MM_LOGERR("getDeviceInitializationContext failed");
                         }
+						if (joGetResult.HasLabel("success") && !joGetResult["success"].Boolean())
+						{
+							t2_event_d("SYST_ERROR_WAI_InitERR", 1);
+						}
                     }
                     else
                     {
@@ -1574,7 +1588,22 @@ namespace WPEFramework
             m_statusMutex.unlock();
 
 #if !defined(GTEST_ENABLE)
-            m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+            try
+            {
+#ifdef ENABLE_TEST_THREAD_EXCEPTION
+                MM_TEST_THROW_THREAD_EXCEPTION();
+#endif
+                m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+            }
+            catch (const std::exception &e)
+            {
+                MM_LOGERR("Failed to create task execution thread in Bootup: [%s] %s", typeid(e).name(), e.what());
+                {
+                    std::lock_guard<std::mutex> lock(m_statusMutex);
+                    g_unsolicited_complete = true;
+                    MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
+                }
+            }
 #endif
         }
 
@@ -1617,6 +1646,12 @@ namespace WPEFramework
                         MM_LOGINFO("MaintMGR Status %d", module_status);
                         string status_string = moduleStatusToString(module_status);
                         MM_LOGINFO("MaintMGR Status %s", status_string.c_str());
+
+						if (status_string == "MAINTENANCE_RFC_ERROR") 
+						{
+							t2_event_d("SYST_ERR_RFC", 1);
+						}
+						
                         switch (module_status)
                         {
                             case MAINT_RFC_COMPLETE:
@@ -1888,6 +1923,12 @@ namespace WPEFramework
             }
 
             response["maintenanceStatus"] = notifyStatusToString(m_notify_status);
+
+			if (notifyStatusToString(m_notify_status) == "MAINTENANCE_INCOMPLETE")
+			{
+				t2_event_d("SYST_INFO_MaintnceIncmpl", 1);
+			}
+			
             if (strcmp("NA", LastSuccessfulCompletionTime.c_str()) == 0)
             {
                 response["LastSuccessfulCompletionTime"] = 0; // stoi is not able handle "NA"
@@ -2436,6 +2477,8 @@ namespace WPEFramework
                  * irrespective of XConf configuration */
                 g_is_reboot_pending = "true";
 
+                /* Save previous value before overwriting, for rollback on thread creation failure */
+                string prev_critical_maintenance = g_is_critical_maintenance;
                 /* we set this to false */
                 g_is_critical_maintenance = "false";
 
@@ -2447,9 +2490,20 @@ namespace WPEFramework
                     MM_LOGINFO("Thread joined successfully");
                 }
 
-                m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
-
-                result = true;
+                try
+                {
+#ifdef ENABLE_TEST_THREAD_EXCEPTION
+                    MM_TEST_THROW_THREAD_EXCEPTION();
+#endif
+                    m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+                    result = true;
+                }
+                catch (const std::exception &e)
+                {
+                    MM_LOGERR("Failed to create task execution thread in startMaintenance: [%s] %s", typeid(e).name(), e.what());
+                    g_is_critical_maintenance = std::move(prev_critical_maintenance);
+                    result = false;
+                }
             }
             else
             {
@@ -2685,6 +2739,12 @@ namespace WPEFramework
             /* we store the updated value as well */
             m_notify_status = status;
             params["maintenanceStatus"] = notifyStatusToString(status);
+
+			if (notifyStatusToString(m_notify_status) == "MAINTENANCE_INCOMPLETE")
+			{
+				t2_event_d("SYST_INFO_MaintnceIncmpl", 1);
+			}
+			
             sendNotify(EVT_ONMAINTENANCSTATUSCHANGE, params);
 #if defined(ENABLE_JOURNAL_LOGGING)
             MM_SEND_NOTIFY(EVT_ONMAINTENANCSTATUSCHANGE, params);
