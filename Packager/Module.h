@@ -24,7 +24,7 @@
 #define MODULE_NAME Plugin_Packager
 #endif
 
-#include <tracing/tracing.h>
+#include <core/core.h>
 #include <plugins/plugins.h>
 
 #undef EXTERNAL
