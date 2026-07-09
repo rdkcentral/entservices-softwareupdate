@@ -23,7 +23,7 @@ find_package(WPEFramework)
 
 # All packages that did not deliver a CMake Find script (and some deprecated scripts that need to be removed)
 # are located in the cmake directory. Include it in the search.
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
 
 
 option(COMCAST_CONFIG "Comcast services configuration" ON)

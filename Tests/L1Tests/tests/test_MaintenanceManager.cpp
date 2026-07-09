@@ -22,8 +22,8 @@
 #include <fstream>
 #include <iostream>
 #include "FactoriesImplementation.h"
-#include "MaintenanceManager.cpp"
-#include "MaintenanceManager.h"
+#include "../../../MaintenanceManager/MaintenanceManager.cpp"
+#include "../../../MaintenanceManager/MaintenanceManager.h"
 #include "RfcApiMock.h"
 #include "IarmBusMock.h"
 #include "ServiceMock.h"
@@ -47,6 +47,28 @@ using ::testing::AssertionFailure;
 
 extern "C" FILE* __real_popen(const char* command, const char* type);
 extern "C" int __real_pclose(FILE* pipe);
+
+namespace {
+    void clearMaintenanceRecord()
+    {
+        cSettings settings(MAINTENANCE_MGR_RECORD_FILE);
+        settings.remove("LastSuccessfulCompletionTime");
+        settings.remove("LastMaintenanceStatus");
+    }
+#if defined(GTEST_ENABLE)
+    void setMaintenanceRecordValue(const std::string& key, const std::string& value)
+    {
+        cSettings settings(MAINTENANCE_MGR_RECORD_FILE);
+        settings.setValue(key, value);
+    }
+
+    std::string getMaintenanceRecordValue(const std::string& key)
+    {
+        cSettings settings(MAINTENANCE_MGR_RECORD_FILE);
+        return settings.getValue(key).String();
+    }
+#endif /* GTEST_ENABLE */
+}
 
 class MaintenanceManagerTest : public Test {
 protected:
@@ -76,6 +98,9 @@ protected:
 
         p_wrapsImplMock  = new testing::NiceMock <WrapsImplMock>;
         Wraps::setImpl(p_wrapsImplMock);
+
+	clearMaintenanceRecord();
+        remove("/opt/secure/reboot/maintenance_reboot");
     }
 
     virtual ~MaintenanceManagerTest() override
@@ -1679,6 +1704,69 @@ TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_InitializesCorrectly1)
     EXPECT_FALSE(plugin_->m_abort_flag);
     EXPECT_FALSE(plugin_->g_unsolicited_complete);
 
+}
+
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_DoesNotSkipWhenLastMaintenanceStatusIsMissing)
+{
+    plugin_->m_service = &service_;
+    Plugin::MaintenanceManager::_instance = &(*plugin_);
+
+    setMaintenanceRecordValue("LastSuccessfulCompletionTime", std::string("1780190908"));
+    /* Create maintenance reboot flag - reboot reason matches, but status key is missing */
+    {
+        ASSERT_EQ(0, system("mkdir -p /opt/secure/reboot"));
+        FILE *fp = fopen("/opt/secure/reboot/maintenance_reboot", "w");
+	ASSERT_NE(fp, nullptr);
+        fclose(fp);
+    }
+
+    plugin_->maintenanceManagerOnBootup();
+
+    EXPECT_EQ(plugin_->g_currentMode, FOREGROUND_MODE);
+    EXPECT_EQ(plugin_->m_notify_status, MAINTENANCE_IDLE);
+    EXPECT_EQ(plugin_->g_maintenance_type, UNSOLICITED_MAINTENANCE);
+    EXPECT_FALSE(plugin_->g_unsolicited_complete);
+    remove("/opt/secure/reboot/maintenance_reboot");
+}
+
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_DoesNotSkipWhenLastMaintenanceStatusIsNotComplete)
+{
+    plugin_->m_service = &service_;
+    Plugin::MaintenanceManager::_instance = &(*plugin_);
+
+    setMaintenanceRecordValue("LastSuccessfulCompletionTime", std::string("1780190908"));
+    setMaintenanceRecordValue("LastMaintenanceStatus", std::string("MAINTENANCE_IDLE"));
+    {
+        ASSERT_EQ(0, system("mkdir -p /opt/secure/reboot"));
+        FILE *fp = fopen("/opt/secure/reboot/maintenance_reboot", "w");
+	ASSERT_NE(fp, nullptr);
+        fclose(fp);
+    }
+
+    plugin_->maintenanceManagerOnBootup();
+
+    EXPECT_EQ(plugin_->g_currentMode, FOREGROUND_MODE);
+    EXPECT_EQ(plugin_->m_notify_status, MAINTENANCE_IDLE);
+    EXPECT_EQ(plugin_->g_maintenance_type, UNSOLICITED_MAINTENANCE);
+    EXPECT_FALSE(plugin_->g_unsolicited_complete);
+    remove("/opt/secure/reboot/maintenance_reboot");
+}
+
+TEST_F(MaintenanceManagerTest, MaintenanceManagerOnBootup_DoesNotSkipWhenMaintenanceRebootFlagIsAbsent)
+{
+    plugin_->m_service = &service_;
+    Plugin::MaintenanceManager::_instance = &(*plugin_);
+
+    setMaintenanceRecordValue("LastSuccessfulCompletionTime", std::string("1780190908"));
+    setMaintenanceRecordValue("LastMaintenanceStatus", std::string("MAINTENANCE_COMPLETE"));
+    remove("/opt/secure/reboot/maintenance_reboot");
+
+    plugin_->maintenanceManagerOnBootup();
+
+    EXPECT_EQ(plugin_->g_currentMode, FOREGROUND_MODE);
+    EXPECT_EQ(plugin_->m_notify_status, MAINTENANCE_IDLE);
+    EXPECT_EQ(plugin_->g_maintenance_type, UNSOLICITED_MAINTENANCE);
+    EXPECT_FALSE(plugin_->g_unsolicited_complete);
 }
 
 TEST_F(MaintenanceManagerTest, InitializeIARM_RegistersEventAndBootsUp) {

@@ -85,18 +85,18 @@ jobs:
           path: ThunderTools
           ref: R4.4.3
 
-      - name: Checkout entservices-softwareupdate
+      - name: Checkout entservices-maintenancemanager
         if: ${{ inputs.caller_source == 'local' }}
         uses: actions/checkout@v3
         with:
-          path: entservices-softwareupdate
+          path: entservices-maintenancemanager
 
-      - name: Checkout entservices-softwareupdate-testframework
+      - name: Checkout entservices-maintenancemanager-testframework
         if: ${{ inputs.caller_source == 'testframework' }}
         uses: actions/checkout@v3
         with:
-          repository: rdkcentral/entservices-softwareupdate
-          path: entservices-softwareupdate
+          repository: rdkcentral/entservices-maintenancemanager
+          path: entservices-maintenancemanager
           ref: develop
 
       - name: Checkout entservices-testframework
@@ -127,9 +127,9 @@ jobs:
           patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/00010-R4.4-Add-support-for-project-dir.patch
           cd -
      
-      - name: Apply patches entservices-softwareupdate
+      - name: Apply patches entservices-maintenancemanager
         run: |  
-            cd $GITHUB_WORKSPACE/entservices-softwareupdate
+            cd $GITHUB_WORKSPACE/entservices-maintenancemanager
             patch -p1 < $GITHUB_WORKSPACE/entservices-testframework/patches/Maintenancemanager.patch
             cd -
 
@@ -355,11 +355,11 @@ jobs:
           # Install
           cmake --install build/networkmanager_rdk
       
-      - name: Build entservices-softwareupdate
+      - name: Build entservices-maintenancemanager
         run: >
           cmake
-          -S "$GITHUB_WORKSPACE/entservices-softwareupdate"
-          -B build/entservices-softwareupdate
+          -S "$GITHUB_WORKSPACE/entservices-maintenancemanager"
+          -B build/entservices-maintenancemanager
           -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}"
           -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
           -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
@@ -423,9 +423,9 @@ jobs:
           -DDS_FOUND=ON
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           &&
-          cmake --build build/entservices-softwareupdate
+          cmake --build build/entservices-maintenancemanager
           &&
-          cmake --install build/entservices-softwareupdate
+          cmake --install build/entservices-maintenancemanager
 
       - name: Build entservices-testframework
         run: >
@@ -453,7 +453,7 @@ jobs:
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmmgrs-hal
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/systemservices
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/systemservices/proc
-          -I $GITHUB_WORKSPACE/entservices-softwareupdate/helpers
+          -I $GITHUB_WORKSPACE/entservices-maintenancemanager/helpers
           -I $GITHUB_WORKSPACE/install/usr/include
           -I ./usr/include/libdrm
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/devicesettings.h
@@ -629,7 +629,7 @@ jobs:
           &&
           lcov -c
           -o coverage.info
-          -d build/entservices-softwareupdate
+          -d build/entservices-maintenancemanager
           &&
           lcov
           -r coverage.info
@@ -647,7 +647,7 @@ jobs:
           &&
           genhtml
           -o coverage
-          -t "entservices-softwareupdate coverage"
+          -t "entservices-maintenancemanager coverage"
           filtered_coverage.info
           &&
           lcov --extract filtered_coverage.info "*/MaintenanceManager/MaintenanceManager.cpp" -o maintenancemanager_coverage.info
@@ -656,7 +656,7 @@ jobs:
         if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-L2-softwareupdate
+          name: artifacts-L2-maintenancemanager
           path: |
             coverage/
             valgrind_log

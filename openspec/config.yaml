@@ -1,0 +1,81 @@
+schema: spec-driven
+
+context: |
+  Repository: rdkcentral/entservices-maintenancemanager.
+  Primary development workflow in this repo is OpenSpec-first. When OpenSpec is used for SDLC work, give the model only the minimum repository context needed for the active task.
+
+  Source-of-truth order:
+  1. openspec/**
+  2. repository docs and README files
+  3. code and tests
+  4. CI/workflow files
+  5. assumptions only when explicitly marked as assumptions
+
+  Repository shape:
+  - Top-level build and release wiring: CMakeLists.txt, services.cmake, build_dependencies.sh, cov_build.sh, cmake/**.
+  - Main production plugins: MaintenanceManager/** and Packager/**.
+  - Shared helper code: helpers/** including WebSockets/**.
+  - Tests: Tests/L1Tests/**, Tests/L2Tests/**, Tests/README.md, Tests/*.cmake.
+  - CI and automation: .github/workflows/**, .github/prompts/**, .github/agents/**, .github/skills/**, .github/instructions/**.
+  - OpenSpec docs: openspec/project.md, openspec/README.md, openspec/runtime/**, openspec/interfaces/**, openspec/subsystems/**, openspec/diagrams/**, openspec/specs/**, openspec/unknowns/**, openspec/changes/**.
+
+  Documentation context bucket:
+  - Always consider top-level README.md.
+  - Include all repo README files relevant to the touched area: MaintenanceManager/README.md, Packager/README.md, Tests/README.md, openspec/README.md, .github/agents/README.md, .github/skills/README.md.
+  - If a top-level docs/ directory is added later, treat docs/** as first-class repository documentation and prefer the nearest matching file instead of loading the whole tree.
+
+  Code context bucket:
+  - For MaintenanceManager work, start with MaintenanceManager/MaintenanceManager.cpp, MaintenanceManager/MaintenanceManager.h, MaintenanceManager/Module.cpp, MaintenanceManager/Module.h, MaintenanceManager/CMakeLists.txt, and MaintenanceManager/*.conf.in or *.config only if configuration is involved.
+  - For Packager work, start with Packager/Packager.cpp, Packager/Packager.h, Packager/PackagerImplementation.cpp, Packager/PackagerImplementation.h, Packager/Module.cpp, Packager/Module.h, and Packager/CMakeLists.txt.
+  - For shared behavior, include helpers/** only when the touched code directly depends on those headers or sources.
+  - For build issues, prefer the narrowest relevant CMake files before loading unrelated code.
+
+  Script and runtime context bucket:
+  - Include build_dependencies.sh and cov_build.sh when the task involves local build, coverage, or dependency setup.
+  - Include services.cmake and relevant cmake/Find*.cmake files when the task involves plugin enablement, linking, or dependency discovery.
+  - Do not load every script or CMake helper by default; select only the files used by the affected component or workflow.
+
+  Test context bucket:
+  - L1 behavior and unit/mocked coverage live under Tests/L1Tests/**, especially Tests/L1Tests/tests/test_MaintenanceManager.cpp, Tests/L1Tests/tests/test_Packager.cpp, and helper/unit tests.
+  - L2 integration-style coverage lives under Tests/L2Tests/**, especially Tests/L2Tests/tests/MaintenancemanagerL2.cpp.
+  - Include Tests/README.md when work affects how tests are run, organized, or triggered.
+  - Prefer only the nearest affected tests instead of loading all test files.
+
+  CI context bucket:
+  - Use .github/workflows/L1-tests.yml, .github/workflows/L2-tests.yml, and .github/workflows/tests-trigger.yml for test pipeline context.
+  - Use .github/workflows/native_full_build.yml and .github/workflows/manual-ci.yml for full-build and manual validation flows.
+  - Use .github/workflows/component-release.yml, update-changelog-and-api-version.yml, cla.yml, and fossid_integration_stateless_diffscan_target_repo.yml only when release/compliance automation is relevant.
+  - Include .github/copilot-instructions.md and matching .github/instructions/*.instructions.md when the touched files fall under those applyTo patterns.
+
+  OpenSpec usage policy:
+  - Proposal and design work should read openspec/project.md plus only the subsystem/interface/runtime docs that match the change.
+  - Implementation work should read the active change under openspec/changes/**, then the owning code, then the nearest tests, then only the CI/workflow files needed for validation.
+  - Diagnosis work should reconstruct the event or state path from logs to code, then use OpenSpec docs to confirm intended behavior.
+  - Archive work should verify that OpenSpec artifacts, repo docs, code, and tests agree before closing the change.
+
+  Token-efficiency rules:
+  - Never load whole directories when a single file, nearest README, or narrow test file will answer the question.
+  - Prefer owning abstractions over broad repo scans.
+  - Prefer README/project/runtime/interface/subsystem summaries before loading large implementation files.
+  - Pull CI files only when the task touches build, release, validation, or developer workflow behavior.
+  - Summaries should name the exact files consulted so later SDLC steps can reuse the same compact evidence set.
+
+rules:
+  proposal:
+    - Start from openspec/project.md and only the directly relevant OpenSpec docs for the subsystem being changed.
+    - Include sections for problem, scope, non-goals, impacted code areas, impacted docs, impacted tests, and validation plan.
+    - Name concrete repository paths that will likely change, but keep the evidence set compact.
+    - If CI, release, or developer workflow behavior is affected, explicitly list the relevant .github/workflows files.
+  design:
+    - Tie each design decision to the owning plugin, helper, script, or workflow file.
+    - Separate architecture facts from assumptions and unknowns.
+    - Call out documentation sources to be kept in sync: openspec/**, relevant README files, and docs/** if present.
+    - Describe test impact with explicit L1 and L2 coverage expectations when behavior changes.
+  tasks:
+    - Break implementation into small, verifiable steps that follow code, tests, docs, and OpenSpec sync order.
+    - Include doc updates when behavior, workflow, CI, or operator expectations change.
+    - Include validation tasks that point to the narrowest relevant tests or workflows.
+  specs:
+    - Prefer behavior statements over implementation trivia.
+    - Reference the owning OpenSpec docs, production code, and nearest L1/L2 tests as evidence.
+    - Record CI or script dependencies only when they materially affect behavior or validation.

@@ -10,7 +10,7 @@ on:
 
 env:
   BUILD_TYPE: Debug
-  REPO_NAME: "softwareupdate"
+  REPO_NAME: "maintenancemanager"
   THUNDER_REF: "R4.4.1"
   INTERFACES_REF: "develop"
   AUTOMATICS_UNAME: ${{ secrets.AUTOMATICS_UNAME}}
@@ -123,18 +123,18 @@ jobs:
           path: entservices-testframework
           ref: 1.0.1
 
-      - name: Checkout entservices-softwareupdate
+      - name: Checkout entservices-maintenancemanager
         if: ${{ inputs.caller_source == 'local' }}
         uses: actions/checkout@v3
         with:
-          path: entservices-softwareupdate
+          path: entservices-maintenancemanager
 
-      - name: Checkout entservices-softwareupdate-testframework
+      - name: Checkout entservices-maintenancemanager-testframework
         if: ${{ inputs.caller_source == 'testframework' }}
         uses: actions/checkout@v3
         with:
-          repository: rdkcentral/entservices-softwareupdate
-          path: entservices-softwareupdate
+          repository: rdkcentral/entservices-maintenancemanager
+          path: entservices-maintenancemanager
           ref: develop
 
       - name: Checkout googletest
@@ -353,7 +353,7 @@ jobs:
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/ccec/drivers
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/network
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests
-          -I $GITHUB_WORKSPACE/entservices-softwareupdate/helpers
+          -I $GITHUB_WORKSPACE/entservices-maintenancemanager/helpers
           -I $GITHUB_WORKSPACE/install/usr/include
           -I ./usr/include/libdrm
           -include $GITHUB_WORKSPACE/entservices-testframework/Tests/mocks/devicesettings.h
@@ -387,11 +387,11 @@ jobs:
           &&
           cmake --install build/mocks
 
-      - name: Build entservices-softwareupdate
+      - name: Build entservices-maintenancemanager
         run: >
           cmake -G Ninja
-          -S "$GITHUB_WORKSPACE/entservices-softwareupdate"
-          -B build/entservices-softwareupdate
+          -S "$GITHUB_WORKSPACE/entservices-maintenancemanager"
+          -B build/entservices-maintenancemanager
           -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install/usr"
           -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
           -DCMAKE_CXX_FLAGS="
@@ -458,9 +458,9 @@ jobs:
           -DPLUGIN_MAINTENANCEMANAGER=ON
           -DPLUGIN_PACKAGER=ON
           &&
-          cmake --build build/entservices-softwareupdate
+          cmake --build build/entservices-maintenancemanager
           &&
-          cmake --install build/entservices-softwareupdate
+          cmake --install build/entservices-maintenancemanager
 
       - name: Build entservices-testframework
         run: >
@@ -485,7 +485,7 @@ jobs:
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/rdk/iarmmgrs-hal
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/ccec/drivers
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests/headers/network
-          -I $GITHUB_WORKSPACE/entservices-softwareupdate/helpers
+          -I $GITHUB_WORKSPACE/entservices-maintenancemanager/helpers
           -I $GITHUB_WORKSPACE/entservices-testframework/Tests
           -I $GITHUB_WORKSPACE/install/usr/include
           -I $GITHUB_WORKSPACE/install/usr/include/WPEFramework
@@ -654,12 +654,12 @@ jobs:
           &&
           lcov -c
           -o coverage.info
-          -d build/entservices-softwareupdate
+          -d build/entservices-maintenancemanager
           &&
           lcov
           -r coverage.info
           '/usr/include/*'
-          '*/build/entservices-softwareupdate/_deps/*'
+          '*/build/entservices-maintenancemanager/_deps/*'
           '*/install/usr/include/*'
           '*/Tests/headers/*'
           '*/Tests/mocks/*'
@@ -669,7 +669,7 @@ jobs:
           &&
           genhtml
           -o coverage
-          -t "entservices-softwareupdate coverage"
+          -t "entservices-maintenancemanager coverage"
           filtered_coverage.info
           &&
           lcov --extract filtered_coverage.info "*/Packager/Packager*" -o Packager_coverage.info
@@ -680,7 +680,7 @@ jobs:
         if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-L1-softwareupdate
+          name: artifacts-L1-maintenancemanager
           path: |
             coverage/
             valgrind_log

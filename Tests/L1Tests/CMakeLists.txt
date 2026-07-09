@@ -102,11 +102,11 @@ macro(add_plugin_test plugin_name test_files)
 endmacro()
 
 # PLUGIN_PACKAGER
-set (PACKAGER_INC ${CMAKE_SOURCE_DIR}/Packager ${CMAKE_SOURCE_DIR}/helpers)
+set (PACKAGER_INC ${PROJECT_SOURCE_DIR}/Packager ${PROJECT_SOURCE_DIR}/helpers)
 add_plugin_test_ex(PLUGIN_PACKAGER tests/test_Packager.cpp "${PACKAGER_INC}" "${NAMESPACE}Packager")
 
 # PLUGIN_MAINTENANCEMANAGER
-set (MAINTENANCEMANAGER_INC ${CMAKE_SOURCE_DIR}/MaintenanceManager ${CMAKE_SOURCE_DIR}/helpers)
+set (MAINTENANCEMANAGER_INC ${PROJECT_SOURCE_DIR}/MaintenanceManager ${PROJECT_SOURCE_DIR}/helpers)
 add_plugin_test_ex(PLUGIN_MAINTENANCEMANAGER tests/test_MaintenanceManager.cpp "${MAINTENANCEMANAGER_INC}" "${NAMESPACE}MaintenanceManager")
 
 add_library(${MODULE_NAME} SHARED ${TEST_SRC})
@@ -121,10 +121,10 @@ target_include_directories(${MODULE_NAME}
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
-        ${CMAKE_SOURCE_DIR}/../entservices-testframework/Tests/mocks
-        ${CMAKE_SOURCE_DIR}/../entservices-testframework/Tests/mocks/devicesettings
-        ${CMAKE_SOURCE_DIR}/../entservices-testframework/Tests/mocks/thunder
-        ${CMAKE_SOURCE_DIR}/../Thunder/Source/plugins
+        ${PROJECT_SOURCE_DIR}/../entservices-testframework/Tests/mocks
+        ${PROJECT_SOURCE_DIR}/../entservices-testframework/Tests/mocks/devicesettings
+        ${PROJECT_SOURCE_DIR}/../entservices-testframework/Tests/mocks/thunder
+        ${PROJECT_SOURCE_DIR}/../Thunder/Source/plugins
         )
 
 install(TARGETS ${MODULE_NAME} DESTINATION lib)
