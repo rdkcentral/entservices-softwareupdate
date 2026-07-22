@@ -1563,6 +1563,22 @@ namespace WPEFramework
             DeinitializeIARM();
 #endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
 
+            /* Final safety: std::thread must never remain joinable at object destruction. */
+            std::thread threadToJoin;
+            {
+                std::lock_guard<std::mutex> lock(m_statusMutex);
+                if (m_thread.joinable())
+                {
+                    MM_LOGWARN("Deinitialize detected joinable worker thread outside stop path, forcing join");
+                    threadToJoin = std::move(m_thread);
+                }
+            }
+            if (threadToJoin.joinable())
+            {
+                threadToJoin.join();
+                MM_LOGINFO("Thread joined successfully during Deinitialize final safety");
+            }
+
             ASSERT(service == m_service);
 
             m_service->Release();
@@ -2738,13 +2754,12 @@ namespace WPEFramework
         bool MaintenanceManager::stopMaintenanceTasks()
         {
             MM_LOGINFO("Request for stopMaintenance()");
-            string codeDLtask;
             int k_ret = EINVAL;
             int i = 0;
             bool task_status[3] = {false};
             bool result = false;
+            std::thread threadToJoin;
             
-            /* run only when the maintenance status is MAINTENANCE_STARTED */
             m_statusMutex.lock();
             if (MAINTENANCE_STARTED == m_notify_status)
             {
@@ -2800,8 +2815,7 @@ namespace WPEFramework
                 task_thread.notify_one();
                 if (m_thread.joinable())
                 {
-                    m_thread.join();
-                    MM_LOGINFO("Thread joined successfully");
+                    threadToJoin = std::move(m_thread);
                 }
                 if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
                 {
@@ -2813,8 +2827,24 @@ namespace WPEFramework
             else
             {
                 MM_LOGINFO("Maintenance Status is not MAINTENANCE_STARTED, Hence can not stop the Maintenance execution");
+
+                /* Minimal safety fix: status can be IDLE while thread object is still joinable. */
+                if (m_thread.joinable())
+                {
+                    MM_LOGWARN("Joinable worker thread found when status is not MAINTENANCE_STARTED; joining for safe shutdown");
+                    threadToJoin = std::move(m_thread);
+                    result = true;
+                }
             }
             m_statusMutex.unlock();
+
+            if (threadToJoin.joinable())
+            {
+                threadToJoin.join();
+                MM_LOGINFO("Thread joined successfully");
+                result = true;
+            }
+
             return result;
         }
 
