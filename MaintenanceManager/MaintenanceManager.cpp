@@ -1871,6 +1871,14 @@ namespace WPEFramework
                             }
                         }
 
+                        /* In logupload-only mode (post maintenance reboot), always confirm
+                         * MAINTENANCE_COMPLETE since full maintenance already succeeded */
+                        if (g_logupload_only)
+                        {
+                            MM_LOGINFO("Logupload-only mode: confirming maintenance complete");
+                            notify_status = MAINTENANCE_COMPLETE;
+                        }
+
                         MM_LOGINFO("ENDING MAINTENANCE CYCLE");
                         if (m_thread.joinable())
                         {
