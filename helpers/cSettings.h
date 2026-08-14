@@ -21,6 +21,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <plugins/plugins.h>
 #include <stdlib.h>
 #include <string>
@@ -32,6 +33,7 @@ using namespace std;
 class cSettings {
     std::string filename;
     JsonObject data;
+    std::mutex settingsMutex;
 
 public:
     /***
@@ -207,5 +209,29 @@ public:
             //Do nothing.
         }
         return retStatus;
+    }
+
+    JsonValue getValueSync(const std::string& key)
+    {
+        std::lock_guard<std::mutex> lock(settingsMutex);
+        return getValue(key);
+    }
+
+    bool setValueSync(const std::string& key, const std::string& value)
+    {
+        std::lock_guard<std::mutex> lock(settingsMutex);
+        return setValue(key, value);
+    }
+
+    bool containsSync(const std::string& key)
+    {
+        std::lock_guard<std::mutex> lock(settingsMutex);
+        return contains(key);
+    }
+
+    bool removeSync(const std::string& key)
+    {
+        std::lock_guard<std::mutex> lock(settingsMutex);
+        return remove(key);
     }
 };
