@@ -1849,7 +1849,7 @@ namespace WPEFramework
                             MM_LOGINFO("last succesful time is :%s", str_successfulTime.c_str());
                             /* Remove any old completion time */
                             m_setting.remove("LastSuccessfulCompletionTime");
-                            m_setting.setValue("LastSuccessfulCompletionTime", std::move(str_successfulTime));
+                            m_setting.setValue("LastSuccessfulCompletionTime", str_successfulTime);
                         }
                         /* Check other than all success case which means we have errors */
                         else if ((g_task_status & ALL_TASKS_SUCCESS) != ALL_TASKS_SUCCESS)
