@@ -1796,10 +1796,16 @@ namespace WPEFramework
                             tm ltime = *localtime(&successfulTime);
                             time_t epoch_time = mktime(&ltime);
                             str_successfulTime = to_string(epoch_time);
-                            MM_LOGINFO("last succesful time is :%s", str_successfulTime.c_str());
-                            /* Remove any old completion time */
-                            m_setting.remove("LastSuccessfulCompletionTime");
-                            m_setting.setValue("LastSuccessfulCompletionTime", std::move(str_successfulTime));
+                            MM_LOGINFO("Generated LastSuccessfulCompletionTime=%s", str_successfulTime.c_str());
+                            if (!m_setting.setValueSync("LastSuccessfulCompletionTime", str_successfulTime))
+                            {
+                                MM_LOGERR("Failed to persist LastSuccessfulCompletionTime=%s", str_successfulTime.c_str());
+                            }
+                            else
+                            {
+                                const string persistedCompletionTime = m_setting.getValueSync("LastSuccessfulCompletionTime").String();			    
+                                MM_LOGINFO("Persisted LastSuccessfulCompletionTime=%s", persistedCompletionTime.c_str());
+                            }			    
                         }
                         /* Check other than all success case which means we have errors */
                         else if ((g_task_status & ALL_TASKS_SUCCESS) != ALL_TASKS_SUCCESS)
@@ -1909,9 +1915,14 @@ namespace WPEFramework
             }
 
             /* Get the last SuccessfulCompletion time from Persistant location */
-            if (m_setting.contains("LastSuccessfulCompletionTime"))
+            if (m_setting.containsSync("LastSuccessfulCompletionTime"))
             {
-                LastSuccessfulCompletionTime = m_setting.getValue("LastSuccessfulCompletionTime").String();
+                LastSuccessfulCompletionTime = m_setting.getValueSync("LastSuccessfulCompletionTime").String();
+                MM_LOGINFO("Read LastSuccessfulCompletionTime=%s", LastSuccessfulCompletionTime.c_str());
+            }
+            else
+            {
+                MM_LOGWARN("LastSuccessfulCompletionTime is missing or empty");
             }
 
             if (!isCriticalMaintenance.compare("true"))
@@ -1943,7 +1954,7 @@ namespace WPEFramework
                 }
                 catch (exception &err)
                 {
-                    // exception caught with stoi -- So making "LastSuccessfulCompletionTime" as 0
+                    MM_LOGERR("Invalid LastSuccessfulCompletionTime='%s': %s", LastSuccessfulCompletionTime.c_str(), err.what());
                     response["LastSuccessfulCompletionTime"] = 0;
                 }
             }
