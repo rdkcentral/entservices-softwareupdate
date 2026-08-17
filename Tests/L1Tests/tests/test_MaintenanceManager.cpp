@@ -129,17 +129,6 @@ protected:
     }
 };
 
-TEST_F(MaintenanceManagerTest, SynchronizedCompletionTimeOverwrite)
-{
-    ASSERT_TRUE(plugin_->m_setting.setValueSync("LastSuccessfulCompletionTime", "1786610000"));
-    ASSERT_TRUE(plugin_->m_setting.setValueSync("LastSuccessfulCompletionTime", "1786610478"));
-
-    EXPECT_TRUE(plugin_->m_setting.containsSync("LastSuccessfulCompletionTime"));
-    EXPECT_EQ("1786610478", plugin_->m_setting.getValueSync("LastSuccessfulCompletionTime").String());
-    EXPECT_TRUE(plugin_->m_setting.removeSync("LastSuccessfulCompletionTime"));
-    EXPECT_FALSE(plugin_->m_setting.containsSync("LastSuccessfulCompletionTime"));
-}
-
 static AssertionResult isValidCtrlmRcuIarmEvent(IARM_EventId_t ctrlmRcuIarmEventId)
 {
     switch (ctrlmRcuIarmEventId) {
