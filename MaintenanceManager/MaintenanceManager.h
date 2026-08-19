@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 #include <thread>
+#include <atomic>
 #include <map>
 #include <time.h>
 #include <signal.h>
@@ -143,7 +144,7 @@ typedef enum
 #define TASK_RETRY_COUNT                1
 #define TASK_RETRY_DELAY                5
 #ifndef TASK_TIMEOUT
-#define TASK_TIMEOUT                    3600 /* Default Task Timeout (1 Hour i.e. 3600 seconds)  */
+#define TASK_TIMEOUT                    300 /* Default Task Timeout (1 Hour i.e. 3600 seconds)  DEBUG */ 
 #endif
 
 #define RFC_SUCCESS                     0
@@ -204,7 +205,7 @@ namespace WPEFramework
             Maint_notify_status_t m_notify_status;
             Maintenance_Type_t g_maintenance_type;
             static cSettings m_setting;
-            bool m_abort_flag;
+            std::atomic<bool> m_abort_flag;
             uint16_t g_task_status;
             bool g_unsolicited_complete;
             bool g_listen_to_nwevents = false;

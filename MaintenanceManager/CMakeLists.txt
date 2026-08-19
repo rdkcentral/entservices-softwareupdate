@@ -77,7 +77,7 @@ if (TASK_TIMEOUT)
     message(STATUS "Task Timeout set to ${TASK_TIMEOUT}")
     target_compile_definitions(${MODULE_NAME} PRIVATE TASK_TIMEOUT=${TASK_TIMEOUT})
 else()
-    target_compile_definitions(${MODULE_NAME} PRIVATE TASK_TIMEOUT=3600) # default value
+    target_compile_definitions(${MODULE_NAME} PRIVATE TASK_TIMEOUT=300) # default value
 endif()
 
 # Enable test thread exception injection (for verifying catch-block recovery paths)

@@ -26,6 +26,7 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <regex>
 #include <fstream>
@@ -420,7 +421,12 @@ namespace WPEFramework
                         MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
                         g_listen_to_deviceContextUpdate = true;
                         MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
-                        task_thread.wait(wailck, [this]{ return !g_listen_to_deviceContextUpdate; });
+                        task_thread.wait(wailck, [this]{ return !g_listen_to_deviceContextUpdate || m_abort_flag; });
+                        if (m_abort_flag)
+                        {
+                            MM_LOGINFO("task_execution_thread: abort flag set while waiting for deviceContextUpdate, exiting");
+                            return;
+                        }
                     }
                     else if (!internetConnectStatus && activation_status == "activated")
                     {
@@ -497,51 +503,83 @@ namespace WPEFramework
                 tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
             }
 
-            std::unique_lock<std::mutex> lck(m_callMutex);
-            for (i = 0; i < static_cast<int>(tasks.size()) && !m_abort_flag; i++)
             {
-                int task_status = -1;
-                task = tasks[i];
-                currentTask = task;
-                task += " &";
-                task += "\0";
-                if (!m_abort_flag)
+                std::unique_lock<std::mutex> lck(m_callMutex);
+                for (i = 0; i < static_cast<int>(tasks.size()) && !m_abort_flag; i++)
                 {
-                    if (retry_count == TASK_RETRY_COUNT)
+                    int task_status = -1;
+                    task = tasks[i];
+                    currentTask = task;
+                    task += " &";
+                    task += "\0";
+                    if (!m_abort_flag)
                     {
-                        MM_LOGINFO("Starting Timer for %s", currentTask.c_str());
-                        isTaskTimerStarted = task_startTimer();
-                    }
-                    if (isTaskTimerStarted)
-                    {
-                        m_task_map[tasks[i]] = true;
-                        MM_LOGINFO("Starting Task %s", task.c_str());
-                        task_status = system(task.c_str());
-                    }
-                    /* Set task_status purposefully to non-zero value to verify failure logic*/
-                    // task_status = -1;
-                    if (task_status != 0) /* system() call fails */
-                    {
-                        m_task_map[tasks[i]] = false;
-                        MM_LOGINFO("%s invocation failed with return status %d", tasks[i].c_str(), WEXITSTATUS(task_status));
-                        if (retry_count > 0 && isTaskTimerStarted)
+                        if (retry_count == TASK_RETRY_COUNT)
                         {
-                            MM_LOGINFO("Retry %s after %d seconds (%d retry left)\n", tasks[i].c_str(), TASK_RETRY_DELAY, retry_count);
-                            std::this_thread::sleep_for(std::chrono::seconds(TASK_RETRY_DELAY));
-                            i--; /* Decrement iterator to retry the same task again */
-                            retry_count--;
-                            continue;
+                            MM_LOGINFO("Starting Timer for %s", currentTask.c_str());
+                            isTaskTimerStarted = task_startTimer();
                         }
-                        else
+                        if (isTaskTimerStarted)
                         {
-                            MM_LOGINFO("Task Failed");
-                            auto it = task_status_map.find(tasks[i]);
-                            if (it != task_status_map.end())
+                            m_task_map[tasks[i]] = true;
+                            MM_LOGINFO("Starting Task %s", task.c_str());
+                            task_status = system(task.c_str());
+                        }
+                        /* Set task_status purposefully to non-zero value to verify failure logic*/
+                        // task_status = -1;
+                        if (task_status != 0) /* system() call fails */
+                        {
+                            m_task_map[tasks[i]] = false;
+                            if (task_status == -1)
                             {
-                                MM_LOGINFO("Setting task as Error");
-                                int complete_status = it->second;
-                                SET_STATUS(g_task_status, complete_status);
+                                MM_LOGERR("%s fork/exec failed with errno %d (%s)", tasks[i].c_str(), errno, strerror(errno));
                             }
+                            else if (WIFEXITED(task_status))
+                            {
+                                MM_LOGINFO("%s exited with status %d", tasks[i].c_str(), WEXITSTATUS(task_status));
+                            }
+                            else if (WIFSIGNALED(task_status))
+                            {
+                                MM_LOGINFO("%s terminated by signal %d", tasks[i].c_str(), WTERMSIG(task_status));
+                            }
+                            else
+                            {
+                                MM_LOGINFO("%s terminated with unknown status %d", tasks[i].c_str(), task_status);
+                            }
+                            if (retry_count > 0 && isTaskTimerStarted)
+                            {
+                                MM_LOGINFO("Retry %s after %d seconds (%d retry left)\n", tasks[i].c_str(), TASK_RETRY_DELAY, retry_count);
+                                std::this_thread::sleep_for(std::chrono::seconds(TASK_RETRY_DELAY));
+                                i--; /* Decrement iterator to retry the same task again */
+                                retry_count--;
+                                continue;
+                            }
+                            else
+                            {
+                                MM_LOGINFO("Task Failed");
+                                auto it = task_status_map.find(tasks[i]);
+                                if (it != task_status_map.end())
+                                {
+                                    MM_LOGINFO("Setting task as Error");
+                                    int complete_status = it->second;
+                                    SET_STATUS(g_task_status, complete_status);
+                                }
+                                if (task_stopTimer())
+                                {
+                                    MM_LOGINFO("Stopped Timer Successfully");
+                                }
+                                else
+                                {
+                                    MM_LOGERR("task_stopTimer() did not stop the Timer");
+                                }
+                            }
+                        }
+                        else /* system() executes successfully */
+                        {
+                            MM_LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
+#if !defined(GTEST_ENABLE)
+                            task_thread.wait(lck);
+#endif
                             if (task_stopTimer())
                             {
                                 MM_LOGINFO("Stopped Timer Successfully");
@@ -552,23 +590,8 @@ namespace WPEFramework
                             }
                         }
                     }
-                    else /* system() executes successfully */
-                    {
-                        MM_LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
-#if !defined(GTEST_ENABLE)
-                        task_thread.wait(lck);
-#endif
-                        if (task_stopTimer())
-                        {
-                            MM_LOGINFO("Stopped Timer Successfully");
-                        }
-                        else
-                        {
-                            MM_LOGERR("task_stopTimer() did not stop the Timer");
-                        }
-                    }
+                    retry_count = TASK_RETRY_COUNT; /* Reset Retry Count for next Task*/
                 }
-                retry_count = TASK_RETRY_COUNT; /* Reset Retry Count for next Task*/
             }
             if (m_abort_flag)
             {
@@ -582,6 +605,61 @@ namespace WPEFramework
                     MM_LOGERR("task_stopTimer() did not stop the Timer");
                 }
             }
+
+            /* Fallback finalization: if all task COMPLETE bits are set and m_notify_status is still MAINTENANCE_STARTED
+             * (eg: after the last-task timer timeout and no final IARM status update arrives) publish the final status from here. 
+             */
+            // Compute fallback_status and update minimal shared state under the mutex, then emit the
+            // notification outside the lock. This avoids holding m_statusMutex across sendNotify()
+            // (which can block on JSON-RPC and risks lock inversion if notification re-enters code
+            // that also wants m_statusMutex).
+            Maint_notify_status_t fallback_status = MAINTENANCE_IDLE; // IDLE means: no fallback needed
+            {
+                std::lock_guard<std::mutex> guard(m_statusMutex);
+                if (m_notify_status == MAINTENANCE_STARTED && (g_task_status & TASKS_COMPLETED) == TASKS_COMPLETED)
+                {
+                    // All tasks are marked complete (success/failure), but no final status update was received via IARM.
+                    // Determine the final status based on task result bits.
+                    if ((g_task_status & ALL_TASKS_SUCCESS) == ALL_TASKS_SUCCESS)
+                    {
+                        MM_LOGINFO("Fallback: all tasks succeeded. Setting MAINTENANCE_COMPLETE");
+                        fallback_status = MAINTENANCE_COMPLETE;
+                    }
+                    // All tasks completed but at least one task was skipped, likely due to Opt-out.
+                    // Use CHECK_STATUS to detect the skip bit correctly (bit 7, not bit 9).
+                    else if (CHECK_STATUS(g_task_status, TASK_SKIPPED))
+                    {
+                        MM_LOGINFO("Fallback: skipped tasks detected. Setting MAINTENANCE_INCOMPLETE");
+                        fallback_status = MAINTENANCE_INCOMPLETE;
+                    }
+                    // At least one task failed, indicating maintenance completed with errors.
+                    else
+                    {
+                        MM_LOGINFO("Fallback: task error detected. Setting MAINTENANCE_ERROR");
+                        fallback_status = MAINTENANCE_ERROR;
+                    }
+                    // Update shared state under the lock so IARM sees m_notify_status != MAINTENANCE_STARTED
+                    // and skips its own finalization if it arrives late.
+                    m_notify_status = fallback_status;
+                    if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
+                    {
+                        g_unsolicited_complete = true;
+                    }
+                }
+            }
+            // Emit the notification outside the critical section to avoid holding m_statusMutex
+            // across a potentially blocking sendNotify() call.
+            if (fallback_status != MAINTENANCE_IDLE)
+            {
+                JsonObject params;
+                params["maintenanceStatus"] = notifyStatusToString(fallback_status);
+                MM_LOGINFO("Fallback: publishing final status %s", notifyStatusToString(fallback_status).c_str());
+                sendNotify(EVT_ONMAINTENANCSTATUSCHANGE, params);
+#if defined(ENABLE_JOURNAL_LOGGING)
+                MM_SEND_NOTIFY(EVT_ONMAINTENANCSTATUSCHANGE, params);
+#endif
+            }
+
             MM_LOGINFO("Worker Thread Completed");
         } /* end of task_execution_thread() */
 
@@ -670,6 +748,8 @@ namespace WPEFramework
                     {
                         MM_LOGINFO("%s is not active. Retry after %d seconds", secMgr_callsign, SECMGR_RETRY_INTERVAL);
                         std::this_thread::sleep_for(std::chrono::seconds(SECMGR_RETRY_INTERVAL));
+                        // Exit the retry loop immediately if Deinitialize() has set the abort flag.
+                        if (m_abort_flag) return false;
                     }
                     else
                     {
@@ -1081,7 +1161,18 @@ namespace WPEFramework
             rfc_task_status = system(command);
             if (rfc_task_status != 0)
             {
-                MM_LOGINFO("Failed to run %s with %d", RFC_TASK, WEXITSTATUS(rfc_task_status));
+                if (rfc_task_status == -1)
+                {
+                    MM_LOGERR("Failed to fork/exec %s, errno %d (%s)", RFC_TASK, errno, strerror(errno));
+                }
+                else if (WIFEXITED(rfc_task_status))
+                {
+                    MM_LOGINFO("Failed to run %s, exited with status %d", RFC_TASK, WEXITSTATUS(rfc_task_status));
+                }
+                else if (WIFSIGNALED(rfc_task_status))
+                {
+                    MM_LOGINFO("Failed to run %s, terminated by signal %d", RFC_TASK, WTERMSIG(rfc_task_status));
+                }
             }
 
             // Critical Task XConf Image Check
@@ -1090,7 +1181,18 @@ namespace WPEFramework
             xconf_imagecheck_status = system(command);
             if (xconf_imagecheck_status != 0)
             {
-                MM_LOGINFO("Failed to run %s with %d", IMAGE_CHECK_SCRIPT, WEXITSTATUS(xconf_imagecheck_status));
+                if (xconf_imagecheck_status == -1)
+                {
+                    MM_LOGERR("Failed to fork/exec %s, errno %d (%s)", IMAGE_CHECK_SCRIPT, errno, strerror(errno));
+                }
+                else if (WIFEXITED(xconf_imagecheck_status))
+                {
+                    MM_LOGINFO("Failed to run %s, exited with status %d", IMAGE_CHECK_SCRIPT, WEXITSTATUS(xconf_imagecheck_status));
+                }
+                else if (WIFSIGNALED(xconf_imagecheck_status))
+                {
+                    MM_LOGINFO("Failed to run %s, terminated by signal %d", IMAGE_CHECK_SCRIPT, WTERMSIG(xconf_imagecheck_status));
+                }
             }
         }
 
@@ -1182,6 +1284,8 @@ namespace WPEFramework
                     if ((getServiceState(m_service, "org.rdk.AuthService", state) != Core::ERROR_NONE) || (state != PluginHost::IShell::state::ACTIVATED))
                     {
                         sleep(10);
+                        // Allow Deinitialize() to interrupt this wait via the abort flag.
+                        if (m_abort_flag) return ret_status;
                         i++;
                         MM_LOGINFO("AuthService retries [%d/4]", i);
                     }
@@ -1189,7 +1293,7 @@ namespace WPEFramework
                     {
                         break;
                     }
-                } while (i < MAX_ACTIVATION_RETRIES);
+                } while (i < MAX_ACTIVATION_RETRIES && !m_abort_flag);
 
                 if (state != PluginHost::IShell::state::ACTIVATED)
                 {
@@ -1404,11 +1508,12 @@ namespace WPEFramework
             if (!network_available)
             {
                 int retry_count = 0;
-                while (retry_count < MAX_NETWORK_RETRIES)
+                while (retry_count < MAX_NETWORK_RETRIES && !m_abort_flag)
                 {
                     MM_LOGINFO("Network not available. Sleeping for %d seconds", NETWORK_RETRY_INTERVAL);
                     sleep(NETWORK_RETRY_INTERVAL);
                     MM_LOGINFO("Network retries [%d/%d]", ++retry_count, MAX_NETWORK_RETRIES);
+                    if (m_abort_flag) break;
                     network_available = checkNetwork();
                     if (network_available)
                     {
@@ -1560,6 +1665,16 @@ namespace WPEFramework
             MM_LOGINFO("Timer Deleted on Deinitialization.");
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             stopMaintenanceTasks();
+            // Ensure the task thread is dead before DeinitializeIARM() nullifies _instance.
+            // stopMaintenanceTasks() is a no-op when status != MAINTENANCE_STARTED (e.g. thread
+            // is still sleeping in isDeviceOnline), so we force-abort and join here.
+            m_abort_flag = true;
+            task_thread.notify_all();
+            if (m_thread.joinable())
+            {
+                m_thread.join();
+                MM_LOGINFO("Deinitialize: task thread joined.");
+            }
             DeinitializeIARM();
 #endif /* defined(USE_IARMBUS) || defined(USE_IARM_BUS) */
 
@@ -1873,17 +1988,30 @@ namespace WPEFramework
                         }
 
                         MM_LOGINFO("ENDING MAINTENANCE CYCLE");
+                        // Release m_statusMutex before joining task_execution_thread.
+                        m_statusMutex.unlock();
                         if (m_thread.joinable())
                         {
                             m_thread.join();
                             MM_LOGINFO("Thread joined successfully");
                         }
+                        // Re-acquire before writing shared state and calling onMaintenanceStatusChange.
+                        m_statusMutex.lock();
 
-                        if (g_maintenance_type == UNSOLICITED_MAINTENANCE && !g_unsolicited_complete)
+                        // Guard against duplicate notification
+                        if (m_notify_status != MAINTENANCE_STARTED)
                         {
-                            g_unsolicited_complete = true;
+                            MM_LOGINFO("IARM: status already finalized by fallback (%d), skipping duplicate notify", m_notify_status);
                         }
-                        MaintenanceManager::_instance->onMaintenanceStatusChange(notify_status);
+                        else
+                        {
+                            if (g_maintenance_type == UNSOLICITED_MAINTENANCE && !g_unsolicited_complete)
+                            {
+                                g_unsolicited_complete = true;
+                            }
+                            MM_LOGINFO("IARM: publishing final status=%d", notify_status);
+                            MaintenanceManager::_instance->onMaintenanceStatusChange(notify_status);
+                        }
                     }
                     else
                     {
@@ -2809,11 +2937,16 @@ namespace WPEFramework
                     MM_LOGERR("task_stopTimer() did not stop the Timer");
                 }
                 task_thread.notify_one();
+                // Release m_statusMutex before joining task_execution_thread to avoid deadlock:
+                // the thread's fallback finalization block also acquires m_statusMutex after waking.
+                m_statusMutex.unlock();
                 if (m_thread.joinable())
                 {
                     m_thread.join();
                     MM_LOGINFO("Thread joined successfully");
                 }
+                // Re-acquire before writing shared state and notifying.
+                m_statusMutex.lock();
                 if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
                 {
                     g_unsolicited_complete = true;
