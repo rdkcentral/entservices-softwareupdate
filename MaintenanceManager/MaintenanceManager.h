@@ -212,6 +212,7 @@ namespace WPEFramework
             bool g_listen_to_deviceContextUpdate = false;
             bool g_subscribed_for_deviceContextUpdate = false;
             bool g_whoami_support_enabled = false;
+            bool g_logupload_only = false;
 #if defined(SUPPRESS_MAINTENANCE)
             bool g_suppress_maintenance_enabled = true;
 #else

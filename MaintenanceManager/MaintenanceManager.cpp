@@ -481,7 +481,16 @@ namespace WPEFramework
 #endif
 			}
 			
-            if (!g_whoami_support_enabled && g_suppress_maintenance_enabled && skipFirmwareCheck)
+            if (g_logupload_only)
+            {
+                /* Skip RFC and SWUPDATE tasks, run only logupload */
+                SET_STATUS(g_task_status, RFC_SUCCESS);
+                SET_STATUS(g_task_status, RFC_COMPLETE);
+                SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
+                SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
+            }
+            else if (!g_whoami_support_enabled && g_suppress_maintenance_enabled && skipFirmwareCheck)
             {
                 /* set the task status of Firmware Download */
                 SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
@@ -1626,12 +1635,8 @@ namespace WPEFramework
             const string lastMaintenanceStatus = m_setting.getValue(LAST_MAINTENANCE_STATUS_KEY).String();
             if (skipUnsolicitedMaintenance(isMaintenanceReboot(), lastMaintenanceStatus))
             {
-                MM_LOGINFO("Skipping unsolicited maintenance at boot because previous maintenance status is complete and reboot reason is maintenance reboot");
-                m_statusMutex.lock();
-                MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_COMPLETE);
-                m_statusMutex.unlock();
-                MaintenanceManager::g_unsolicited_complete = true;
-                return;
+                MM_LOGINFO("Skipping unsolicited maintenance at boot because previous maintenance status is complete and reboot reason is maintenance reboot. Running only logupload task.");
+                g_logupload_only = true;
             }
 
 	    /* we post just to tell that we are in idle at this moment */
@@ -1870,6 +1875,14 @@ namespace WPEFramework
                                 MM_LOGINFO("Maintenance Ended with Errors");
                                 notify_status = MAINTENANCE_ERROR;
                             }
+                        }
+
+                        /* In logupload-only mode (post maintenance reboot), always confirm
+                         * MAINTENANCE_COMPLETE since full maintenance already succeeded */
+                        if (g_logupload_only)
+                        {
+                            MM_LOGINFO("Logupload-only mode: confirming maintenance complete");
+                            notify_status = MAINTENANCE_COMPLETE;
                         }
 
                         MM_LOGINFO("ENDING MAINTENANCE CYCLE");
@@ -2681,6 +2694,7 @@ namespace WPEFramework
                
                 g_task_status = 0;
                 g_maintenance_type = SOLICITED_MAINTENANCE;
+                g_logupload_only = false;
 
                 m_abort_flag = false;
 
