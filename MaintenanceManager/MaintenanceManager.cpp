@@ -88,8 +88,7 @@ using namespace std;
 
 enum TaskIndices {
     TASK_RFC = 0,
-    TASK_SWUPDATE,
-    TASK_LOGUPLOAD
+    TASK_SWUPDATE
 };
 
 /**
@@ -279,34 +278,29 @@ namespace WPEFramework
 
         string task_param[] = {
             "RFC",
-            "SWUPDATE",
-            "LOGUPLOAD"
+            "SWUPDATE"
         };
 
         string task_names_foreground[] = {
             string(TASK_SCRIPT) + " " + task_param[TASK_RFC],
-            string(TASK_SCRIPT) + " " + task_param[TASK_SWUPDATE],
-            string(TASK_SCRIPT) + " " + task_param[TASK_LOGUPLOAD]
+            string(TASK_SCRIPT) + " " + task_param[TASK_SWUPDATE]
         };
 
         vector<string> tasks;
 
         const int task_complete_status[] = {
             RFC_COMPLETE,
-            SWUPDATE_COMPLETE,
-            LOGUPLOAD_COMPLETE
+            SWUPDATE_COMPLETE
         };
 
         std::map<string, int> task_status_map = {
             {string(TASK_SCRIPT) + " " + task_param[TASK_RFC], RFC_COMPLETE},
-            {string(TASK_SCRIPT) + " " + task_param[TASK_SWUPDATE], SWUPDATE_COMPLETE},
-            {string(TASK_SCRIPT) + " " + task_param[TASK_LOGUPLOAD], LOGUPLOAD_COMPLETE}
+            {string(TASK_SCRIPT) + " " + task_param[TASK_SWUPDATE], SWUPDATE_COMPLETE}
         };
 
         string task_names[] = {
             "rfcMgr",
-            "rdkvfwupgrader",
-            "logupload"
+            "rdkvfwupgrader"
         };
 
         static const array<string, 3> kDeviceInitContextKeyVals = {
@@ -343,7 +337,6 @@ namespace WPEFramework
 
             MaintenanceManager::m_task_map[task_names_foreground[TASK_RFC].c_str()] = false;
             MaintenanceManager::m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
-            MaintenanceManager::m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = false;
 
             MaintenanceManager::m_param_map[kDeviceInitContextKeyVals[0].c_str()] = TR181_PARTNER_ID;
             MaintenanceManager::m_param_map[kDeviceInitContextKeyVals[1].c_str()] = TR181_TARGET_OS_CLASS;
@@ -488,14 +481,12 @@ namespace WPEFramework
                 SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
                 /* Skip Firmware Download Task and add other tasks */
                 tasks.push_back(task_names_foreground[TASK_RFC].c_str());
-                tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
             }
 	    else
             {
                 tasks.push_back(task_names_foreground[TASK_RFC].c_str());
                 tasks.push_back(task_names_foreground[TASK_SWUPDATE].c_str());
-                tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
-            }
+			}
 
             std::unique_lock<std::mutex> lck(m_callMutex);
             for (i = 0; i < static_cast<int>(tasks.size()) && !m_abort_flag; i++)
@@ -1685,7 +1676,6 @@ namespace WPEFramework
 
                 auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
                 auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
-                auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
 
                 IARM_Bus_MaintMGR_EventId_t event = (IARM_Bus_MaintMGR_EventId_t)eventId;
                 MM_LOGINFO("Maintenance Event-ID = %d", event);
@@ -1734,21 +1724,6 @@ namespace WPEFramework
                                     m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
                                 }
                                 break;
-                            case MAINT_LOGUPLOAD_COMPLETE:
-                                if (task_status_LOGUPLOAD != m_task_map.end() && task_status_LOGUPLOAD->second != true)
-                                {
-                                    MM_LOGINFO("Ignoring Event MAINT_LOGUPLOAD_COMPLETE");
-                                    break;
-                                }
-                                else
-                                {
-                                    SET_STATUS(g_task_status, LOGUPLOAD_SUCCESS);
-                                    SET_STATUS(g_task_status, LOGUPLOAD_COMPLETE);
-                                    task_thread.notify_one();
-                                    m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = false;
-                                }
-
-                                break;
                             case MAINT_REBOOT_REQUIRED:
                                 SET_STATUS(g_task_status, REBOOT_REQUIRED);
                                 g_is_reboot_pending = "true";
@@ -1778,20 +1753,6 @@ namespace WPEFramework
                                     m_task_map[task_names_foreground[TASK_RFC].c_str()] = true;
                                 }
                                 break;
-                            case MAINT_LOGUPLOAD_ERROR:
-                                if (task_status_LOGUPLOAD != m_task_map.end() && task_status_LOGUPLOAD->second != true)
-                                {
-                                    MM_LOGINFO("Ignoring Event MAINT_LOGUPLOAD_ERROR");
-                                    break;
-                                }
-                                else
-                                {
-                                    SET_STATUS(g_task_status, LOGUPLOAD_COMPLETE);
-                                    task_thread.notify_one();
-                                    MM_LOGINFO("Error encountered in LOGUPLOAD Task");
-                                    m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = true;
-                                }
-                                break;
                             case MAINT_FWDOWNLOAD_ERROR:
                                 if (task_status_SWUPDATE != m_task_map.end() && task_status_SWUPDATE->second != true)
                                 {
@@ -1815,11 +1776,6 @@ namespace WPEFramework
                                 m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = true;
                                 /*will be set to false once COMEPLETE/ERROR received for FWDOWNLOAD*/
                                 MM_LOGINFO(" FWDOWNLOAD already IN PROGRESS -> setting m_task_map of FWDOWNLOAD to true");
-                                break;
-                            case MAINT_LOGUPLOAD_INPROGRESS:
-                                m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = true;
-                                /*will be set to false once COMEPLETE/ERROR received for LOGUPLOAD*/
-                                MM_LOGINFO(" LOGUPLOAD already IN PROGRESS -> setting m_task_map of LOGUPLOAD to true");
                                 break;
                             default:
                                 break;
@@ -2752,7 +2708,7 @@ namespace WPEFramework
             string codeDLtask;
             int k_ret = EINVAL;
             int i = 0;
-            bool task_status[3] = {false};
+            bool task_status[2] = {false};
             bool result = false;
             
             /* run only when the maintenance status is MAINTENANCE_STARTED */
@@ -2772,16 +2728,11 @@ namespace WPEFramework
                     task_status[1] = task_status_SWUPDATE->second;
                 }
 
-                auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
-                if (task_status_LOGUPLOAD != m_task_map.end()) {
-                    task_status[2] = task_status_LOGUPLOAD->second;
-                }
-
-                for (i = 0; i < 3; i++)
+                for (i = 0; i < 2; i++)
                 {
                     MM_LOGINFO("task status [%d]  = %s Task Name %s", i, (task_status[i]) ? "true" : "false", task_names[i].c_str());
                 }
-                for (i = 0; i < 3; i++)
+                for (i = 0; i < 2; i++)
                 {
                     if (task_status[i])
                     {

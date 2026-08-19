@@ -125,8 +125,8 @@ typedef enum
 #define FOREGROUND_MODE "FOREGROUND"
 #define BACKGROUND_MODE "BACKGROUND"
 
-#define TASKS_COMPLETED                 0x2A
-#define ALL_TASKS_SUCCESS               0x3F
+#define TASKS_COMPLETED                 0x22
+#define ALL_TASKS_SUCCESS               0x33
 #define MAINTENANCE_TASK_SKIPPED        0x200
 
 #if defined(GTEST_ENABLE)
@@ -148,8 +148,6 @@ typedef enum
 
 #define RFC_SUCCESS                     0
 #define RFC_COMPLETE                    1
-#define LOGUPLOAD_SUCCESS               2
-#define LOGUPLOAD_COMPLETE              3
 #define SWUPDATE_SUCCESS                4
 #define SWUPDATE_COMPLETE               5
 #define REBOOT_REQUIRED                 6

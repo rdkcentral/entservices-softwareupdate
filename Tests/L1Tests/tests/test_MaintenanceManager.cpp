@@ -959,8 +959,6 @@ TEST(MaintenanceManagerModuleStatus, ModuleStatusToString) {
 	std::vector<std::pair<IARM_Maint_module_status_t, std::string>> maint_modStatus = {
 		{MAINT_RFC_COMPLETE, "MAINTENANCE_RFC_COMPLETE"},
 		{MAINT_RFC_ERROR, "MAINTENANCE_RFC_ERROR"},
-		{MAINT_LOGUPLOAD_COMPLETE, "MAINTENANCE_LOGUPLOAD_COMPLETE"},
-		{MAINT_LOGUPLOAD_ERROR, "MAINTENANCE_LOGUPLOAD_ERROR"},
 		{MAINT_PINGTELEMETRY_COMPLETE, "MAINTENANCE_PINGTELEMETRY_COMPLETE"},
 		{MAINT_PINGTELEMETRY_ERROR, "MAINTENANCE_PINGTELEMETRY_ERROR"},
 		{MAINT_FWDOWNLOAD_COMPLETE, "MAINTENANCE_FWDOWNLOAD_COMPLETE"},
@@ -1049,19 +1047,19 @@ TEST_F(MaintenanceManagerTest, TimerHandler_Handles_failedtask) {
 }
 
 TEST_F(MaintenanceManagerTest, TimerHandler_NonSIGALRM_Ignored)
+
 {
     using namespace WPEFramework::Plugin;
-
-    std::string task = task_names_foreground[TASK_LOGUPLOAD];
+    std::string task = task_names_foreground[TASK_RFC];
     MaintenanceManager::currentTask = task;
     plugin_->m_task_map[task] = true;
-    plugin_->g_task_status = 999; // sentinel value
-
+	plugin_->g_task_status = 999; // sentinel value
     plugin_->timer_handler(SIGINT); // wrong signal
-
     EXPECT_TRUE(plugin_->m_task_map[task]); // no change
-    EXPECT_EQ(plugin_->g_task_status, 999); // unchanged
+	EXPECT_EQ(plugin_->g_task_status, 999); // unchanged
+
 }
+
 
 TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_NoTaskMatch)
 {
@@ -1499,21 +1497,6 @@ TEST_F(MaintenanceManagerTest, IarmEventHandler_RFCComplete_TaskInactive_Ignored
                               IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
                               &eventData, sizeof(eventData));
     EXPECT_FALSE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_RFC].c_str()]);
-}
-
-TEST_F(MaintenanceManagerTest, IarmEventHandler_LogUploadError_TaskActive_Handled) {
-    plugin_->m_abort_flag = false;
-    plugin_->m_notify_status = MAINTENANCE_STARTED;
-    plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_LOGUPLOAD].c_str()] = true;
-
-    IARM_Bus_MaintMGR_EventData_t eventData = {};
-    eventData.data.maintenance_module_status.status = MAINT_LOGUPLOAD_ERROR;
-
-    plugin_->iarmEventHandler(IARM_BUS_MAINTENANCE_MGR_NAME,
-                              IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE,
-                              &eventData, sizeof(eventData));
-
-    EXPECT_TRUE(plugin_->m_task_map[WPEFramework::Plugin::task_names_foreground[TASK_LOGUPLOAD].c_str()]);
 }
 
 TEST_F(MaintenanceManagerTest, IarmEventHandler_FWDownloadAborted_TaskMarkedSkipped) {
