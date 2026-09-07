@@ -223,7 +223,8 @@ namespace WPEFramework
             std::mutex m_taskMapMutex; /* Guards m_task_map, read/written from the JSON-RPC, IARM event, task-execution, and timer threads */
             std::mutex m_abortFlagMutex; /* Guards m_abort_flag, read/written from the JSON-RPC and task-execution threads */
             std::mutex m_maintenanceTypeMutex; /* Guards g_maintenance_type, which is read/written from multiple threads */
-            std::mutex m_currentTaskMutex; /* Guards currentTask, written by task_execution_thread() and read by timer_handler() on the timer thread */            std::condition_variable task_thread;
+            std::mutex m_currentTaskMutex; /* Guards currentTask, written by task_execution_thread() and read by timer_handler() on the timer thread */
+            std::condition_variable task_thread;
             std::thread m_thread;
 
             std::map<string, bool> m_task_map;
