@@ -52,7 +52,16 @@
   - worker std::thread m_thread
   - task timer created by POSIX timer_create()/timer_settime()/timer_delete(), using SIGEV_THREAD so expiry runs timerThreadCallback() on a dedicated thread instead of a signal handler
   - condition variable task_thread for worker/event coordination
-  - multiple mutexes: m_callMutex, m_waiMutex, m_statusMutex, m_taskMapMutex, m_abortFlagMutex, m_maintenanceTypeMutex
+  - seven single-purpose mutexes, each guarding one piece of shared state:
+    - m_callMutex: g_currentMode/g_triggerMode/g_is_critical_maintenance/g_is_reboot_pending; also serializes the task_execution_thread() loop
+    - m_waiMutex: g_listen_to_deviceContextUpdate
+    - m_statusMutex: m_notify_status and g_task_status
+    - m_taskMapMutex: m_task_map
+    - m_abortFlagMutex: m_abort_flag
+    - m_maintenanceTypeMutex: g_maintenance_type (via getMaintenanceType()/setMaintenanceType())
+    - m_currentTaskMutex: currentTask (written by task_execution_thread(), read by timer_handler() on the timer thread)
+  - Lock ordering: m_statusMutex is acquired before m_callMutex when both are needed (see startMaintenance()); task_execution_thread() explicitly releases m_callMutex around any m_statusMutex acquisition to avoid holding both at once. The remaining four mutexes are leaf locks, never held while acquiring another mutex.
+  - Every critical section in the source carries a `// critical section start/end: <mutex>` comment at its lock/unlock or lock_guard scope boundary.
 
 ## 6) Deinitialize()
 
