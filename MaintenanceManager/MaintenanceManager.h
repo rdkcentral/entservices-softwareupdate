@@ -223,8 +223,7 @@ namespace WPEFramework
             std::mutex m_taskMapMutex; /* Guards m_task_map, read/written from the JSON-RPC, IARM event, task-execution, and timer threads */
             std::mutex m_abortFlagMutex; /* Guards m_abort_flag, read/written from the JSON-RPC and task-execution threads */
             std::mutex m_maintenanceTypeMutex; /* Guards g_maintenance_type, which is read/written from multiple threads */
-            std::mutex m_currentTaskMutex; /* Guards currentTask, written by task_execution_thread() and read by timer_handler() on the timer thread */
-            std::condition_variable task_thread;
+            std::mutex m_currentTaskMutex; /* Guards currentTask, written by task_execution_thread() and read by timer_handler() on the timer thread */            std::condition_variable task_thread;
             std::thread m_thread;
 
             std::map<string, bool> m_task_map;
@@ -296,6 +295,8 @@ namespace WPEFramework
             static timer_t timerid;
             static string currentTask;
             static bool g_task_timerCreated;
+            static std::mutex m_timerCallbackMutex; /* Static (outlives any instance): serializes timer_handler() against Deinitialize() teardown so _instance can never be null-deref'd/use-after-freed */
+            struct sigaction m_prevSigalrmAction {}; /* Previous SIGALRM disposition, saved by Initialize() and restored by Deinitialize() */
 
             bool maintenance_initTimer();
             bool task_startTimer();

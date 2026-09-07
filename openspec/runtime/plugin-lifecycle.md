@@ -24,7 +24,7 @@
 - Reads WHOAMI_SUPPORT from /etc/device.properties.
 - If WhoAmI enabled, subscribes to SecManager device context update event.
 - Calls InitializeIARM() when IARM support macros are enabled.
-- Installs a SIG_IGN safety-net handler for SIGALRM so a stray external SIGALRM can't terminate the process; the task timer itself is delivered via SIGEV_THREAD (see maintenance_initTimer()), not a SIGALRM handler.
+- Installs a SIG_IGN safety-net handler for SIGALRM so a stray external SIGALRM can't terminate the process; the task timer itself is delivered via SIGEV_THREAD (see maintenance_initTimer()), not a SIGALRM handler. Uses sigaction() to save the previous disposition (m_prevSigalrmAction) so Deinitialize() can restore it instead of leaving SIG_IGN installed process-wide forever.
 - Returns empty string on success, error text on signal-handler registration failure.
 
 - ASSERT(timerid != nullptr) is intended as runtime guard but may rely on platform/compiler behavior for timer_t representation.
@@ -66,6 +66,8 @@
 ## 6) Deinitialize()
 
 - Attempts timer deletion.
+- Drains any in-flight SIGEV_THREAD timer callback via m_timerCallbackMutex (timer_delete() does not wait for an already-running notification thread to finish) before nulling _instance or releasing m_service, preventing a null-deref/use-after-free in timer_handler().
+- Restores the previous SIGALRM disposition via sigaction() (saved in m_prevSigalrmAction by Initialize()).
 - Calls stopMaintenanceTasks() before IARM deinit (under IARM build).
 - Removes IARM event handler and nulls singleton instance in deinit path.
 - Releases IShell and IAuthService interface references.

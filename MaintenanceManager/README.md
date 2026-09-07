@@ -105,8 +105,11 @@ Runtime status includes:
 | `m_abortFlagMutex` | `m_abort_flag` (read/written from the JSON-RPC and task-execution threads) |
 | `m_maintenanceTypeMutex` | `g_maintenance_type` (via `getMaintenanceType()`/`setMaintenanceType()`) |
 | `m_currentTaskMutex` | `currentTask` (written by `task_execution_thread()`, read by `timer_handler()` on the timer thread) |
+| `m_timerCallbackMutex` (static) | Serializes `timer_handler()` against the teardown drain in `Deinitialize()`, so a still-running SIGEV_THREAD callback can never see a null/freed `_instance` |
 
 Every critical section in the source is bracketed with a `// critical section start/end: <mutex>` comment at the lock/unlock (or `lock_guard` scope) to make the boundary explicit.
+
+`Deinitialize()` also saves/restores the SIGALRM disposition via `sigaction()` (instead of leaving `SIG_IGN` installed process-wide forever), and drains any in-flight timer callback (via `m_timerCallbackMutex`) before releasing `m_service`/nulling `_instance`.
 
 ### Lock ordering
 

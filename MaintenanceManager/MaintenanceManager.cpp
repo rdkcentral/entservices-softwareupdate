@@ -276,6 +276,7 @@ namespace WPEFramework
         timer_t MaintenanceManager::timerid;
         string MaintenanceManager::currentTask;
         bool MaintenanceManager::g_task_timerCreated = false;
+        std::mutex MaintenanceManager::m_timerCallbackMutex;
 
         string task_param[] = {
             "RFC",
@@ -902,6 +903,14 @@ namespace WPEFramework
          */
         void MaintenanceManager::timer_handler(int signo)
         {
+            /* Serializes with the drain performed in Deinitialize(); m_timerCallbackMutex is static
+             * so it stays valid even if the MaintenanceManager instance is torn down concurrently. */
+            std::lock_guard<std::mutex> tcGuard(MaintenanceManager::m_timerCallbackMutex); // critical section start: m_timerCallbackMutex serializes against Deinitialize() teardown
+            if (MaintenanceManager::_instance == nullptr)
+            {
+                MM_LOGWARN("timer_handler() invoked after plugin teardown; ignoring");
+                return;
+            }
             if (signo == SIGALRM)
             {
                 /* Snapshot currentTask under its mutex; it is written concurrently by task_execution_thread(). */
@@ -957,7 +966,7 @@ namespace WPEFramework
             {
                 MM_LOGERR("Received %d Signal instead of SIGALRM", signo);
             }
-        }
+        } // critical section end: m_timerCallbackMutex
 
         /**
          * @brief SIGEV_THREAD callback invoked by the OS when the task timer expires.
@@ -1621,8 +1630,14 @@ namespace WPEFramework
             /* The task timer uses SIGEV_THREAD (see maintenance_initTimer()), which invokes
              * timerThreadCallback() directly on a dedicated thread instead of delivering
              * SIGALRM to a signal handler. Ignore any stray SIGALRM from elsewhere in the
-             * process so it can't take down this plugin via the signal's default action. */
-            if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
+             * process so it can't take down this plugin via the signal's default action.
+             * sigaction() (rather than signal()) is used so the previous, process-wide
+             * disposition can be restored in Deinitialize() instead of leaving SIG_IGN installed forever. */
+            struct sigaction newSigalrmAction {};
+            newSigalrmAction.sa_handler = SIG_IGN;
+            sigemptyset(&newSigalrmAction.sa_mask);
+            newSigalrmAction.sa_flags = 0;
+            if (sigaction(SIGALRM, &newSigalrmAction, &m_prevSigalrmAction) == -1)
             {
                 MM_LOGERR("Failed to install SIGALRM safety-net handler");
                 /* Unwind what Initialize() has already acquired, mirroring Deinitialize(). */
@@ -1648,6 +1663,16 @@ namespace WPEFramework
                 MM_LOGINFO("Failed to delete timer");
             }
             MM_LOGINFO("Timer Deleted on Deinitialization.");
+            {
+                /* timer_delete() does not wait for an already-in-flight SIGEV_THREAD callback to finish;
+                 * take/release the same static mutex timer_handler() holds for its whole body so we don't
+                 * proceed with teardown (nulling _instance, releasing m_service) while one is still running. */
+                std::lock_guard<std::mutex> tcGuard(MaintenanceManager::m_timerCallbackMutex); // critical section start: drains any in-flight timer_handler() call
+            } // critical section end: m_timerCallbackMutex
+            if (sigaction(SIGALRM, &m_prevSigalrmAction, nullptr) == -1)
+            {
+                MM_LOGWARN("Failed to restore previous SIGALRM disposition");
+            }
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             stopMaintenanceTasks();
             DeinitializeIARM();
