@@ -144,10 +144,12 @@ namespace Plugin {
         ASSERT(notification);
         _adminLock.Lock();
         auto item = std::find(_notifications.begin(), _notifications.end(), notification);
-        ASSERT(item != _notifications.end());
         if (item != _notifications.end()) {
             (*item)->Release();
             _notifications.erase(item);
+        }
+        else {
+            TRACE(Trace::Error, (_T("[Packager]: Unregister() called with an unknown or already-unregistered notification")));
         }
         _adminLock.Unlock();
     }

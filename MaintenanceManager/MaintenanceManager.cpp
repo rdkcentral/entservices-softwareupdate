@@ -417,10 +417,11 @@ namespace WPEFramework
                     if (!whoAmIStatus && activation_status != "activated")
                     {
                         MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
-                        g_listen_to_deviceContextUpdate = true;
                         MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
-                        /* Lock acquired only here to avoid holding it across the blocking calls like isDeviceOnline() or knowWhoAmI() or checkActivatedStatus() */
+                        /* Lock covers the flag write and the wait's predicate checks; acquired only here to
+                         * avoid holding it across the blocking calls like isDeviceOnline() or knowWhoAmI() or checkActivatedStatus() */
                         std::unique_lock<std::mutex> wailck(m_waiMutex);
+                        g_listen_to_deviceContextUpdate = true;
                         task_thread.wait(wailck, [this]{ return !g_listen_to_deviceContextUpdate; });
                     }
                     else if (!internetConnectStatus && activation_status == "activated")
@@ -515,7 +516,10 @@ namespace WPEFramework
                     }
                     if (isTaskTimerStarted)
                     {
-                        m_task_map[tasks[i]] = true;
+                        {
+                            std::lock_guard<std::mutex> tmGuard(m_taskMapMutex);
+                            m_task_map[tasks[i]] = true;
+                        }
                         MM_LOGINFO("Starting Task %s", task.c_str());
                         task_status = system(task.c_str());
                     }
@@ -523,7 +527,10 @@ namespace WPEFramework
                     // task_status = -1;
                     if (task_status != 0) /* system() call fails */
                     {
-                        m_task_map[tasks[i]] = false;
+                        {
+                            std::lock_guard<std::mutex> tmGuard(m_taskMapMutex);
+                            m_task_map[tasks[i]] = false;
+                        }
                         MM_LOGINFO("%s invocation failed with return status %d", tasks[i].c_str(), WEXITSTATUS(task_status));
                         if (retry_count > 0 && isTaskTimerStarted)
                         {
@@ -1036,7 +1043,13 @@ namespace WPEFramework
         void MaintenanceManager::deviceInitializationContextEventHandler(const JsonObject &parameters)
         {
             bool contextSet = false;
-            if (g_listen_to_deviceContextUpdate && UNSOLICITED_MAINTENANCE == g_maintenance_type)
+            bool shouldProcess = false;
+            {
+                /* Guard the flag read the same way it is written, to avoid a cross-thread data race. */
+                std::lock_guard<std::mutex> wailck(m_waiMutex);
+                shouldProcess = g_listen_to_deviceContextUpdate && (UNSOLICITED_MAINTENANCE == g_maintenance_type);
+            }
+            if (shouldProcess)
             {
                 MM_LOGINFO("onDeviceInitializationContextUpdate event is already subscribed and Maintenance Type is Unsolicited Maintenance");
                 if (parameters.HasLabel("deviceInitializationContext"))
@@ -1047,7 +1060,10 @@ namespace WPEFramework
                     if (contextSet)
                     {
                         MM_LOGINFO("setDeviceInitializationContext() success");
-                        g_listen_to_deviceContextUpdate = false;
+                        {
+                            std::lock_guard<std::mutex> wailck(m_waiMutex);
+                            g_listen_to_deviceContextUpdate = false;
+                        }
                         MM_LOGINFO("Notify maintenance execution thread");
                         task_thread.notify_one();
                     }
@@ -1687,10 +1703,6 @@ namespace WPEFramework
                 time_t successfulTime;
                 string str_successfulTime = "";
 
-                auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
-                auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
-                auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
-
                 IARM_Bus_MaintMGR_EventId_t event = (IARM_Bus_MaintMGR_EventId_t)eventId;
                 MM_LOGINFO("Maintenance Event-ID = %d", event);
 
@@ -1698,6 +1710,11 @@ namespace WPEFramework
                 {
                     if ((IARM_BUS_MAINTENANCEMGR_EVENT_UPDATE == eventId) && (MAINTENANCE_STARTED == m_notify_status))
                     {
+                        /* Scoped for the lifetime of this block: covers every m_task_map read/write below. */
+                        std::lock_guard<std::mutex> tmGuard(m_taskMapMutex);
+                        auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
+                        auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
+                        auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
                         module_status = module_event_data->data.maintenance_module_status.status;
                         MM_LOGINFO("MaintMGR Status %d", module_status);
                         string status_string = moduleStatusToString(module_status);
@@ -2766,19 +2783,22 @@ namespace WPEFramework
                 MM_LOGINFO("Stopping maintenance activities");
                 // Set the condition flag m_abort_flag to true
                 m_abort_flag = true;
-                auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
-                if (task_status_RFC != m_task_map.end()) {
-                    task_status[0] = task_status_RFC->second;
-                }
+                {
+                    std::lock_guard<std::mutex> tmGuard(m_taskMapMutex);
+                    auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());
+                    if (task_status_RFC != m_task_map.end()) {
+                        task_status[0] = task_status_RFC->second;
+                    }
 
-                auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
-                if (task_status_SWUPDATE != m_task_map.end()) {
-                    task_status[1] = task_status_SWUPDATE->second;
-                }
+                    auto task_status_SWUPDATE = m_task_map.find(task_names_foreground[TASK_SWUPDATE].c_str());
+                    if (task_status_SWUPDATE != m_task_map.end()) {
+                        task_status[1] = task_status_SWUPDATE->second;
+                    }
 
-                auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
-                if (task_status_LOGUPLOAD != m_task_map.end()) {
-                    task_status[2] = task_status_LOGUPLOAD->second;
+                    auto task_status_LOGUPLOAD = m_task_map.find(task_names_foreground[TASK_LOGUPLOAD].c_str());
+                    if (task_status_LOGUPLOAD != m_task_map.end()) {
+                        task_status[2] = task_status_LOGUPLOAD->second;
+                    }
                 }
 
                 for (i = 0; i < 3; i++)
@@ -2794,6 +2814,7 @@ namespace WPEFramework
 
                         if (k_ret == 0)
                         {                                                         // if task(s) was(were) killed successfully ...
+                            std::lock_guard<std::mutex> tmGuard(m_taskMapMutex);
                             m_task_map[task_names_foreground[i].c_str()] = false; // set it to false
                         }
                         /* No need to loop again */

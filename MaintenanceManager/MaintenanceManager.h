@@ -220,6 +220,7 @@ namespace WPEFramework
             std::mutex m_callMutex;
             std::mutex m_waiMutex;
             std::mutex m_statusMutex;
+            std::mutex m_taskMapMutex;
             std::condition_variable task_thread;
             std::thread m_thread;
 
@@ -228,7 +229,7 @@ namespace WPEFramework
             std::map<string, DATA_TYPE> m_paramType_map;
 
             PluginHost::IShell *m_service = nullptr;
-t            Exchange::IAuthService *m_authservicePlugin = nullptr;
+            Exchange::IAuthService *m_authservicePlugin = nullptr;
 
             bool isDeviceOnline();
             void task_execution_thread();
