@@ -364,7 +364,6 @@ namespace WPEFramework
             int retry_count = TASK_RETRY_COUNT;
             bool isTaskTimerStarted = false;
 
-            std::unique_lock<std::mutex> wailck(m_waiMutex);
             MM_LOGINFO("Executing Maintenance tasks");
 
             /* Purposefully delaying MAINTENANCE_STARTED status to honor POWER compliance */
@@ -420,6 +419,8 @@ namespace WPEFramework
                         MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
                         g_listen_to_deviceContextUpdate = true;
                         MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
+                        /* Lock acquired only here to avoid holding it across the blocking calls like isDeviceOnline() or knowWhoAmI() or checkActivatedStatus() */
+                        std::unique_lock<std::mutex> wailck(m_waiMutex);
                         task_thread.wait(wailck, [this]{ return !g_listen_to_deviceContextUpdate; });
                     }
                     else if (!internetConnectStatus && activation_status == "activated")
@@ -630,7 +631,10 @@ namespace WPEFramework
                         JsonObject joGetResult;
 
                         thunder_client->Invoke<JsonObject, JsonObject>(5000, "getDeviceInitializationContext", params, joGetResult);
-                        if (joGetResult.HasLabel("success") && joGetResult["success"].Boolean())
+                        /* Cache the success flag before joGetResult is potentially moved-from below. */
+                        bool hasSuccessLabel = joGetResult.HasLabel("success");
+                        bool isSuccess = hasSuccessLabel && joGetResult["success"].Boolean();
+                        if (isSuccess)
                         {
                             static const char *kDeviceInitializationContext = "deviceInitializationContext";
                             if (joGetResult.HasLabel(kDeviceInitializationContext))
@@ -647,7 +651,7 @@ namespace WPEFramework
                         {
                             MM_LOGERR("getDeviceInitializationContext failed");
                         }
-						if (joGetResult.HasLabel("success") && !joGetResult["success"].Boolean())
+						if (hasSuccessLabel && !isSuccess)
 						{
 							t2_event_d("SYST_ERROR_WAI_InitERR", 1);
 						}

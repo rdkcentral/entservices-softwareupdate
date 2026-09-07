@@ -228,7 +228,7 @@ namespace WPEFramework
             std::map<string, DATA_TYPE> m_paramType_map;
 
             PluginHost::IShell *m_service = nullptr;
-            Exchange::IAuthService *m_authservicePlugin;
+t            Exchange::IAuthService *m_authservicePlugin = nullptr;
 
             bool isDeviceOnline();
             void task_execution_thread();

@@ -145,8 +145,10 @@ namespace Plugin {
         _adminLock.Lock();
         auto item = std::find(_notifications.begin(), _notifications.end(), notification);
         ASSERT(item != _notifications.end());
-        (*item)->Release();
-        _notifications.erase(item);
+        if (item != _notifications.end()) {
+            (*item)->Release();
+            _notifications.erase(item);
+        }
         _adminLock.Unlock();
     }
 

@@ -91,6 +91,7 @@ namespace Plugin {
             , _worker(this)
             , _isUpgrade(false)
             , _isSyncing(false)
+            , _repoSyncMode(RepoSyncMode::SETUP)
         {
         }
 
