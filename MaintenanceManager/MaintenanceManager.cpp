@@ -367,7 +367,7 @@ namespace WPEFramework
             MM_LOGINFO("Executing Maintenance tasks");
 
             /* Purposefully delaying MAINTENANCE_STARTED status to honor POWER compliance */
-            if (UNSOLICITED_MAINTENANCE == g_maintenance_type && g_whoami_support_enabled)
+            if (UNSOLICITED_MAINTENANCE == getMaintenanceType() && g_whoami_support_enabled)
             {
                 delayMaintenanceStarted = true;
             }
@@ -408,7 +408,7 @@ namespace WPEFramework
             if (g_whoami_support_enabled)
             {
                 MM_LOGINFO("WhoAmI feature is enabled");
-                if (UNSOLICITED_MAINTENANCE == g_maintenance_type)
+                if (UNSOLICITED_MAINTENANCE == getMaintenanceType())
                 {
                     string activation_status = checkActivatedStatus(); /* Device Activation Status Check */
                     bool whoAmIStatus = knowWhoAmI(activation_status); /* WhoAmI Response & Set Status Check */
@@ -458,7 +458,7 @@ namespace WPEFramework
 				t2_event_d("SYST_ERR_MaintNetworkFail", 1);
 #endif
 				
-                if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
+                if (UNSOLICITED_MAINTENANCE == getMaintenanceType() && !g_unsolicited_complete)
                 {
                     g_unsolicited_complete = true;
                     g_listen_to_nwevents = true;
@@ -474,9 +474,9 @@ namespace WPEFramework
             }
 
             MM_LOGINFO("Reboot_Pending :%s", g_is_reboot_pending.c_str());
-            MM_LOGINFO("%s", UNSOLICITED_MAINTENANCE == g_maintenance_type ? "---------------UNSOLICITED_MAINTENANCE--------------" : "=============SOLICITED_MAINTENANCE===============");
+            MM_LOGINFO("%s", UNSOLICITED_MAINTENANCE == getMaintenanceType() ? "---------------UNSOLICITED_MAINTENANCE--------------" : "=============SOLICITED_MAINTENANCE===============");
 
-			if (UNSOLICITED_MAINTENANCE != g_maintenance_type) 
+			if (UNSOLICITED_MAINTENANCE != getMaintenanceType()) 
 			{
 #if !defined(GTEST_ENABLE)
 				t2_event_d("SYST_INFO_SOMT", 1);
@@ -1051,7 +1051,7 @@ namespace WPEFramework
             {
                 /* Guard the flag read the same way it is written, to avoid a cross-thread data race. */
                 std::lock_guard<std::mutex> wailck(m_waiMutex);
-                shouldProcess = g_listen_to_deviceContextUpdate && (UNSOLICITED_MAINTENANCE == g_maintenance_type);
+                shouldProcess = g_listen_to_deviceContextUpdate && (UNSOLICITED_MAINTENANCE == getMaintenanceType());
             }
             if (shouldProcess)
             {
@@ -1337,7 +1337,7 @@ namespace WPEFramework
             {
                 MM_LOGINFO("Network plugin is active");
 
-                if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_subscribed_for_nwevents)
+                if (UNSOLICITED_MAINTENANCE == getMaintenanceType() && !g_subscribed_for_nwevents)
                 {
                     // Subscribe for internetConnectionStatusChange event
                     bool subscribe_status = subscribeForInternetStatusEvent("onInternetStatusChange");
@@ -1621,7 +1621,7 @@ namespace WPEFramework
             MaintenanceManager::g_epoch_time = "";
 
             /* to know the maintenance is solicited or unsolicited */
-            g_maintenance_type = UNSOLICITED_MAINTENANCE;
+            setMaintenanceType(UNSOLICITED_MAINTENANCE);
             MM_LOGINFO("Triggering Maintenance on bootup");
 
             /* On bootup we check for opt-out value
@@ -1912,7 +1912,7 @@ namespace WPEFramework
                             MM_LOGINFO("Thread joined successfully");
                         }
 
-                        if (g_maintenance_type == UNSOLICITED_MAINTENANCE && !g_unsolicited_complete)
+                        if (getMaintenanceType() == UNSOLICITED_MAINTENANCE && !g_unsolicited_complete)
                         {
                             g_unsolicited_complete = true;
                         }
@@ -2713,7 +2713,7 @@ namespace WPEFramework
                 }
                
                 g_task_status = 0;
-                g_maintenance_type = SOLICITED_MAINTENANCE;
+                setMaintenanceType(SOLICITED_MAINTENANCE);
 
                 {
                     std::lock_guard<std::mutex> g(m_abortFlagMutex);
@@ -2857,7 +2857,7 @@ namespace WPEFramework
                     m_thread.join();
                     MM_LOGINFO("Thread joined successfully");
                 }
-                if (UNSOLICITED_MAINTENANCE == g_maintenance_type && !g_unsolicited_complete)
+                if (UNSOLICITED_MAINTENANCE == getMaintenanceType() && !g_unsolicited_complete)
                 {
                     g_unsolicited_complete = true;
                 }

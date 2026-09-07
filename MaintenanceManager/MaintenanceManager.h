@@ -222,6 +222,7 @@ namespace WPEFramework
             std::mutex m_statusMutex;
             std::mutex m_taskMapMutex;
             std::mutex m_abortFlagMutex;
+            std::mutex m_maintenanceTypeMutex; /* Guards g_maintenance_type, which is read/written from multiple threads */
             std::condition_variable task_thread;
             std::thread m_thread;
 
@@ -231,6 +232,9 @@ namespace WPEFramework
 
             PluginHost::IShell *m_service = nullptr;
             Exchange::IAuthService *m_authservicePlugin = nullptr;
+
+            Maintenance_Type_t getMaintenanceType() { std::lock_guard<std::mutex> g(m_maintenanceTypeMutex); return g_maintenance_type; }
+            void setMaintenanceType(Maintenance_Type_t type) { std::lock_guard<std::mutex> g(m_maintenanceTypeMutex); g_maintenance_type = type; }
 
             bool isDeviceOnline();
             void task_execution_thread();
