@@ -291,6 +291,7 @@ namespace WPEFramework
 
             /* Timer Implementations */
             static void timer_handler(int signo);
+            static void timerThreadCallback(union sigval sv); /* SIGEV_THREAD entry point: runs on a normal thread, safe to lock/allocate */
             static timer_t timerid;
             static string currentTask;
             static bool g_task_timerCreated;

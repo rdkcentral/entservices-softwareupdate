@@ -7,7 +7,7 @@
 - Validate: Run full maintenance cycle and capture IARM events with timestamps; verify one-to-one task completion/error signaling and ordering.
 
 2. Timeout behavior under real task hangs
-- Unknown: Reliability of SIGALRM timer and handler under production load and signal-mask context.
+- Unknown: Reliability of the POSIX SIGEV_THREAD timer callback under production load (glibc spawns a helper thread per expiration), and whether the SIGALRM SIG_IGN safety net (for stray external SIGALRM) has any interaction with other components in the process.
 - Validate: Induce controlled hangs in each task and verify timeout handling, status bit updates, and cycle finalization.
 
 3. Abort semantics for SIGUSR1

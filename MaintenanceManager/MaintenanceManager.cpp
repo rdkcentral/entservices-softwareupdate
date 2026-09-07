@@ -753,8 +753,11 @@ namespace WPEFramework
             }
 
             struct sigevent sev = {0};
-            sev.sigev_notify = SIGEV_SIGNAL;
-            sev.sigev_signo = SIGALRM;
+            /* SIGEV_THREAD (not SIGEV_SIGNAL) so the callback runs on a normal thread instead of
+             * a SIGALRM signal handler, where locking a mutex or touching m_task_map would be unsafe. */
+            sev.sigev_notify = SIGEV_THREAD;
+            sev.sigev_notify_function = &MaintenanceManager::timerThreadCallback;
+            sev.sigev_notify_attributes = nullptr;
             sev.sigev_value.sival_ptr = &timerid;
 
             if (timer_create(BASE_CLOCK, &sev, &timerid) == -1)
@@ -897,13 +900,27 @@ namespace WPEFramework
                         break;
                     }
                 }
-                if (failedTask && !MaintenanceManager::_instance->m_task_map[failedTask])
+                bool ignoreEvent = false;
+                if (failedTask)
+                {
+                    /* Safe here: timer_handler() only ever runs on a normal thread (SIGEV_THREAD
+                     * callback, or a direct unit-test call), never inside a signal handler. */
+                    std::lock_guard<std::mutex> tmGuard(MaintenanceManager::_instance->m_taskMapMutex);
+                    if (!MaintenanceManager::_instance->m_task_map[failedTask])
+                    {
+                        ignoreEvent = true;
+                    }
+                    else
+                    {
+                        MaintenanceManager::_instance->m_task_map[failedTask] = false;
+                    }
+                }
+                if (failedTask && ignoreEvent)
                 {
                     MM_LOGINFO("Ignoring Error Event for Task: %s", failedTask);
                 }
                 else if (failedTask)
                 {
-                    MaintenanceManager::_instance->m_task_map[failedTask] = false;
                     SET_STATUS(MaintenanceManager::_instance->g_task_status, complete_status);
                     MaintenanceManager::_instance->task_thread.notify_one();
                     MM_LOGINFO("Set %s Task to ERROR", failedTask);
@@ -913,6 +930,17 @@ namespace WPEFramework
             {
                 MM_LOGERR("Received %d Signal instead of SIGALRM", signo);
             }
+        }
+
+        /**
+         * @brief SIGEV_THREAD callback invoked by the OS when the task timer expires.
+         *
+         * Runs on a dedicated, normal (non-signal-handler) thread, so it can safely
+         * delegate to timer_handler() which locks m_taskMapMutex.
+         */
+        void MaintenanceManager::timerThreadCallback(union sigval /*sv*/)
+        {
+            timer_handler(SIGALRM);
         }
 
         /**
@@ -1563,13 +1591,14 @@ namespace WPEFramework
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             InitializeIARM();
 #endif
-            // Register Signal Handler
-            if (signal(SIGALRM, timer_handler) == SIG_ERR)
+            /* The task timer uses SIGEV_THREAD (see maintenance_initTimer()), which invokes
+             * timerThreadCallback() directly on a dedicated thread instead of delivering
+             * SIGALRM to a signal handler. Ignore any stray SIGALRM from elsewhere in the
+             * process so it can't take down this plugin via the signal's default action. */
+            if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
             {
-                MM_LOGERR("Failed to register signal handler");
-                return string("Failed to register signal handler");
+                MM_LOGWARN("Failed to install SIGALRM safety-net handler");
             }
-            MM_LOGINFO("Signal Handler registered for Timer");
 
             /* On Success; return empty to indicate no error text. */
             return (string());

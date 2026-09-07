@@ -24,7 +24,7 @@
 - Reads WHOAMI_SUPPORT from /etc/device.properties.
 - If WhoAmI enabled, subscribes to SecManager device context update event.
 - Calls InitializeIARM() when IARM support macros are enabled.
-- Registers SIGALRM handler for task timeout.
+- Installs a SIG_IGN safety-net handler for SIGALRM so a stray external SIGALRM can't terminate the process; the task timer itself is delivered via SIGEV_THREAD (see maintenance_initTimer()), not a SIGALRM handler.
 - Returns empty string on success, error text on signal-handler registration failure.
 
 - ASSERT(timerid != nullptr) is intended as runtime guard but may rely on platform/compiler behavior for timer_t representation.
@@ -50,9 +50,9 @@
 
 - Runtime uses:
   - worker std::thread m_thread
-  - task timer created by POSIX timer_create()/timer_settime()/timer_delete()
+  - task timer created by POSIX timer_create()/timer_settime()/timer_delete(), using SIGEV_THREAD so expiry runs timerThreadCallback() on a dedicated thread instead of a signal handler
   - condition variable task_thread for worker/event coordination
-  - multiple mutexes: m_callMutex, m_waiMutex, m_statusMutex
+  - multiple mutexes: m_callMutex, m_waiMutex, m_statusMutex, m_taskMapMutex, m_abortFlagMutex, m_maintenanceTypeMutex
 
 ## 6) Deinitialize()
 

@@ -63,7 +63,7 @@ MaintenanceManager is a hosted component inside Thunder. It exposes northbound J
   - startMaintenance
   - stopMaintenance
   - getMaintenanceMode
-- Initialize() stores IShell, checks WhoAmI feature flag from /etc/device.properties, optionally pre-subscribes to SecManager device context event, initializes IARM integration, and registers SIGALRM handler for task timeout.
+- Initialize() stores IShell, checks WhoAmI feature flag from /etc/device.properties, optionally pre-subscribes to SecManager device context event, initializes IARM integration, and installs a SIG_IGN safety-net for stray SIGALRM (the task timer itself uses SIGEV_THREAD, not a SIGALRM handler).
 - Deinitialize() deletes timer, stops maintenance tasks, removes IARM handler, releases IShell/AuthService resources.
 
 - Lifetime is tightly coupled to Thunder plugin activation lifecycle; worker thread and timer are plugin-owned resources that must be cleaned up on deactivation.
@@ -75,7 +75,7 @@ MaintenanceManager is a hosted component inside Thunder. It exposes northbound J
 - When unsolicited execution is skipped, plugin sets status to MAINTENANCE_COMPLETE and marks unsolicited-complete true for subsequent solicited requests.
 - API path startMaintenance() sets maintenance type to SOLICITED_MAINTENANCE (only when unsolicited cycle has completed and status is not STARTED).
 - Worker thread computes task list, performs network/activation/whoami gating, launches tasks sequentially, waits on condition variable for module completion events, applies timeout, supports one retry for failed task invocation.
-- Task timeout uses POSIX timer APIs and SIGALRM callback to mark task as error-complete and continue orchestration.
+- Task timeout uses POSIX timer APIs with a SIGEV_THREAD callback (runs on a dedicated thread, not a signal handler) to mark task as error-complete and continue orchestration.
 
 - Execution is event-assisted sequential orchestration with a coarse-grained status bitmask used as the finalization gate.
 

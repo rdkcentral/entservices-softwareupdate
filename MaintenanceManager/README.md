@@ -59,7 +59,7 @@ Primary scripts:
 Behavioral highlights:
 
 - Separate unsolicited and solicited maintenance flow paths
-- Timeout protection using timer and signal handling
+- Timeout protection using a POSIX timer (SIGEV_THREAD callback on a dedicated thread, not a SIGALRM signal handler); a SIG_IGN safety net ignores any stray external SIGALRM
 - Retry support for failed task invocation attempts
 - Abort path that signals active task processes and transitions to error status
 - Final status derivation from task completion/success/skipped bitmasks
