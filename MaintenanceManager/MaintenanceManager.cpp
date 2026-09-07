@@ -500,14 +500,15 @@ namespace WPEFramework
             }
 
             std::unique_lock<std::mutex> lck(m_callMutex);
-            for (i = 0; i < static_cast<int>(tasks.size()) && !m_abort_flag; i++)
+            auto isAborted = [this]{ std::lock_guard<std::mutex> g(m_abortFlagMutex); return m_abort_flag; };
+            for (i = 0; i < static_cast<int>(tasks.size()) && !isAborted(); i++)
             {
                 int task_status = -1;
                 task = tasks[i];
                 currentTask = task;
                 task += " &";
                 task += "\0";
-                if (!m_abort_flag)
+                if (!isAborted())
                 {
                     if (retry_count == TASK_RETRY_COUNT)
                     {
@@ -578,9 +579,12 @@ namespace WPEFramework
                 }
                 retry_count = TASK_RETRY_COUNT; /* Reset Retry Count for next Task*/
             }
-            if (m_abort_flag)
+            if (isAborted())
             {
-                m_abort_flag = false;
+                {
+                    std::lock_guard<std::mutex> g(m_abortFlagMutex);
+                    m_abort_flag = false;
+                }
                 if (task_stopTimer())
                 {
                     MM_LOGINFO("Stopped Timer Successfully");
@@ -1640,7 +1644,10 @@ namespace WPEFramework
             MaintenanceManager::g_is_reboot_pending = "false";
             MaintenanceManager::g_lastSuccessful_maint_time = "";
             MaintenanceManager::g_task_status = 0;
-            MaintenanceManager::m_abort_flag = false;
+            {
+                std::lock_guard<std::mutex> g(m_abortFlagMutex);
+                MaintenanceManager::m_abort_flag = false;
+            }
             MaintenanceManager::g_unsolicited_complete = false;
 
             const string lastMaintenanceStatus = m_setting.getValue(LAST_MAINTENANCE_STATUS_KEY).String();
@@ -1695,7 +1702,12 @@ namespace WPEFramework
         void MaintenanceManager::iarmEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
         {
             m_statusMutex.lock();
-            if (!m_abort_flag)
+            bool aborted = false;
+            {
+                std::lock_guard<std::mutex> g(m_abortFlagMutex);
+                aborted = m_abort_flag;
+            }
+            if (!aborted)
             {
                 Maint_notify_status_t notify_status = MAINTENANCE_STARTED;
                 IARM_Bus_MaintMGR_EventData_t *module_event_data = (IARM_Bus_MaintMGR_EventData_t *)data;
@@ -2703,7 +2715,10 @@ namespace WPEFramework
                 g_task_status = 0;
                 g_maintenance_type = SOLICITED_MAINTENANCE;
 
-                m_abort_flag = false;
+                {
+                    std::lock_guard<std::mutex> g(m_abortFlagMutex);
+                    m_abort_flag = false;
+                }
 
                 /* isRebootPending will be set to true
                  * irrespective of XConf configuration */
@@ -2782,7 +2797,10 @@ namespace WPEFramework
             {
                 MM_LOGINFO("Stopping maintenance activities");
                 // Set the condition flag m_abort_flag to true
-                m_abort_flag = true;
+                {
+                    std::lock_guard<std::mutex> g(m_abortFlagMutex);
+                    m_abort_flag = true;
+                }
                 {
                     std::lock_guard<std::mutex> tmGuard(m_taskMapMutex);
                     auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());

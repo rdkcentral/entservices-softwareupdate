@@ -221,6 +221,7 @@ namespace WPEFramework
             std::mutex m_waiMutex;
             std::mutex m_statusMutex;
             std::mutex m_taskMapMutex;
+            std::mutex m_abortFlagMutex;
             std::condition_variable task_thread;
             std::thread m_thread;
 
