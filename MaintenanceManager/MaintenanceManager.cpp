@@ -549,6 +549,8 @@ namespace WPEFramework
                             {
                                 MM_LOGINFO("Setting task as Error");
                                 int complete_status = it->second;
+                                /* g_task_status is shared with iarmEventHandler()/timer_handler(); guard every update. */
+                                std::lock_guard<std::mutex> stGuard(m_statusMutex);
                                 SET_STATUS(g_task_status, complete_status);
                             }
                             if (task_stopTimer())
@@ -921,7 +923,11 @@ namespace WPEFramework
                 }
                 else if (failedTask)
                 {
-                    SET_STATUS(MaintenanceManager::_instance->g_task_status, complete_status);
+                    {
+                        /* g_task_status is shared with iarmEventHandler()/task_execution_thread(); guard every update. */
+                        std::lock_guard<std::mutex> stGuard(MaintenanceManager::_instance->m_statusMutex);
+                        SET_STATUS(MaintenanceManager::_instance->g_task_status, complete_status);
+                    }
                     MaintenanceManager::_instance->task_thread.notify_one();
                     MM_LOGINFO("Set %s Task to ERROR", failedTask);
                 }
@@ -1597,7 +1603,17 @@ namespace WPEFramework
              * process so it can't take down this plugin via the signal's default action. */
             if (signal(SIGALRM, SIG_IGN) == SIG_ERR)
             {
-                MM_LOGWARN("Failed to install SIGALRM safety-net handler");
+                MM_LOGERR("Failed to install SIGALRM safety-net handler");
+                /* Unwind what Initialize() has already acquired, mirroring Deinitialize(). */
+#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
+                DeinitializeIARM();
+#endif
+                if (m_service != nullptr)
+                {
+                    m_service->Release();
+                    m_service = nullptr;
+                }
+                return string(_T("MaintenanceManager: Failed to install SIGALRM safety-net handler"));
             }
 
             /* On Success; return empty to indicate no error text. */
