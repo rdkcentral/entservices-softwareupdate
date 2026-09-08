@@ -13,7 +13,8 @@
 ## Execution strategy
 
 - Each task command is executed by system() with trailing background ampersand.
-- m_task_map tracks whether each task is active/pending completion event.
+- m_task_map tracks whether each task is active/pending completion event; guarded by m_taskMapMutex (read/written from the worker, IARM-event, and timer threads).
+- currentTask holds the name of the in-flight task; guarded by m_currentTaskMutex (written by the worker thread, read by timer_handler() on the timer thread).
 - task_status_map maps each task command to corresponding completion bit index.
 
 - The worker does not directly inspect child process result after launch success; it relies mainly on IARM events and timeout path.
