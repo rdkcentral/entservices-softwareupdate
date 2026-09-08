@@ -290,8 +290,6 @@ namespace WPEFramework
             string(TASK_SCRIPT) + " " + task_param[TASK_LOGUPLOAD]
         };
 
-        vector<string> tasks;
-
         const int task_complete_status[] = {
             RFC_COMPLETE,
             SWUPDATE_COMPLETE,
@@ -364,6 +362,8 @@ namespace WPEFramework
             bool exitOnNoNetwork = false;
             int retry_count = TASK_RETRY_COUNT;
             bool isTaskTimerStarted = false;
+            /* Local to this thread; only task_execution_thread() ever touches it, so no lock is needed. */
+            vector<string> tasks;
 
             MM_LOGINFO("Executing Maintenance tasks");
 
@@ -380,11 +380,7 @@ namespace WPEFramework
                 m_statusMutex.unlock(); // critical section end: m_statusMutex
             }
 
-            /* cleanup if not empty */
-            if (!tasks.empty())
-            {
-                tasks.erase(tasks.begin(), tasks.end());
-            }
+            /* tasks is a fresh, empty local vector for this invocation; no stale entries to clear. */
 
 	    bool skipFirmwareCheck = false;
             if (!g_whoami_support_enabled && g_suppress_maintenance_enabled)
