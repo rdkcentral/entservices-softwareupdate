@@ -91,6 +91,7 @@ namespace Plugin {
             , _worker(this)
             , _isUpgrade(false)
             , _isSyncing(false)
+            , _repoSyncMode(RepoSyncMode::SETUP)
         {
         }
 
@@ -322,7 +323,7 @@ namespace Plugin {
         bool InitOPKG();
         void FreeOPKG();
 
-        Core::CriticalSection _adminLock;
+        mutable Core::CriticalSection _adminLock; /* mutable: also locked from const accessors (GetIsSyncing/GetRepoSyncMode) */
         string _configFile;
         string _tempPath;
         string _cachePath;
@@ -361,10 +362,10 @@ namespace Plugin {
         void SetNoDeps(bool noDeps) {_noDeps = noDeps;}
         void SetVolatileCache(bool volatileCache) {_volatileCache = volatileCache;}
         void SetSkipSignatureChecking(bool skipSignatureChecking) {_skipSignatureChecking = skipSignatureChecking;}
-        bool GetIsSyncing() const { return _isSyncing; }
+        bool GetIsSyncing() const { _adminLock.Lock(); bool syncing = _isSyncing; _adminLock.Unlock(); return syncing; }
         using RepoSyncModeType = RepoSyncMode;
-        RepoSyncMode GetRepoSyncMode() const { return _repoSyncMode; }
-        void SetRepoSyncMode(RepoSyncMode mode) { _repoSyncMode = mode; }
+        RepoSyncMode GetRepoSyncMode() const { _adminLock.Lock(); RepoSyncMode mode = _repoSyncMode; _adminLock.Unlock(); return mode; }
+        void SetRepoSyncMode(RepoSyncMode mode) { _adminLock.Lock(); _repoSyncMode = mode; _adminLock.Unlock(); }
     };
 
 }  // namespace Plugin

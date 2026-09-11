@@ -49,7 +49,6 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
     }
     }
 
-    IARM_EventHandler_t               controlEventHandler_;
     uint32_t status = Core::ERROR_GENERAL;
     status = ActivateService("org.rdk.MaintenanceManager");
     EXPECT_EQ(Core::ERROR_NONE, status);
@@ -62,9 +61,8 @@ MaintenanceManagerTest::MaintenanceManagerTest() : L2TestMocks() {
 }
 
 MaintenanceManagerTest::~MaintenanceManagerTest() {
-    uint32_t status = Core::ERROR_GENERAL;
     sleep(6);
-    status = DeactivateService("org.rdk.MaintenanceManager");
+    (void)DeactivateService("org.rdk.MaintenanceManager");
 }
 
 TEST_F(MaintenanceManagerTest,Unsolicited_Maintenance)

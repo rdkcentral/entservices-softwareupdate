@@ -24,8 +24,8 @@
 - Reads WHOAMI_SUPPORT from /etc/device.properties.
 - If WhoAmI enabled, subscribes to SecManager device context update event.
 - Calls InitializeIARM() when IARM support macros are enabled.
-- Registers SIGALRM handler for task timeout.
-- Returns empty string on success, error text on signal-handler registration failure.
+- Reopens timer callback acceptance for plugin reactivation; SIGEV_THREAD does not install or modify a process-wide SIGALRM disposition.
+- Returns empty string on success.
 
 - ASSERT(timerid != nullptr) is intended as runtime guard but may rely on platform/compiler behavior for timer_t representation.
 
@@ -50,13 +50,28 @@
 
 - Runtime uses:
   - worker std::thread m_thread
-  - task timer created by POSIX timer_create()/timer_settime()/timer_delete()
+  - one POSIX timer per task arm, using SIGEV_THREAD with an immutable task name and generation so delayed callbacks cannot be attributed to a later task
   - condition variable task_thread for worker/event coordination
-  - multiple mutexes: m_callMutex, m_waiMutex, m_statusMutex
+  - ten single-purpose mutexes, each guarding one piece of shared state or lifecycle protocol:
+    - m_callMutex: g_currentMode/g_triggerMode; also serializes the task_execution_thread() loop
+    - m_waiMutex: g_listen_to_deviceContextUpdate and m_contextWaitCancelled
+    - m_statusMutex: m_notify_status, g_task_status, g_is_critical_maintenance, g_is_reboot_pending, g_unsolicited_complete, and m_workerJoinInProgress
+    - m_networkEventMutex: g_listen_to_nwevents
+    - m_taskMapMutex: m_task_map
+    - m_abortFlagMutex: m_abort_flag
+    - m_maintenanceTypeMutex: g_maintenance_type (via getMaintenanceType()/setMaintenanceType())
+    - m_currentTaskMutex: currentTask (written by task_execution_thread() and snapshotted when a timer is armed)
+    - m_threadMutex: assignment, joinability checks, and joins of m_thread
+    - m_timerCallbackMutex: callback-context registration, global generation allocation, shutdown state, and in-flight callback accounting
+  - Lock ordering: m_statusMutex is acquired before m_callMutex when both are needed; task_execution_thread() explicitly releases m_callMutex around status updates, and terminal paths release m_statusMutex before taking m_threadMutex for a join.
+  - Every critical section in the source carries a `// critical section start/end: <mutex>` comment at its lock/unlock or lock_guard scope boundary.
 
 ## 6) Deinitialize()
 
-- Attempts timer deletion.
+- Marks timer callbacks as shutting down, invalidates the active generation, deletes/unregisters the timer context, and waits for the in-flight callback count to reach zero.
+- Queued callbacks that have not acquired their registered context return without dereferencing plugin memory; callbacks already in flight retain shared context ownership and finish before teardown continues.
+- Stop/deactivation sets m_contextWaitCancelled and clears g_listen_to_deviceContextUpdate under m_waiMutex before notifying, so the device-context predicate wait cannot remain blocked.
+- Terminal completion/stop sets m_workerJoinInProgress under m_statusMutex, releases the status lock, joins the worker, then publishes final status and clears the transition flag; concurrent start/stop is rejected during the join.
 - Calls stopMaintenanceTasks() before IARM deinit (under IARM build).
 - Removes IARM event handler and nulls singleton instance in deinit path.
 - Releases IShell and IAuthService interface references.
@@ -66,7 +81,7 @@
 ## Failure and recovery behavior
 
 - Thread creation failures in boot and startMaintenance paths are caught and converted to MAINTENANCE_ERROR or failed RPC response.
-- Signal handler registration failure fails Initialize().
+- Timer creation/arming failures are logged and reported to the task orchestration path.
 - Timer operation failures are logged and can degrade timeout enforcement.
 
 - There is no explicit health watchdog for permanently blocked thread waits if no IARM completion/error event arrives and timer path is disabled/failing.

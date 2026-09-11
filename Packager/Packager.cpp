@@ -111,7 +111,7 @@ namespace {
         Core::TextSegmentIterator index(Core::TextFragment(request.Path, _skipURL, request.Path.length() - _skipURL), false, '/');
 
         // Always skip the first one, it is an empty part because we start with a '/' if there are more parameters.
-        index.Next();
+        (void)index.Next();
 
         result->ErrorCode = Web::STATUS_BAD_REQUEST;
         result->Message = _T("Invalid request to packager plugin.");

@@ -63,7 +63,7 @@ MaintenanceManager is a hosted component inside Thunder. It exposes northbound J
   - startMaintenance
   - stopMaintenance
   - getMaintenanceMode
-- Initialize() stores IShell, checks WhoAmI feature flag from /etc/device.properties, optionally pre-subscribes to SecManager device context event, initializes IARM integration, and registers SIGALRM handler for task timeout.
+- Initialize() stores IShell, checks WhoAmI feature flag from /etc/device.properties, optionally pre-subscribes to SecManager device context event, and initializes IARM integration. The SIGEV_THREAD task timer does not install or modify a process-wide SIGALRM disposition.
 - Deinitialize() deletes timer, stops maintenance tasks, removes IARM handler, releases IShell/AuthService resources.
 
 - Lifetime is tightly coupled to Thunder plugin activation lifecycle; worker thread and timer are plugin-owned resources that must be cleaned up on deactivation.
@@ -75,7 +75,7 @@ MaintenanceManager is a hosted component inside Thunder. It exposes northbound J
 - When unsolicited execution is skipped, plugin sets status to MAINTENANCE_COMPLETE and marks unsolicited-complete true for subsequent solicited requests.
 - API path startMaintenance() sets maintenance type to SOLICITED_MAINTENANCE (only when unsolicited cycle has completed and status is not STARTED).
 - Worker thread computes task list, performs network/activation/whoami gating, launches tasks sequentially, waits on condition variable for module completion events, applies timeout, supports one retry for failed task invocation.
-- Task timeout uses POSIX timer APIs and SIGALRM callback to mark task as error-complete and continue orchestration.
+- Each task arm creates a POSIX timer with an immutable task/generation callback context. SIGEV_THREAD callbacks reject unregistered or stale generations, mark only their associated task error-complete, and continue orchestration.
 
 - Execution is event-assisted sequential orchestration with a coarse-grained status bitmask used as the finalization gate.
 

@@ -59,7 +59,7 @@ Primary scripts:
 Behavioral highlights:
 
 - Separate unsolicited and solicited maintenance flow paths
-- Timeout protection using timer and signal handling
+- Timeout protection using a per-arm POSIX timer with an immutable task/generation context delivered by SIGEV_THREAD; the plugin does not change the process-wide SIGALRM disposition
 - Retry support for failed task invocation attempts
 - Abort path that signals active task processes and transitions to error status
 - Final status derivation from task completion/success/skipped bitmasks
@@ -84,6 +84,43 @@ Runtime status includes:
 - reboot pending flag
 - solicited/unsolicited cycle state
 - task status bitmask
+
+## Concurrency Model
+
+### Threads
+
+- JSON-RPC dispatch thread(s): Thunder-managed thread(s) that invoke the registered method handlers (getMaintenanceActivityStatus, setMaintenanceMode, startMaintenance, stopMaintenance, getMaintenanceMode, getMaintenanceStartTime).
+- IARM event thread: invokes `_MaintenanceMgrEventHandler()` / `iarmEventHandler()` when a maintenance module posts a status update.
+- Worker thread (`m_thread`): runs `task_execution_thread()`, sequences and launches the maintenance task scripts.
+- Timer thread: POSIX `timer_create()` is configured with `SIGEV_THREAD`, so a per-arm OS thread invokes `timerThreadCallback()` with that arm's immutable task/generation context and then calls `handleTaskTimeout()`; this is not a SIGALRM signal handler.
+
+### Mutexes
+
+| Mutex | Protects |
+|---|---|
+| `m_callMutex` | `g_currentMode` and `g_triggerMode`; also serializes the task-execution loop in `task_execution_thread()` |
+| `m_waiMutex` | `g_listen_to_deviceContextUpdate` and `m_contextWaitCancelled`; stop/deactivation publishes cancellation before notifying the waiting worker |
+| `m_statusMutex` | `m_notify_status`, `g_task_status`, `g_is_critical_maintenance`, `g_is_reboot_pending`, `g_unsolicited_complete`, and `m_workerJoinInProgress` |
+| `m_networkEventMutex` | `g_listen_to_nwevents` across the worker and network-event threads |
+| `m_taskMapMutex` | `m_task_map` (read/written from the JSON-RPC, IARM event, task-execution, and timer threads) |
+| `m_abortFlagMutex` | `m_abort_flag` (read/written from the JSON-RPC and task-execution threads) |
+| `m_maintenanceTypeMutex` | `g_maintenance_type` (via `getMaintenanceType()`/`setMaintenanceType()`) |
+| `m_currentTaskMutex` | `currentTask` (written by `task_execution_thread()`, snapshotted when arming and by the direct-test-compatible `timer_handler()`) |
+| `m_threadMutex` | Assignment, joinability checks, and joins of `m_thread` |
+| `m_timerCallbackMutex` (static) | Guards timer-context registration, generation/shutdown state, and in-flight callback accounting |
+
+Every critical section in the source is bracketed with a `// critical section start/end: <mutex>` comment at the lock/unlock (or `lock_guard` scope) to make the boundary explicit.
+
+Each timer arm owns an immutable task name and generation. Disarm/delete unregisters that context so queued stale callbacks return without dereferencing it; callbacks that already acquired a shared context are counted, and `Deinitialize()` waits for that count to reach zero before stopping/releasing plugin resources. The plugin never installs a SIGALRM handler because SIGEV_THREAD does not deliver SIGALRM.
+
+Task completion/error notifications advance `m_taskNotificationGeneration` before waking the worker. The worker wait predicates on that generation or `m_abort_flag`, preventing completion and stop notifications from being lost when they arrive just before the wait begins.
+
+### Lock ordering
+
+- Established order: `m_statusMutex` is acquired before `m_callMutex` when both are needed (see `startMaintenance()`).
+- `task_execution_thread()` holds `m_callMutex` for its whole loop; it explicitly `unlock()`s/`lock()`s around any `m_statusMutex` acquisition so the two are never held at once, avoiding a lock-order inversion (Coverity `ORDER_REVERSAL`).
+- Terminal IARM/stop paths set `m_workerJoinInProgress` under `m_statusMutex`, release that mutex, join the worker exactly once, and only then publish the final notification; concurrent start/stop requests are rejected during this transition.
+- `m_networkEventMutex` is released before starting critical tasks, and terminal paths release `m_statusMutex` before taking `m_threadMutex` to join the worker.
 
 ## JSON-RPC API
 

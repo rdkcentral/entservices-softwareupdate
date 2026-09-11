@@ -41,9 +41,8 @@ flowchart TD
     I1 -- Yes --> I2[Post MAINTENANCE_COMPLETE and set unsolicited_complete]
     I1 -- No --> J[Emit MAINTENANCE_IDLE notification]
     J --> K[Start worker thread]
-    I2 --> L[Register SIGALRM handler]
-    K --> L[Register SIGALRM handler]
-    L --> M[Initialize success]
+    I2 --> M[Initialize success]
+    K --> M[Initialize success]
 ```
 
 ## Maintenance Execution Sequence
