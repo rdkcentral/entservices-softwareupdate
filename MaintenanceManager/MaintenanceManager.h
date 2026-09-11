@@ -217,9 +217,13 @@ namespace WPEFramework
 #else
             bool g_suppress_maintenance_enabled = false;
 #endif
-            std::mutex m_callMutex;
-            std::mutex m_waiMutex;
-            std::mutex m_statusMutex;
+            std::mutex m_callMutex; /* Guards g_currentMode/g_triggerMode/g_is_critical_maintenance/g_is_reboot_pending and serializes the task-execution loop in task_execution_thread() */
+            std::mutex m_waiMutex; /* Guards g_listen_to_deviceContextUpdate, read/written by task_execution_thread() and deviceInitializationContextEventHandler() */
+            std::mutex m_statusMutex; /* Guards m_notify_status and g_task_status, read/written from the JSON-RPC, IARM event, and task-execution threads */
+            std::mutex m_taskMapMutex; /* Guards m_task_map, read/written from the JSON-RPC, IARM event, task-execution, and timer threads */
+            std::mutex m_abortFlagMutex; /* Guards m_abort_flag, read/written from the JSON-RPC and task-execution threads */
+            std::mutex m_maintenanceTypeMutex; /* Guards g_maintenance_type, which is read/written from multiple threads */
+            std::mutex m_currentTaskMutex; /* Guards currentTask, written by task_execution_thread() and read by timer_handler() on the timer thread */
             std::condition_variable task_thread;
             std::thread m_thread;
 
@@ -228,7 +232,10 @@ namespace WPEFramework
             std::map<string, DATA_TYPE> m_paramType_map;
 
             PluginHost::IShell *m_service = nullptr;
-            Exchange::IAuthService *m_authservicePlugin;
+            Exchange::IAuthService *m_authservicePlugin = nullptr;
+
+            Maintenance_Type_t getMaintenanceType() { std::lock_guard<std::mutex> g(m_maintenanceTypeMutex); return g_maintenance_type; }
+            void setMaintenanceType(Maintenance_Type_t type) { std::lock_guard<std::mutex> g(m_maintenanceTypeMutex); g_maintenance_type = type; }
 
             bool isDeviceOnline();
             void task_execution_thread();
@@ -285,9 +292,12 @@ namespace WPEFramework
 
             /* Timer Implementations */
             static void timer_handler(int signo);
+            static void timerThreadCallback(union sigval sv); /* SIGEV_THREAD entry point: runs on a normal thread, safe to lock/allocate */
             static timer_t timerid;
             static string currentTask;
             static bool g_task_timerCreated;
+            static std::mutex m_timerCallbackMutex; /* Static (outlives any instance): serializes timer_handler() against Deinitialize() teardown so _instance can never be null-deref'd/use-after-freed */
+            struct sigaction m_prevSigalrmAction {}; /* Previous SIGALRM disposition, saved by Initialize() and restored by Deinitialize() */
 
             bool maintenance_initTimer();
             bool task_startTimer();

@@ -100,7 +100,8 @@ protected:
         Wraps::setImpl(p_wrapsImplMock);
 
 	clearMaintenanceRecord();
-        remove("/opt/secure/reboot/maintenance_reboot");
+        int rc = remove("/opt/secure/reboot/maintenance_reboot");
+        (void)rc;
     }
 
     virtual ~MaintenanceManagerTest() override
@@ -142,10 +143,10 @@ static AssertionResult isValidCtrlmRcuIarmEvent(IARM_EventId_t ctrlmRcuIarmEvent
 
 class MaintenanceManagerInitializedEventTest : public MaintenanceManagerTest {
 protected:
-    IARM_EventHandler_t               controlEventHandler_;
+    IARM_EventHandler_t               controlEventHandler_ = nullptr;
     NiceMock<ServiceMock>             service_;
     NiceMock<FactoriesImplementation> factoriesImplementation_;
-    PLUGINHOST_DISPATCHER* dispatcher_;
+    PLUGINHOST_DISPATCHER* dispatcher_ = nullptr;
     Core::JSONRPC::Message message_;
 
     MaintenanceManagerInitializedEventTest() :
@@ -893,7 +894,8 @@ TEST(GetFileContentTest, FileExistsAndHasContent) {
     EXPECT_EQ("Line 1", vecOfStrs[0]);
     EXPECT_EQ("Line 2", vecOfStrs[1]);
     EXPECT_EQ("Line 3", vecOfStrs[2]);
-	std::remove(testFilePath.c_str());
+	int rc = std::remove(testFilePath.c_str());
+	(void)rc;
 }
 
 TEST(GetFileContentTest, FileDoesNotExist) {
@@ -926,7 +928,8 @@ protected:
     void TearDown() override {
 	string test_name = getCurrentTestName();
 	if (test_name != "FileDoesNotExist"){
-		std::remove(testFilePath.c_str());
+		int rc = std::remove(testFilePath.c_str());
+		(void)rc;
 	}
     }
 };
