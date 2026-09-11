@@ -24,8 +24,8 @@
 - Reads WHOAMI_SUPPORT from /etc/device.properties.
 - If WhoAmI enabled, subscribes to SecManager device context update event.
 - Calls InitializeIARM() when IARM support macros are enabled.
-- Installs a SIG_IGN safety-net handler for SIGALRM so a stray external SIGALRM can't terminate the process; the task timer itself is delivered via SIGEV_THREAD (see maintenance_initTimer()), not a SIGALRM handler. Uses sigaction() to save the previous disposition (m_prevSigalrmAction) so Deinitialize() can restore it instead of leaving SIG_IGN installed process-wide forever.
-- Returns empty string on success, error text on signal-handler registration failure.
+- Reopens timer callback acceptance for plugin reactivation; SIGEV_THREAD does not install or modify a process-wide SIGALRM disposition.
+- Returns empty string on success.
 
 - ASSERT(timerid != nullptr) is intended as runtime guard but may rely on platform/compiler behavior for timer_t representation.
 
@@ -50,24 +50,27 @@
 
 - Runtime uses:
   - worker std::thread m_thread
-  - task timer created by POSIX timer_create()/timer_settime()/timer_delete(), using SIGEV_THREAD so expiry runs timerThreadCallback() on a dedicated thread instead of a signal handler
+  - one POSIX timer per task arm, using SIGEV_THREAD with an immutable task name and generation so delayed callbacks cannot be attributed to a later task
   - condition variable task_thread for worker/event coordination
-  - seven single-purpose mutexes, each guarding one piece of shared state:
-    - m_callMutex: g_currentMode/g_triggerMode/g_is_critical_maintenance/g_is_reboot_pending; also serializes the task_execution_thread() loop
+  - ten single-purpose mutexes, each guarding one piece of shared state or lifecycle protocol:
+    - m_callMutex: g_currentMode/g_triggerMode; also serializes the task_execution_thread() loop
     - m_waiMutex: g_listen_to_deviceContextUpdate
-    - m_statusMutex: m_notify_status and g_task_status
+    - m_statusMutex: m_notify_status, g_task_status, g_is_critical_maintenance, g_is_reboot_pending, g_unsolicited_complete, and m_workerJoinInProgress
+    - m_networkEventMutex: g_listen_to_nwevents
     - m_taskMapMutex: m_task_map
     - m_abortFlagMutex: m_abort_flag
     - m_maintenanceTypeMutex: g_maintenance_type (via getMaintenanceType()/setMaintenanceType())
-    - m_currentTaskMutex: currentTask (written by task_execution_thread(), read by timer_handler() on the timer thread)
-  - Lock ordering: m_statusMutex is acquired before m_callMutex when both are needed (see startMaintenance()); task_execution_thread() explicitly releases m_callMutex around any m_statusMutex acquisition to avoid holding both at once. The remaining four mutexes are leaf locks, never held while acquiring another mutex.
+    - m_currentTaskMutex: currentTask (written by task_execution_thread() and snapshotted when a timer is armed)
+    - m_threadMutex: assignment, joinability checks, and joins of m_thread
+    - m_timerCallbackMutex: callback-context registration, global generation allocation, shutdown state, and in-flight callback accounting
+  - Lock ordering: m_statusMutex is acquired before m_callMutex when both are needed; task_execution_thread() explicitly releases m_callMutex around status updates, and terminal paths release m_statusMutex before taking m_threadMutex for a join.
   - Every critical section in the source carries a `// critical section start/end: <mutex>` comment at its lock/unlock or lock_guard scope boundary.
 
 ## 6) Deinitialize()
 
-- Attempts timer deletion.
-- Drains any in-flight SIGEV_THREAD timer callback via m_timerCallbackMutex (timer_delete() does not wait for an already-running notification thread to finish) before nulling _instance or releasing m_service, preventing a null-deref/use-after-free in timer_handler().
-- Restores the previous SIGALRM disposition via sigaction() (saved in m_prevSigalrmAction by Initialize()).
+- Marks timer callbacks as shutting down, invalidates the active generation, deletes/unregisters the timer context, and waits for the in-flight callback count to reach zero.
+- Queued callbacks that have not acquired their registered context return without dereferencing plugin memory; callbacks already in flight retain shared context ownership and finish before teardown continues.
+- Terminal completion/stop sets m_workerJoinInProgress under m_statusMutex, releases the status lock, joins the worker, then publishes final status and clears the transition flag; concurrent start/stop is rejected during the join.
 - Calls stopMaintenanceTasks() before IARM deinit (under IARM build).
 - Removes IARM event handler and nulls singleton instance in deinit path.
 - Releases IShell and IAuthService interface references.

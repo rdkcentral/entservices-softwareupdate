@@ -65,14 +65,18 @@
 
 - JSON-RPC handlers run on Thunder-managed dispatch thread(s), concurrently with the IARM event thread (`iarmEventHandler()`), the worker thread (`task_execution_thread()`, `m_thread`), and the timer thread (SIGEV_THREAD callback running `timer_handler()`).
 - Each piece of shared state has exactly one dedicated mutex:
-  - `m_callMutex`: g_currentMode/g_triggerMode/g_is_critical_maintenance/g_is_reboot_pending, and serializes the task-execution loop.
-  - `m_statusMutex`: m_notify_status and g_task_status, guarding status transitions read/updated from API, IARM-event, and worker-thread paths.
+  - `m_callMutex`: g_currentMode/g_triggerMode, and serializes the task-execution loop.
+  - `m_statusMutex`: m_notify_status, g_task_status, critical/reboot/unsolicited flags, and m_workerJoinInProgress.
+  - `m_networkEventMutex`: g_listen_to_nwevents across worker and network-event callbacks.
   - `m_taskMapMutex`: m_task_map, read/written from API, IARM-event, worker, and timer paths.
   - `m_abortFlagMutex`: m_abort_flag.
   - `m_waiMutex`: g_listen_to_deviceContextUpdate.
   - `m_maintenanceTypeMutex`: g_maintenance_type.
-  - `m_currentTaskMutex`: currentTask, written by the worker thread and read by the timer thread.
+  - `m_currentTaskMutex`: currentTask, written by the worker thread and snapshotted when arming a timer.
+  - `m_threadMutex`: assignment, joinability checks, and joins of m_thread.
+  - `m_timerCallbackMutex`: timer-context registration, globally unique generation allocation, shutdown state, and in-flight callback accounting.
 - Lock ordering: `m_statusMutex` is always acquired before `m_callMutex` when both are needed (see startMaintenance()); the worker thread never holds both simultaneously (it releases `m_callMutex` around any `m_statusMutex` acquisition), avoiding a lock-order inversion between API calls and the worker loop.
+- IARM completion derives final status and marks the join transition under `m_statusMutex`, releases it, joins the worker, then reacquires it to publish final status and clear the transition; stopMaintenance follows the same ordering.
 
 - Mixed mutex/condition-variable design implies potential contention points between API calls and event handling during active maintenance.
 

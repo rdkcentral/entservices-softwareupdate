@@ -14,7 +14,7 @@
 
 - Each task command is executed by system() with trailing background ampersand.
 - m_task_map tracks whether each task is active/pending completion event; guarded by m_taskMapMutex (read/written from the worker, IARM-event, and timer threads).
-- currentTask holds the name of the in-flight task; guarded by m_currentTaskMutex (written by the worker thread, read by timer_handler() on the timer thread).
+- currentTask holds the name of the in-flight task; guarded by m_currentTaskMutex and snapshotted into each timer arm's immutable callback context.
 - task_status_map maps each task command to corresponding completion bit index.
 
 - The worker does not directly inspect child process result after launch success; it relies mainly on IARM events and timeout path.
@@ -24,7 +24,9 @@
 - One retry is attempted for task invocation failure (TASK_RETRY_COUNT=1).
 - Retry delay is TASK_RETRY_DELAY seconds (5).
 - Timeout per task defaults to TASK_TIMEOUT=3600 unless compile-time override in CMake.
-- Timeout handler marks timed-out task error-complete and notifies worker.
+- Each arm creates an immutable callback context containing its task and generation; callbacks whose context was unregistered or whose generation is stale are ignored.
+- A valid timeout marks only its associated task error-complete and notifies the worker.
+- Timer teardown invalidates the active generation and waits for callbacks already counted as in flight before plugin resources are released.
 
 ## Abort model
 

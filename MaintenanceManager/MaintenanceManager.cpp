@@ -277,6 +277,9 @@ namespace WPEFramework
         string MaintenanceManager::currentTask;
         bool MaintenanceManager::g_task_timerCreated = false;
         std::mutex MaintenanceManager::m_timerCallbackMutex;
+        std::condition_variable MaintenanceManager::m_timerCallbackCondition;
+        std::map<uint64_t, std::shared_ptr<MaintenanceManager::TimerCallbackContext>> MaintenanceManager::m_timerCallbackContexts;
+        uint64_t MaintenanceManager::m_nextTimerGeneration = 0;
 
         string task_param[] = {
             "RFC",
@@ -453,11 +456,20 @@ namespace WPEFramework
 				t2_event_d("SYST_ERR_MaintNetworkFail", 1);
 #endif
 				
-                if (UNSOLICITED_MAINTENANCE == getMaintenanceType() && !g_unsolicited_complete)
+                bool listenForNetwork = false;
                 {
-                    g_unsolicited_complete = true;
+                    std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards g_unsolicited_complete
+                    if (UNSOLICITED_MAINTENANCE == getMaintenanceType() && !g_unsolicited_complete)
+                    {
+                        g_unsolicited_complete = true;
+                        listenForNetwork = true;
+                    }
+                } // critical section end: m_statusMutex
+                if (listenForNetwork)
+                {
+                    std::lock_guard<std::mutex> networkGuard(m_networkEventMutex); // critical section start: m_networkEventMutex guards g_listen_to_nwevents
                     g_listen_to_nwevents = true;
-                }
+                } // critical section end: m_networkEventMutex
                 return;
             }
 
@@ -468,7 +480,12 @@ namespace WPEFramework
                 m_statusMutex.unlock(); // critical section end: m_statusMutex
             }
 
-            MM_LOGINFO("Reboot_Pending :%s", g_is_reboot_pending.c_str());
+            string rebootPending;
+            {
+                std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards g_is_reboot_pending
+                rebootPending = g_is_reboot_pending;
+            } // critical section end: m_statusMutex
+            MM_LOGINFO("Reboot_Pending :%s", rebootPending.c_str());
             MM_LOGINFO("%s", UNSOLICITED_MAINTENANCE == getMaintenanceType() ? "---------------UNSOLICITED_MAINTENANCE--------------" : "=============SOLICITED_MAINTENANCE===============");
 
 			if (UNSOLICITED_MAINTENANCE != getMaintenanceType()) 
@@ -481,8 +498,11 @@ namespace WPEFramework
             if (!g_whoami_support_enabled && g_suppress_maintenance_enabled && skipFirmwareCheck)
             {
                 /* set the task status of Firmware Download */
-                SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
-                SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                {
+                    std::lock_guard<std::mutex> stGuard(m_statusMutex); // critical section start: m_statusMutex guards g_task_status
+                    SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
+                    SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                } // critical section end: m_statusMutex
                 /* Skip Firmware Download Task and add other tasks */
                 tasks.push_back(task_names_foreground[TASK_RFC].c_str());
                 tasks.push_back(task_names_foreground[TASK_LOGUPLOAD].c_str());
@@ -750,30 +770,87 @@ namespace WPEFramework
          */
         bool MaintenanceManager::maintenance_initTimer()
         {
-            if (g_task_timerCreated)
             {
-                MM_LOGINFO("Timer has already been created, no need to create a Timer.");
-                return g_task_timerCreated;
+                std::lock_guard<std::mutex> callbackGuard(m_timerCallbackMutex); // critical section start: m_timerCallbackMutex guards timer creation state
+                if (g_task_timerCreated)
+                {
+                    MM_LOGINFO("Timer has already been created, no need to create a Timer.");
+                    return true;
+                }
+            } // critical section end: m_timerCallbackMutex
+
+            string taskNameSnapshot;
+            {
+                std::lock_guard<std::mutex> taskGuard(m_currentTaskMutex); // critical section start: m_currentTaskMutex guards currentTask
+                taskNameSnapshot = currentTask;
+            } // critical section end: m_currentTaskMutex
+            return createTaskTimer(taskNameSnapshot, false);
+        }
+
+        bool MaintenanceManager::createTaskTimer(const string &taskName, bool armTimer)
+        {
+            std::lock_guard<std::mutex> callbackGuard(m_timerCallbackMutex); // critical section start: m_timerCallbackMutex guards timer generation/context registration
+            if (m_timerShuttingDown)
+            {
+                return false;
             }
 
+            if (m_timerHandleValid)
+            {
+                m_timerGeneration = 0;
+                if (timer_delete(timerid) == -1)
+                {
+                    MM_LOGERR("timer_delete() failed while replacing the Timer");
+                    return false;
+                }
+                m_timerCallbackContexts.erase(m_activeTimerGeneration);
+                m_activeTimerGeneration = 0;
+                m_timerHandleValid = false;
+                g_task_timerCreated = false;
+            }
+
+            auto callbackContext = std::make_shared<TimerCallbackContext>();
+            callbackContext->instance = this;
+            callbackContext->generation = ++m_nextTimerGeneration;
+            callbackContext->task = taskName;
+            m_timerGeneration = callbackContext->generation;
+
             struct sigevent sev = {0};
-            /* SIGEV_THREAD (not SIGEV_SIGNAL) so the callback runs on a normal thread instead of
-             * a SIGALRM signal handler, where locking a mutex or touching m_task_map would be unsafe. */
             sev.sigev_notify = SIGEV_THREAD;
             sev.sigev_notify_function = &MaintenanceManager::timerThreadCallback;
             sev.sigev_notify_attributes = nullptr;
-            sev.sigev_value.sival_ptr = &timerid;
+            sev.sigev_value.sival_ptr = reinterpret_cast<void *>(static_cast<uintptr_t>(callbackContext->generation));
 
             if (timer_create(BASE_CLOCK, &sev, &timerid) == -1)
             {
                 MM_LOGERR("timer_create() failed to create the Timer");
+                return false;
             }
-            else
+
+            m_activeTimerGeneration = callbackContext->generation;
+            m_timerCallbackContexts.emplace(m_activeTimerGeneration, callbackContext);
+            m_timerHandleValid = true;
+            g_task_timerCreated = true;
+
+            if (armTimer)
             {
-                g_task_timerCreated = true; // Timer Created
-                MM_LOGINFO("Timer created successfully.");
+                struct itimerspec its = {};
+                its.it_value.tv_sec = TASK_TIMEOUT;
+                if (timer_settime(timerid, 0, &its, nullptr) == -1)
+                {
+                    MM_LOGERR("timer_settime() failed to start the Timer");
+                    timer_delete(timerid);
+                    m_timerCallbackContexts.erase(m_activeTimerGeneration);
+                    m_activeTimerGeneration = 0;
+                    m_timerHandleValid = false;
+                    g_task_timerCreated = false;
+                    m_timerGeneration = 0;
+                    return false;
+                }
             }
-            return g_task_timerCreated;
+
+            MM_LOGINFO("Timer created successfully for generation %llu", static_cast<unsigned long long>(callbackContext->generation));
+            return true;
         }
 
         /**
@@ -785,39 +862,15 @@ namespace WPEFramework
          */
         bool MaintenanceManager::task_startTimer()
         {
-            bool status = false;
-            if (g_task_timerCreated)
+            string taskNameSnapshot;
             {
-                MM_LOGINFO("Timer has already been created, start the Timer");
+                std::lock_guard<std::mutex> taskGuard(m_currentTaskMutex); // critical section start: m_currentTaskMutex guards currentTask
+                taskNameSnapshot = currentTask;
             }
-            else
+            bool status = createTaskTimer(taskNameSnapshot, true);
+            if (status)
             {
-                MM_LOGINFO("Timer has not been created already, create a new Timer.");
-                if (!maintenance_initTimer())
-                {
-                    return status;
-                }
-            }
-
-            struct itimerspec its;
-            its.it_value.tv_sec = TASK_TIMEOUT;
-            its.it_value.tv_nsec = 0;
-            its.it_interval.tv_sec = 0;
-            its.it_interval.tv_nsec = 0;
-
-            if (timer_settime(timerid, 0, &its, NULL) == -1)
-            {
-                MM_LOGERR("timer_settime() failed to start the Timer");
-            }
-            else
-            {
-                string taskNameSnapshot;
-                {
-                    std::lock_guard<std::mutex> ctGuard(m_currentTaskMutex); // critical section start: m_currentTaskMutex guards currentTask
-                    taskNameSnapshot = currentTask;
-                } // critical section end: m_currentTaskMutex
                 MM_LOGINFO("Timer started for %d seconds for %s", TASK_TIMEOUT, taskNameSnapshot.c_str());
-                status = true;
             }
             return status;
         }
@@ -831,33 +884,34 @@ namespace WPEFramework
          */
         bool MaintenanceManager::task_stopTimer()
         {
-            bool status = false;
-            if (!g_task_timerCreated)
+            std::lock_guard<std::mutex> callbackGuard(m_timerCallbackMutex); // critical section start: m_timerCallbackMutex guards timer generation/context registration
+            if (!g_task_timerCreated || !m_timerHandleValid)
             {
                 MM_LOGINFO("Timer has not been created already, cannot stop the Timer");
-                return status;
+                return false;
             }
 
             struct itimerspec its = {0};
-            its.it_value.tv_sec = 0;
-            its.it_value.tv_nsec = 0;
-
-            if (timer_settime(timerid, 0, &its, NULL) == -1)
+            bool status = (timer_settime(timerid, 0, &its, nullptr) == 0);
+            if (!status)
             {
                 MM_LOGERR("timer_settime() failed to stop the Timer");
             }
+            m_timerGeneration = 0;
+            if (timer_delete(timerid) == -1)
+            {
+                MM_LOGWARN("timer_delete() failed after disarming the Timer");
+            }
             else
             {
-                string taskNameSnapshot;
-                {
-                    std::lock_guard<std::mutex> ctGuard(m_currentTaskMutex); // critical section start: m_currentTaskMutex guards currentTask
-                    taskNameSnapshot = currentTask;
-                } // critical section end: m_currentTaskMutex
-                MM_LOGINFO("Timer stopped for %s", taskNameSnapshot.c_str());
-                status = true;
+                m_timerHandleValid = false;
             }
+            m_timerCallbackContexts.erase(m_activeTimerGeneration);
+            m_activeTimerGeneration = 0;
+            g_task_timerCreated = false;
+            MM_LOGINFO("Timer stopped");
             return status;
-        }
+        } // critical section end: m_timerCallbackMutex
 
         /**
          * @brief Deletes the task timer.
@@ -868,27 +922,30 @@ namespace WPEFramework
          */
         bool MaintenanceManager::maintenance_deleteTimer()
         {
-            bool status = false;
-            if (!g_task_timerCreated)
+            std::lock_guard<std::mutex> callbackGuard(m_timerCallbackMutex); // critical section start: m_timerCallbackMutex guards timer generation/context registration
+            if (!g_task_timerCreated || !m_timerHandleValid)
             {
                 MM_LOGINFO("Timer has not been created already, cannot delete the Timer.");
-                return status;
+                return false;
             }
 
             MM_LOGINFO("Timer has already been created, delete the Timer.");
-
-            if (timer_delete(timerid) == -1)
+            m_timerGeneration = 0;
+            bool status = (timer_delete(timerid) == 0);
+            if (!status)
             {
                 MM_LOGERR("timer_delete() failed to delete the Timer.");
             }
             else
             {
-                g_task_timerCreated = false;
+                m_timerHandleValid = false;
                 MM_LOGINFO("Timer successfully deleted.");
-                status = true;
             }
+            m_timerCallbackContexts.erase(m_activeTimerGeneration);
+            m_activeTimerGeneration = 0;
+            g_task_timerCreated = false;
             return status;
-        }
+        } // critical section end: m_timerCallbackMutex
 
         /**
          * @brief Handles the timer signal.
@@ -899,81 +956,165 @@ namespace WPEFramework
          */
         void MaintenanceManager::timer_handler(int signo)
         {
-            /* Serializes with the drain performed in Deinitialize(); m_timerCallbackMutex is static
-             * so it stays valid even if the MaintenanceManager instance is torn down concurrently. */
-            std::lock_guard<std::mutex> tcGuard(MaintenanceManager::m_timerCallbackMutex); // critical section start: m_timerCallbackMutex serializes against Deinitialize() teardown
-            if (MaintenanceManager::_instance == nullptr)
-            {
-                MM_LOGWARN("timer_handler() invoked after plugin teardown; ignoring");
-                return;
-            }
-            if (signo == SIGALRM)
-            {
-                /* Snapshot currentTask under its mutex; it is written concurrently by task_execution_thread(). */
-                string currentTaskSnapshot;
-                {
-                    std::lock_guard<std::mutex> ctGuard(MaintenanceManager::_instance->m_currentTaskMutex); // critical section start: m_currentTaskMutex guards currentTask
-                    currentTaskSnapshot = currentTask;
-                } // critical section end: m_currentTaskMutex
-                MM_LOGERR("Timeout reached for %s. Set task to Error...", currentTaskSnapshot.c_str());
-
-                const char *failedTask = nullptr;
-                int complete_status = 0;
-                for (size_t j = 0; j < (sizeof(task_names_foreground) / sizeof(task_names_foreground[0])); j++)
-                {
-                    if (currentTaskSnapshot.find(task_names_foreground[j]) != string::npos)
-                    {
-                        failedTask = task_names_foreground[j].c_str();
-                        complete_status = task_complete_status[j];
-                        break;
-                    }
-                }
-                bool ignoreEvent = false;
-                if (failedTask)
-                {
-                    /* Safe here: timer_handler() only ever runs on a normal thread (SIGEV_THREAD
-                     * callback, or a direct unit-test call), never inside a signal handler. */
-                    std::lock_guard<std::mutex> tmGuard(MaintenanceManager::_instance->m_taskMapMutex); // critical section start: m_taskMapMutex guards m_task_map
-                    if (!MaintenanceManager::_instance->m_task_map[failedTask])
-                    {
-                        ignoreEvent = true;
-                    }
-                    else
-                    {
-                        MaintenanceManager::_instance->m_task_map[failedTask] = false;
-                    }
-                } // critical section end: m_taskMapMutex
-                if (failedTask && ignoreEvent)
-                {
-                    MM_LOGINFO("Ignoring Error Event for Task: %s", failedTask);
-                }
-                else if (failedTask)
-                {
-                    {
-                        /* g_task_status is shared with iarmEventHandler()/task_execution_thread(); guard every update. */
-                        std::lock_guard<std::mutex> stGuard(MaintenanceManager::_instance->m_statusMutex); // critical section start: m_statusMutex guards g_task_status
-                        SET_STATUS(MaintenanceManager::_instance->g_task_status, complete_status);
-                    } // critical section end: m_statusMutex
-                    MaintenanceManager::_instance->task_thread.notify_one();
-                    MM_LOGINFO("Set %s Task to ERROR", failedTask);
-                }
-            }
-            else
+            if (signo != SIGALRM)
             {
                 MM_LOGERR("Received %d Signal instead of SIGALRM", signo);
+                return;
             }
-        } // critical section end: m_timerCallbackMutex
+
+            MaintenanceManager *instance = nullptr;
+            {
+                std::lock_guard<std::mutex> callbackGuard(m_timerCallbackMutex); // critical section start: m_timerCallbackMutex guards _instance acquisition/in-flight accounting
+                instance = _instance;
+                if (instance == nullptr || instance->m_timerShuttingDown)
+                {
+                    return;
+                }
+                ++instance->m_timerCallbacksInFlight;
+            } // critical section end: m_timerCallbackMutex
+
+            string taskNameSnapshot;
+            {
+                std::lock_guard<std::mutex> taskGuard(instance->m_currentTaskMutex); // critical section start: m_currentTaskMutex guards currentTask
+                taskNameSnapshot = currentTask;
+            }
+            try
+            {
+                instance->handleTaskTimeout(taskNameSnapshot);
+            }
+            catch (const std::exception &error)
+            {
+                MM_LOGERR("Timer timeout handling failed: %s", error.what());
+            }
+            catch (...)
+            {
+                MM_LOGERR("Timer timeout handling failed with an unknown exception");
+            }
+
+            {
+                std::lock_guard<std::mutex> callbackGuard(m_timerCallbackMutex); // critical section start: m_timerCallbackMutex guards in-flight callback accounting
+                --instance->m_timerCallbacksInFlight;
+                m_timerCallbackCondition.notify_all();
+            } // critical section end: m_timerCallbackMutex
+        }
+
+        void MaintenanceManager::handleTaskTimeout(const string &taskName)
+        {
+            MM_LOGERR("Timeout reached for %s. Set task to Error...", taskName.c_str());
+
+            const char *failedTask = nullptr;
+            int complete_status = 0;
+            for (size_t j = 0; j < (sizeof(task_names_foreground) / sizeof(task_names_foreground[0])); j++)
+            {
+                if (taskName.find(task_names_foreground[j]) != string::npos)
+                {
+                    failedTask = task_names_foreground[j].c_str();
+                    complete_status = task_complete_status[j];
+                    break;
+                }
+            }
+
+            bool ignoreEvent = false;
+            if (failedTask)
+            {
+                std::lock_guard<std::mutex> taskMapGuard(m_taskMapMutex); // critical section start: m_taskMapMutex guards m_task_map
+                if (!m_task_map[failedTask])
+                {
+                    ignoreEvent = true;
+                }
+                else
+                {
+                    m_task_map[failedTask] = false;
+                }
+            } // critical section end: m_taskMapMutex
+
+            if (failedTask && ignoreEvent)
+            {
+                MM_LOGINFO("Ignoring Error Event for Task: %s", failedTask);
+            }
+            else if (failedTask)
+            {
+                {
+                    std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards g_task_status
+                    SET_STATUS(g_task_status, complete_status);
+                } // critical section end: m_statusMutex
+                task_thread.notify_one();
+                MM_LOGINFO("Set %s Task to ERROR", failedTask);
+            }
+        }
 
         /**
          * @brief SIGEV_THREAD callback invoked by the OS when the task timer expires.
          *
-         * Runs on a dedicated, normal (non-signal-handler) thread, so it can safely
-         * delegate to timer_handler() which locks m_taskMapMutex.
+         * Runs on a dedicated, normal thread and processes the immutable task/generation
+         * context associated with the timer arm.
          */
-        void MaintenanceManager::timerThreadCallback(union sigval /*sv*/)
+        void MaintenanceManager::timerThreadCallback(union sigval sv)
         {
-            timer_handler(SIGALRM);
+            const uint64_t callbackGeneration = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(sv.sival_ptr));
+            std::shared_ptr<TimerCallbackContext> context;
+            MaintenanceManager *instance = nullptr;
+            {
+                std::lock_guard<std::mutex> callbackGuard(m_timerCallbackMutex); // critical section start: m_timerCallbackMutex guards callback registration/generation/accounting
+                auto contextEntry = m_timerCallbackContexts.find(callbackGeneration);
+                if (contextEntry == m_timerCallbackContexts.end())
+                {
+                    return;
+                }
+                context = contextEntry->second;
+                instance = context->instance;
+                if (instance == nullptr || instance->m_timerShuttingDown ||
+                    context->generation != instance->m_timerGeneration ||
+                    callbackGeneration != instance->m_activeTimerGeneration)
+                {
+                    return;
+                }
+                ++instance->m_timerCallbacksInFlight;
+            } // critical section end: m_timerCallbackMutex
+
+            try
+            {
+                instance->handleTaskTimeout(context->task);
+            }
+            catch (const std::exception &error)
+            {
+                MM_LOGERR("Timer callback failed: %s", error.what());
+            }
+            catch (...)
+            {
+                MM_LOGERR("Timer callback failed with an unknown exception");
+            }
+
+            {
+                std::lock_guard<std::mutex> callbackGuard(m_timerCallbackMutex); // critical section start: m_timerCallbackMutex guards in-flight callback accounting
+                --instance->m_timerCallbacksInFlight;
+                m_timerCallbackCondition.notify_all();
+            } // critical section end: m_timerCallbackMutex
         }
+
+        void MaintenanceManager::quiesceTimerCallbacks()
+        {
+            std::unique_lock<std::mutex> callbackLock(m_timerCallbackMutex); // critical section start: m_timerCallbackMutex guards timer shutdown/callback accounting
+            m_timerShuttingDown = true;
+            m_timerGeneration = 0;
+            if (m_timerHandleValid)
+            {
+                struct itimerspec its = {0};
+                timer_settime(timerid, 0, &its, nullptr);
+                if (timer_delete(timerid) == -1)
+                {
+                    MM_LOGWARN("timer_delete() failed while quiescing callbacks");
+                }
+                else
+                {
+                    m_timerHandleValid = false;
+                }
+            }
+            m_timerCallbackContexts.erase(m_activeTimerGeneration);
+            m_activeTimerGeneration = 0;
+            g_task_timerCreated = false;
+            m_timerCallbackCondition.wait(callbackLock, [this] { return m_timerCallbacksInFlight == 0; });
+        } // critical section end: m_timerCallbackMutex
 
         /**
          * @brief Sets an RFC parameter.
@@ -1085,13 +1226,19 @@ namespace WPEFramework
                 state = parameters["state"].Number();
 
                 MM_LOGINFO("Received onInternetStatusChange event: [%s:%d]", value.c_str(), state);
-                if (g_listen_to_nwevents)
                 {
-
-                    if (state == INTERNET_CONNECTED_STATE)
+                    bool startTasks = false;
+                    {
+                        std::lock_guard<std::mutex> networkGuard(m_networkEventMutex); // critical section start: m_networkEventMutex guards g_listen_to_nwevents
+                        if (g_listen_to_nwevents && state == INTERNET_CONNECTED_STATE)
+                        {
+                            g_listen_to_nwevents = false;
+                            startTasks = true;
+                        }
+                    } // critical section end: m_networkEventMutex
+                    if (startTasks)
                     {
                         startCriticalTasks();
-                        g_listen_to_nwevents = false;
                     }
                 }
             }
@@ -1602,6 +1749,8 @@ namespace WPEFramework
 
         MaintenanceManager::~MaintenanceManager()
         {
+            quiesceTimerCallbacks();
+            std::lock_guard<std::mutex> callbackGuard(m_timerCallbackMutex); // critical section start: m_timerCallbackMutex guards _instance teardown
             MaintenanceManager::_instance = nullptr;
         }
 
@@ -1610,6 +1759,12 @@ namespace WPEFramework
             ASSERT(service != nullptr);
             ASSERT(m_service == nullptr);
             ASSERT(timerid != nullptr);
+
+            {
+                std::lock_guard<std::mutex> callbackGuard(m_timerCallbackMutex); // critical section start: reopens timer callbacks for this activation
+                MaintenanceManager::_instance = this;
+                m_timerShuttingDown = false;
+            } // critical section end: m_timerCallbackMutex
 
             m_service = service;
             m_service->AddRef();
@@ -1623,30 +1778,6 @@ namespace WPEFramework
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             InitializeIARM();
 #endif
-            /* The task timer uses SIGEV_THREAD (see maintenance_initTimer()), which invokes
-             * timerThreadCallback() directly on a dedicated thread instead of delivering
-             * SIGALRM to a signal handler. Ignore any stray SIGALRM from elsewhere in the
-             * process so it can't take down this plugin via the signal's default action.
-             * sigaction() (rather than signal()) is used so the previous, process-wide
-             * disposition can be restored in Deinitialize() instead of leaving SIG_IGN installed forever. */
-            struct sigaction newSigalrmAction {};
-            newSigalrmAction.sa_handler = SIG_IGN;
-            sigemptyset(&newSigalrmAction.sa_mask);
-            newSigalrmAction.sa_flags = 0;
-            if (sigaction(SIGALRM, &newSigalrmAction, &m_prevSigalrmAction) == -1)
-            {
-                MM_LOGERR("Failed to install SIGALRM safety-net handler");
-                /* Unwind what Initialize() has already acquired, mirroring Deinitialize(). */
-#if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
-                DeinitializeIARM();
-#endif
-                if (m_service != nullptr)
-                {
-                    m_service->Release();
-                    m_service = nullptr;
-                }
-                return string(_T("MaintenanceManager: Failed to install SIGALRM safety-net handler"));
-            }
 
             /* On Success; return empty to indicate no error text. */
             return (string());
@@ -1654,21 +1785,8 @@ namespace WPEFramework
 
         void MaintenanceManager::Deinitialize(PluginHost::IShell *service)
         {
-            if (!maintenance_deleteTimer())
-            {
-                MM_LOGINFO("Failed to delete timer");
-            }
-            MM_LOGINFO("Timer Deleted on Deinitialization.");
-            {
-                /* timer_delete() does not wait for an already-in-flight SIGEV_THREAD callback to finish;
-                 * take/release the same static mutex timer_handler() holds for its whole body so we don't
-                 * proceed with teardown (nulling _instance, releasing m_service) while one is still running. */
-                std::lock_guard<std::mutex> tcGuard(MaintenanceManager::m_timerCallbackMutex); // critical section start: drains any in-flight timer_handler() call
-            } // critical section end: m_timerCallbackMutex
-            if (sigaction(SIGALRM, &m_prevSigalrmAction, nullptr) == -1)
-            {
-                MM_LOGWARN("Failed to restore previous SIGALRM disposition");
-            }
+            quiesceTimerCallbacks();
+            MM_LOGINFO("Timer callbacks quiesced on Deinitialization.");
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             stopMaintenanceTasks();
             DeinitializeIARM();
@@ -1701,10 +1819,20 @@ namespace WPEFramework
         void MaintenanceManager::maintenanceManagerOnBootup()
         {
             /* on boot up we set these things */
-            MaintenanceManager::g_currentMode = FOREGROUND_MODE;
-            MaintenanceManager::g_triggerMode = "";
+            {
+                std::lock_guard<std::mutex> callGuard(m_callMutex); // critical section start: m_callMutex guards mode and trigger state
+                MaintenanceManager::g_currentMode = FOREGROUND_MODE;
+                MaintenanceManager::g_triggerMode = "";
+            } // critical section end: m_callMutex
 
-            MaintenanceManager::m_notify_status = MAINTENANCE_IDLE;
+            {
+                std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards status and terminal flags
+                MaintenanceManager::m_notify_status = MAINTENANCE_IDLE;
+                MaintenanceManager::g_is_critical_maintenance = "false";
+                MaintenanceManager::g_is_reboot_pending = "false";
+                MaintenanceManager::g_task_status = 0;
+                MaintenanceManager::g_unsolicited_complete = false;
+            } // critical section end: m_statusMutex
             MaintenanceManager::g_epoch_time = "";
 
             /* to know the maintenance is solicited or unsolicited */
@@ -1727,15 +1855,11 @@ namespace WPEFramework
                 MM_LOGINFO("OptOut Value Found as: %s", OptOutmode.c_str());
             }
 
-            MaintenanceManager::g_is_critical_maintenance = "false";
-            MaintenanceManager::g_is_reboot_pending = "false";
             MaintenanceManager::g_lastSuccessful_maint_time = "";
-            MaintenanceManager::g_task_status = 0;
             {
                 std::lock_guard<std::mutex> g(m_abortFlagMutex); // critical section start: m_abortFlagMutex guards m_abort_flag
                 MaintenanceManager::m_abort_flag = false;
             } // critical section end: m_abortFlagMutex
-            MaintenanceManager::g_unsolicited_complete = false;
 
             const string lastMaintenanceStatus = m_setting.getValue(LAST_MAINTENANCE_STATUS_KEY).String();
             if (skipUnsolicitedMaintenance(isMaintenanceReboot(), lastMaintenanceStatus))
@@ -1743,8 +1867,8 @@ namespace WPEFramework
                 MM_LOGINFO("Skipping unsolicited maintenance at boot because previous maintenance status is complete and reboot reason is maintenance reboot");
                 m_statusMutex.lock(); // critical section start: m_statusMutex guards m_notify_status/g_task_status via onMaintenanceStatusChange()
                 MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_COMPLETE);
-                m_statusMutex.unlock(); // critical section end: m_statusMutex
                 MaintenanceManager::g_unsolicited_complete = true;
+                m_statusMutex.unlock(); // critical section end: m_statusMutex
                 return;
             }
 
@@ -1759,6 +1883,7 @@ namespace WPEFramework
 #ifdef ENABLE_TEST_THREAD_EXCEPTION
                 MM_TEST_THROW_THREAD_EXCEPTION();
 #endif
+                std::lock_guard<std::mutex> threadGuard(m_threadMutex); // critical section start: m_threadMutex guards m_thread assignment
                 m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
             }
             catch (const std::exception &e)
@@ -1788,6 +1913,7 @@ namespace WPEFramework
 
         void MaintenanceManager::iarmEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
         {
+            bool joinWorker = false;
             m_statusMutex.lock(); // critical section start: m_statusMutex guards m_notify_status/g_task_status for the rest of this function
             bool aborted = false;
             {
@@ -1993,17 +2119,13 @@ namespace WPEFramework
                         }
 
                         MM_LOGINFO("ENDING MAINTENANCE CYCLE");
-                        if (m_thread.joinable())
-                        {
-                            m_thread.join();
-                            MM_LOGINFO("Thread joined successfully");
-                        }
+                        joinWorker = true;
+                        m_workerJoinInProgress = true;
 
                         if (getMaintenanceType() == UNSOLICITED_MAINTENANCE && !g_unsolicited_complete)
                         {
                             g_unsolicited_complete = true;
                         }
-                        MaintenanceManager::_instance->onMaintenanceStatusChange(notify_status);
                     }
                     else
                     {
@@ -2020,6 +2142,21 @@ namespace WPEFramework
                 MM_LOGINFO("Maintenance has been aborted. Hence ignoring the event");
             }
             m_statusMutex.unlock(); // critical section end: m_statusMutex
+            if (joinWorker)
+            {
+                std::lock_guard<std::mutex> threadGuard(m_threadMutex); // critical section start: m_threadMutex guards m_thread join
+                if (m_thread.joinable())
+                {
+                    m_thread.join();
+                    MM_LOGINFO("Thread joined successfully");
+                }
+            }
+            if (joinWorker)
+            {
+                std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards final status publication/join transition
+                MaintenanceManager::_instance->onMaintenanceStatusChange(notify_status);
+                m_workerJoinInProgress = false;
+            } // critical section end: m_statusMutex
         }
         void MaintenanceManager::DeinitializeIARM()
         {
@@ -2064,6 +2201,7 @@ namespace WPEFramework
                                                                   JsonObject &response)
         {
             bool result = false;
+            Maint_notify_status_t notifyStatus;
             string isCriticalMaintenance = "false";
             string isRebootPending = "false";
             string LastSuccessfulCompletionTime = "NA"; /* TODO : check max size to hold this */
@@ -2071,18 +2209,12 @@ namespace WPEFramework
             bool b_criticalMaintenace = false;
             bool b_rebootPending = false;
 
-            std::lock_guard<std::mutex> guard(m_callMutex); // critical section start: m_callMutex guards g_is_critical_maintenance/g_is_reboot_pending/persisted settings reads for the rest of this function (ends at function return)
-
-            /* Check if we have a critical maintenance */
-            if (!g_is_critical_maintenance.empty())
             {
+                std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards status and terminal flags
+                notifyStatus = m_notify_status;
                 isCriticalMaintenance = g_is_critical_maintenance;
-            }
-
-            if (!g_is_reboot_pending.empty())
-            {
                 isRebootPending = g_is_reboot_pending;
-            }
+            } // critical section end: m_statusMutex
 
             /* Get the last SuccessfulCompletion time from Persistant location */
             if (m_setting.containsSync("LastSuccessfulCompletionTime"))
@@ -2105,9 +2237,9 @@ namespace WPEFramework
                 b_rebootPending = true;
             }
 
-            response["maintenanceStatus"] = notifyStatusToString(m_notify_status);
+            response["maintenanceStatus"] = notifyStatusToString(notifyStatus);
 
-			if (notifyStatusToString(m_notify_status) == "MAINTENANCE_INCOMPLETE")
+			if (notifyStatusToString(notifyStatus) == "MAINTENANCE_INCOMPLETE")
 			{
 				t2_event_d("SYST_INFO_MaintnceIncmpl", 1);
 			}
@@ -2589,6 +2721,7 @@ namespace WPEFramework
             MM_LOGINFO("Invoke getMaintenanceMode");
             bool result = false;
             string softwareOptOutmode = "NONE";
+            std::lock_guard<std::mutex> callGuard(m_callMutex); // critical section start: m_callMutex guards g_currentMode/g_triggerMode for this function
             if (BACKGROUND_MODE != g_currentMode && FOREGROUND_MODE != g_currentMode)
             {
                 MM_LOGERR("Didnt get a valid Mode. Failed");
@@ -2599,7 +2732,6 @@ namespace WPEFramework
             }
             else
             {
-                std::lock_guard<std::mutex> guard(m_callMutex); // critical section start: m_callMutex guards g_currentMode/g_triggerMode for the rest of this function (ends at function return)
                 response["maintenanceMode"] = g_currentMode;
                 response["triggerMode"] = g_triggerMode;
 
@@ -2663,7 +2795,11 @@ namespace WPEFramework
             MM_LOGINFO("Invoke setMaintenanceMode");
             bool result = false;
             string new_mode = "";
-            string old_mode = g_currentMode;
+            string old_mode;
+            {
+                std::lock_guard<std::mutex> callGuard(m_callMutex); // critical section start: m_callMutex guards g_currentMode
+                old_mode = g_currentMode;
+            } // critical section end: m_callMutex
             string bg_flag = "false";
             string new_optout_state = "";
             string new_trigger_mode = "";
@@ -2691,12 +2827,17 @@ namespace WPEFramework
                 }
                 MM_LOGINFO("setMaintenanceMode called: maintenanceMode=%s, optOut=%s, triggerMode=%s", new_mode.c_str(), new_optout_state.c_str(), new_trigger_mode.c_str());
 
+                Maint_notify_status_t notifyStatus;
+                {
+                    std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards m_notify_status
+                    notifyStatus = m_notify_status;
+                } // critical section end: m_statusMutex
                 std::lock_guard<std::mutex> guard(m_callMutex); // critical section start: m_callMutex guards g_triggerMode/g_currentMode for the rest of this function (ends at function return)
                 g_triggerMode = std::move(new_trigger_mode); // Update inside mutex lock
 
                 /* check if maintenance is on progress or not */
                 /* if in progress restrict the same */
-                if (MAINTENANCE_STARTED != m_notify_status)
+                if (MAINTENANCE_STARTED != notifyStatus)
                 {
                     MM_LOGINFO("SetMaintenanceMode new_mode = %s", new_mode.c_str());
 
@@ -2784,6 +2925,8 @@ namespace WPEFramework
                                                       JsonObject &response)
         {
             bool result = false;
+            bool startWorker = false;
+            string prev_critical_maintenance;
             /* check what mode we currently have */
             string current_mode = "";
 
@@ -2792,8 +2935,9 @@ namespace WPEFramework
             /* Lock so that m_notify_status will not be updated  further */
             m_statusMutex.lock(); // critical section start: m_statusMutex guards m_notify_status/g_task_status for the rest of this function
 
-            if (MAINTENANCE_STARTED != m_notify_status && g_unsolicited_complete)
+            if (MAINTENANCE_STARTED != m_notify_status && g_unsolicited_complete && !m_workerJoinInProgress)
             {
+                m_workerJoinInProgress = true;
                 {
                     std::lock_guard<std::mutex> guard(m_callMutex); // critical section start: m_callMutex guards g_triggerMode
                     MM_LOGINFO("startMaintenance triggered with %s TriggerMode", g_triggerMode.empty()?"EMPTY":g_triggerMode.c_str());
@@ -2812,38 +2956,48 @@ namespace WPEFramework
                 g_is_reboot_pending = "true";
 
                 /* Save previous value before overwriting, for rollback on thread creation failure */
-                string prev_critical_maintenance = g_is_critical_maintenance;
+                prev_critical_maintenance = g_is_critical_maintenance;
                 /* we set this to false */
                 g_is_critical_maintenance = "false";
-
-                /* if there is any active thread, join it before executing the tasks from startMaintenance
-                 * especially when device is in offline mode*/
-                if (m_thread.joinable())
-                {
-                    m_thread.join();
-                    MM_LOGINFO("Thread joined successfully");
-                }
-
-                try
-                {
-#ifdef ENABLE_TEST_THREAD_EXCEPTION
-                    MM_TEST_THROW_THREAD_EXCEPTION();
-#endif
-                    m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
-                    result = true;
-                }
-                catch (const std::exception &e)
-                {
-                    MM_LOGERR("Failed to create task execution thread in startMaintenance: [%s] %s", typeid(e).name(), e.what());
-                    g_is_critical_maintenance = std::move(prev_critical_maintenance);
-                    result = false;
-                }
+                startWorker = true;
             }
             else
             {
                 MM_LOGINFO("Already a maintenance is in Progress. Please wait for it to complete !!");
             }
             m_statusMutex.unlock(); // critical section end: m_statusMutex
+
+            if (startWorker)
+            {
+                try
+                {
+#ifdef ENABLE_TEST_THREAD_EXCEPTION
+                    MM_TEST_THROW_THREAD_EXCEPTION();
+#endif
+                    std::lock_guard<std::mutex> threadGuard(m_threadMutex); // critical section start: m_threadMutex guards m_thread join/replacement
+                    /* Join a completed prior worker before replacing the thread object. */
+                    if (m_thread.joinable())
+                    {
+                        m_thread.join();
+                        MM_LOGINFO("Thread joined successfully");
+                    }
+                    m_thread = std::thread(&MaintenanceManager::task_execution_thread, _instance);
+                    result = true;
+                }
+                catch (const std::exception &e)
+                {
+                    MM_LOGERR("Failed to create task execution thread in startMaintenance: [%s] %s", typeid(e).name(), e.what());
+                    std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards rollback and worker-join transition
+                    g_is_critical_maintenance = std::move(prev_critical_maintenance);
+                    m_workerJoinInProgress = false;
+                } // critical section end: m_statusMutex
+
+                if (result)
+                {
+                    std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards worker-join transition
+                    m_workerJoinInProgress = false;
+                } // critical section end: m_statusMutex
+            }
 #if defined(ENABLE_JOURNAL_LOGGING)
             MM_RETURN_RESPONSE(result);
 #endif
@@ -2880,9 +3034,10 @@ namespace WPEFramework
             
             /* run only when the maintenance status is MAINTENANCE_STARTED */
             m_statusMutex.lock(); // critical section start: m_statusMutex guards m_notify_status/g_task_status for the rest of this function
-            if (MAINTENANCE_STARTED == m_notify_status)
+            if (MAINTENANCE_STARTED == m_notify_status && !m_workerJoinInProgress)
             {
                 MM_LOGINFO("Stopping maintenance activities");
+                m_workerJoinInProgress = true;
                 // Set the condition flag m_abort_flag to true
                 {
                     std::lock_guard<std::mutex> g(m_abortFlagMutex); // critical section start: m_abortFlagMutex guards m_abort_flag
@@ -2939,23 +3094,32 @@ namespace WPEFramework
                     MM_LOGERR("task_stopTimer() did not stop the Timer");
                 }
                 task_thread.notify_one();
-                if (m_thread.joinable())
-                {
-                    m_thread.join();
-                    MM_LOGINFO("Thread joined successfully");
-                }
                 if (UNSOLICITED_MAINTENANCE == getMaintenanceType() && !g_unsolicited_complete)
                 {
                     g_unsolicited_complete = true;
                 }
-                MM_LOGINFO("Maintenance has been stopped. Hence setting maintenance status to MAINTENANCE_ERROR");
-                MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
             }
             else
             {
                 MM_LOGINFO("Maintenance Status is not MAINTENANCE_STARTED, Hence can not stop the Maintenance execution");
             }
             m_statusMutex.unlock(); // critical section end: m_statusMutex
+            if (result)
+            {
+                std::lock_guard<std::mutex> threadGuard(m_threadMutex); // critical section start: m_threadMutex guards m_thread join
+                if (m_thread.joinable())
+                {
+                    m_thread.join();
+                    MM_LOGINFO("Thread joined successfully");
+                }
+            }
+            if (result)
+            {
+                std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards final status publication/join transition
+                MM_LOGINFO("Maintenance has been stopped. Hence setting maintenance status to MAINTENANCE_ERROR");
+                MaintenanceManager::_instance->onMaintenanceStatusChange(MAINTENANCE_ERROR);
+                m_workerJoinInProgress = false;
+            } // critical section end: m_statusMutex
             return result;
         }
 

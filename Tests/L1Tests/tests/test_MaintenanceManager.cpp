@@ -1091,6 +1091,54 @@ TEST_F(MaintenanceManagerTest, TimerHandler_SIGALRM_TaskSetToError)
     EXPECT_TRUE(plugin_->m_task_map["DownloadFirmware"]);
 }
 
+TEST_F(MaintenanceManagerTest, TimerThreadCallback_StaleGenerationIgnored)
+{
+    using MaintenanceManager = WPEFramework::Plugin::MaintenanceManager;
+    const std::string taskName = WPEFramework::Plugin::task_names_foreground[TASK_RFC];
+    auto context = std::make_shared<MaintenanceManager::TimerCallbackContext>();
+    context->instance = &(*plugin_);
+    context->generation = 1;
+    context->task = taskName;
+
+    plugin_->m_timerGeneration = 2;
+    plugin_->m_activeTimerGeneration = context->generation;
+    plugin_->m_task_map[taskName] = true;
+    MaintenanceManager::m_timerCallbackContexts[context->generation] = context;
+
+    union sigval callbackValue = {};
+    callbackValue.sival_ptr = reinterpret_cast<void *>(static_cast<uintptr_t>(context->generation));
+    MaintenanceManager::timerThreadCallback(callbackValue);
+
+    EXPECT_TRUE(plugin_->m_task_map[taskName]);
+    EXPECT_EQ(plugin_->g_task_status, 0);
+}
+
+TEST_F(MaintenanceManagerTest, TimerThreadCallback_UsesArmTimeTask)
+{
+    using MaintenanceManager = WPEFramework::Plugin::MaintenanceManager;
+    const std::string armedTask = WPEFramework::Plugin::task_names_foreground[TASK_RFC];
+    const std::string laterTask = WPEFramework::Plugin::task_names_foreground[TASK_SWUPDATE];
+    auto context = std::make_shared<MaintenanceManager::TimerCallbackContext>();
+    context->instance = &(*plugin_);
+    context->generation = 7;
+    context->task = armedTask;
+
+    plugin_->m_timerGeneration = context->generation;
+    plugin_->m_activeTimerGeneration = context->generation;
+    MaintenanceManager::currentTask = laterTask;
+    plugin_->m_task_map[armedTask] = true;
+    plugin_->m_task_map[laterTask] = true;
+    MaintenanceManager::m_timerCallbackContexts[context->generation] = context;
+
+    union sigval callbackValue = {};
+    callbackValue.sival_ptr = reinterpret_cast<void *>(static_cast<uintptr_t>(context->generation));
+    MaintenanceManager::timerThreadCallback(callbackValue);
+
+    EXPECT_FALSE(plugin_->m_task_map[armedTask]);
+    EXPECT_TRUE(plugin_->m_task_map[laterTask]);
+    EXPECT_TRUE(CHECK_STATUS(plugin_->g_task_status, RFC_COMPLETE));
+}
+
 TEST_F(MaintenanceManagerTest, HandlesEventCorrectly) {
     const char* owner = "TestOwner";
     IARM_EventId_t eventId = 42; // Use an appropriate value
