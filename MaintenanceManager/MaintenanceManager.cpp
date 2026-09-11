@@ -419,8 +419,13 @@ namespace WPEFramework
                         MM_LOGINFO("knowWhoAmI() returned false and Device is not already Activated");
                         MM_LOGINFO("Waiting for onDeviceInitializationContextUpdate event");
                         std::unique_lock<std::mutex> wailck(m_waiMutex); // critical section start: m_waiMutex guards g_listen_to_deviceContextUpdate
+                        m_contextWaitCancelled = false;
                         g_listen_to_deviceContextUpdate = true;
-                        task_thread.wait(wailck, [this]{ return !g_listen_to_deviceContextUpdate; }); // critical section end: wailck released when it goes out of scope below
+                        task_thread.wait(wailck, [this]{ return !g_listen_to_deviceContextUpdate || m_contextWaitCancelled; });
+                        if (m_contextWaitCancelled)
+                        {
+                            return;
+                        }
                     }
                     else if (!internetConnectStatus && activation_status == "activated")
                     {
@@ -528,6 +533,7 @@ namespace WPEFramework
                 task += "\0";
                 if (!isAborted())
                 {
+                    const uint64_t taskNotificationGeneration = m_taskNotificationGeneration.load();
                     if (retry_count == TASK_RETRY_COUNT)
                     {
                         MM_LOGINFO("Starting Timer for %s", tasks[i].c_str());
@@ -589,7 +595,14 @@ namespace WPEFramework
                     {
                         MM_LOGINFO("Waiting to unlock.. [%d/%d]", i + 1, (int)tasks.size());
 #if !defined(GTEST_ENABLE)
-                        task_thread.wait(lck);
+                        task_thread.wait(lck, [this, taskNotificationGeneration] {
+                            bool aborted = false;
+                            {
+                                std::lock_guard<std::mutex> abortGuard(m_abortFlagMutex);
+                                aborted = m_abort_flag;
+                            }
+                            return aborted || m_taskNotificationGeneration.load() != taskNotificationGeneration;
+                        });
 #endif
                         if (task_stopTimer())
                         {
@@ -1038,6 +1051,7 @@ namespace WPEFramework
                     std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards g_task_status
                     SET_STATUS(g_task_status, complete_status);
                 } // critical section end: m_statusMutex
+                ++m_taskNotificationGeneration;
                 task_thread.notify_one();
                 MM_LOGINFO("Set %s Task to ERROR", failedTask);
             }
@@ -1787,6 +1801,12 @@ namespace WPEFramework
         {
             quiesceTimerCallbacks();
             MM_LOGINFO("Timer callbacks quiesced on Deinitialization.");
+            {
+                std::lock_guard<std::mutex> waitGuard(m_waiMutex); // critical section start: m_waiMutex publishes device-context wait cancellation
+                m_contextWaitCancelled = true;
+                g_listen_to_deviceContextUpdate = false;
+            } // critical section end: m_waiMutex
+            task_thread.notify_all();
 #if defined(USE_IARMBUS) || defined(USE_IARM_BUS)
             stopMaintenanceTasks();
             DeinitializeIARM();
@@ -1914,6 +1934,7 @@ namespace WPEFramework
         void MaintenanceManager::iarmEventHandler(const char *owner, IARM_EventId_t eventId, void *data, size_t len)
         {
             bool joinWorker = false;
+            Maint_notify_status_t terminalStatus = MAINTENANCE_STARTED;
             m_statusMutex.lock(); // critical section start: m_statusMutex guards m_notify_status/g_task_status for the rest of this function
             bool aborted = false;
             {
@@ -1922,7 +1943,6 @@ namespace WPEFramework
             } // critical section end: m_abortFlagMutex
             if (!aborted)
             {
-                Maint_notify_status_t notify_status = MAINTENANCE_STARTED;
                 IARM_Bus_MaintMGR_EventData_t *module_event_data = (IARM_Bus_MaintMGR_EventData_t *)data;
                 IARM_Maint_module_status_t module_status;
                 time_t successfulTime;
@@ -1962,6 +1982,7 @@ namespace WPEFramework
                                 {
                                     SET_STATUS(g_task_status, RFC_SUCCESS);
                                     SET_STATUS(g_task_status, RFC_COMPLETE);
+                                    ++m_taskNotificationGeneration;
                                     task_thread.notify_one();
                                     m_task_map[task_names_foreground[TASK_RFC].c_str()] = false;
                                 }
@@ -1976,6 +1997,7 @@ namespace WPEFramework
                                 {
                                     SET_STATUS(g_task_status, SWUPDATE_SUCCESS);
                                     SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                                    ++m_taskNotificationGeneration;
                                     task_thread.notify_one();
                                     m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
                                 }
@@ -1990,6 +2012,7 @@ namespace WPEFramework
                                 {
                                     SET_STATUS(g_task_status, LOGUPLOAD_SUCCESS);
                                     SET_STATUS(g_task_status, LOGUPLOAD_COMPLETE);
+                                    ++m_taskNotificationGeneration;
                                     task_thread.notify_one();
                                     m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = false;
                                 }
@@ -2006,6 +2029,7 @@ namespace WPEFramework
                                 SET_STATUS(g_task_status, TASK_SKIPPED);
                                 /* we say FW update task complete */
                                 SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                                ++m_taskNotificationGeneration;
                                 task_thread.notify_one();
                                 m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = false;
                                 MM_LOGINFO("FW Download task aborted");
@@ -2019,6 +2043,7 @@ namespace WPEFramework
                                 else
                                 {
                                     SET_STATUS(g_task_status, RFC_COMPLETE);
+                                    ++m_taskNotificationGeneration;
                                     task_thread.notify_one();
                                     MM_LOGINFO("Error encountered in RFC Task");
                                     m_task_map[task_names_foreground[TASK_RFC].c_str()] = true;
@@ -2033,6 +2058,7 @@ namespace WPEFramework
                                 else
                                 {
                                     SET_STATUS(g_task_status, LOGUPLOAD_COMPLETE);
+                                    ++m_taskNotificationGeneration;
                                     task_thread.notify_one();
                                     MM_LOGINFO("Error encountered in LOGUPLOAD Task");
                                     m_task_map[task_names_foreground[TASK_LOGUPLOAD].c_str()] = true;
@@ -2047,6 +2073,7 @@ namespace WPEFramework
                                 else
                                 {
                                     SET_STATUS(g_task_status, SWUPDATE_COMPLETE);
+                                    ++m_taskNotificationGeneration;
                                     task_thread.notify_one();
                                     MM_LOGINFO("Error encountered in SWUPDATE Task");
                                     m_task_map[task_names_foreground[TASK_SWUPDATE].c_str()] = true;
@@ -2086,7 +2113,7 @@ namespace WPEFramework
                         if ((g_task_status & ALL_TASKS_SUCCESS) == ALL_TASKS_SUCCESS)
                         { // all tasks success
                             MM_LOGINFO("Maintenance Successfully Completed!!");
-                            notify_status = MAINTENANCE_COMPLETE;
+                            terminalStatus = MAINTENANCE_COMPLETE;
                             /*  we store the time in persistant location */
                             successfulTime = time(nullptr);
                             tm ltime = *localtime(&successfulTime);
@@ -2109,12 +2136,12 @@ namespace WPEFramework
                             if ((g_task_status & MAINTENANCE_TASK_SKIPPED) == MAINTENANCE_TASK_SKIPPED)
                             {
                                 MM_LOGINFO("There are Skipped Task. Maintenance Incomplete");
-                                notify_status = MAINTENANCE_INCOMPLETE;
+                                terminalStatus = MAINTENANCE_INCOMPLETE;
                             }
                             else
                             {
                                 MM_LOGINFO("Maintenance Ended with Errors");
-                                notify_status = MAINTENANCE_ERROR;
+                                terminalStatus = MAINTENANCE_ERROR;
                             }
                         }
 
@@ -2154,7 +2181,7 @@ namespace WPEFramework
             if (joinWorker)
             {
                 std::lock_guard<std::mutex> statusGuard(m_statusMutex); // critical section start: m_statusMutex guards final status publication/join transition
-                MaintenanceManager::_instance->onMaintenanceStatusChange(notify_status);
+                MaintenanceManager::_instance->onMaintenanceStatusChange(terminalStatus);
                 m_workerJoinInProgress = false;
             } // critical section end: m_statusMutex
         }
@@ -3043,6 +3070,11 @@ namespace WPEFramework
                     std::lock_guard<std::mutex> g(m_abortFlagMutex); // critical section start: m_abortFlagMutex guards m_abort_flag
                     m_abort_flag = true;
                 } // critical section end: m_abortFlagMutex
+                {
+                    std::lock_guard<std::mutex> waitGuard(m_waiMutex); // critical section start: m_waiMutex publishes device-context wait cancellation
+                    m_contextWaitCancelled = true;
+                    g_listen_to_deviceContextUpdate = false;
+                } // critical section end: m_waiMutex
                 {
                     std::lock_guard<std::mutex> tmGuard(m_taskMapMutex); // critical section start: m_taskMapMutex guards m_task_map
                     auto task_status_RFC = m_task_map.find(task_names_foreground[TASK_RFC].c_str());

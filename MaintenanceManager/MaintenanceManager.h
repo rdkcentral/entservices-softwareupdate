@@ -21,6 +21,7 @@
 #define MAINTENANCEMANAGER_H
 
 #include <stdint.h>
+#include <atomic>
 #include <thread>
 #include <condition_variable>
 #include <map>
@@ -213,6 +214,7 @@ namespace WPEFramework
             bool g_listen_to_nwevents = false;
             bool g_subscribed_for_nwevents = false;
             bool g_listen_to_deviceContextUpdate = false;
+            bool m_contextWaitCancelled = false; /* Guarded by m_waiMutex; lets stop/deactivation release the device-context wait */
             bool g_subscribed_for_deviceContextUpdate = false;
             bool g_whoami_support_enabled = false;
 #if defined(SUPPRESS_MAINTENANCE)
@@ -221,15 +223,16 @@ namespace WPEFramework
             bool g_suppress_maintenance_enabled = false;
 #endif
             std::mutex m_callMutex; /* Guards g_currentMode/g_triggerMode and serializes the task-execution loop in task_execution_thread() */
-            std::mutex m_waiMutex; /* Guards g_listen_to_deviceContextUpdate, read/written by task_execution_thread() and deviceInitializationContextEventHandler() */
+            std::mutex m_waiMutex; /* Guards device-context listen/cancellation state and its condition-variable predicate */
             std::mutex m_statusMutex; /* Guards maintenance status, task status, terminal flags, and worker-join transitions */
             std::mutex m_networkEventMutex; /* Guards g_listen_to_nwevents across the worker and network-event threads */
             std::mutex m_taskMapMutex; /* Guards m_task_map, read/written from the JSON-RPC, IARM event, task-execution, and timer threads */
             std::mutex m_abortFlagMutex; /* Guards m_abort_flag, read/written from the JSON-RPC and task-execution threads */
             std::mutex m_maintenanceTypeMutex; /* Guards g_maintenance_type, which is read/written from multiple threads */
-            std::mutex m_currentTaskMutex; /* Guards currentTask, written by task_execution_thread() and read by timer_handler() on the timer thread */
+            std::mutex m_currentTaskMutex; /* Guards currentTask, snapshotted when arming and by the direct-test timer_handler() entry point */
             std::mutex m_threadMutex; /* Guards assignment, joinability checks, and joins of m_thread */
             std::condition_variable task_thread;
+            std::atomic<uint64_t> m_taskNotificationGeneration {0}; /* Advances before each task completion/error notification to prevent lost wakeups */
             std::thread m_thread;
 
             std::map<string, bool> m_task_map;

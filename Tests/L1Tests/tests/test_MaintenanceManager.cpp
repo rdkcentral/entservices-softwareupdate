@@ -61,12 +61,6 @@ namespace {
         cSettings settings(MAINTENANCE_MGR_RECORD_FILE);
         settings.setValue(key, value);
     }
-
-    std::string getMaintenanceRecordValue(const std::string& key)
-    {
-        cSettings settings(MAINTENANCE_MGR_RECORD_FILE);
-        return settings.getValue(key).String();
-    }
 #endif /* GTEST_ENABLE */
 }
 
@@ -890,7 +884,7 @@ TEST(GetFileContentTest, FileExistsAndHasContent) {
     bool result = WPEFramework::Plugin::getFileContent(testFilePath, vecOfStrs);
 
     EXPECT_TRUE(result);
-    EXPECT_EQ(3, vecOfStrs.size());
+    EXPECT_EQ(static_cast<size_t>(3), vecOfStrs.size());
     EXPECT_EQ("Line 1", vecOfStrs[0]);
     EXPECT_EQ("Line 2", vecOfStrs[1]);
     EXPECT_EQ("Line 3", vecOfStrs[2]);

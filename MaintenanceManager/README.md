@@ -99,7 +99,7 @@ Runtime status includes:
 | Mutex | Protects |
 |---|---|
 | `m_callMutex` | `g_currentMode` and `g_triggerMode`; also serializes the task-execution loop in `task_execution_thread()` |
-| `m_waiMutex` | `g_listen_to_deviceContextUpdate` (read/written by `task_execution_thread()` and `deviceInitializationContextEventHandler()`) |
+| `m_waiMutex` | `g_listen_to_deviceContextUpdate` and `m_contextWaitCancelled`; stop/deactivation publishes cancellation before notifying the waiting worker |
 | `m_statusMutex` | `m_notify_status`, `g_task_status`, `g_is_critical_maintenance`, `g_is_reboot_pending`, `g_unsolicited_complete`, and `m_workerJoinInProgress` |
 | `m_networkEventMutex` | `g_listen_to_nwevents` across the worker and network-event threads |
 | `m_taskMapMutex` | `m_task_map` (read/written from the JSON-RPC, IARM event, task-execution, and timer threads) |
@@ -112,6 +112,8 @@ Runtime status includes:
 Every critical section in the source is bracketed with a `// critical section start/end: <mutex>` comment at the lock/unlock (or `lock_guard` scope) to make the boundary explicit.
 
 Each timer arm owns an immutable task name and generation. Disarm/delete unregisters that context so queued stale callbacks return without dereferencing it; callbacks that already acquired a shared context are counted, and `Deinitialize()` waits for that count to reach zero before stopping/releasing plugin resources. The plugin never installs a SIGALRM handler because SIGEV_THREAD does not deliver SIGALRM.
+
+Task completion/error notifications advance `m_taskNotificationGeneration` before waking the worker. The worker wait predicates on that generation or `m_abort_flag`, preventing completion and stop notifications from being lost when they arrive just before the wait begins.
 
 ### Lock ordering
 

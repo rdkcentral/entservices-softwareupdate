@@ -26,6 +26,7 @@
 - Timeout per task defaults to TASK_TIMEOUT=3600 unless compile-time override in CMake.
 - Each arm creates an immutable callback context containing its task and generation; callbacks whose context was unregistered or whose generation is stale are ignored.
 - A valid timeout marks only its associated task error-complete and notifies the worker.
+- Task completion/error paths increment m_taskNotificationGeneration before notification; the worker waits for a generation change or abort, preventing a notification that arrives before wait() from being lost.
 - Timer teardown invalidates the active generation and waits for callbacks already counted as in flight before plugin resources are released.
 
 ## Abort model

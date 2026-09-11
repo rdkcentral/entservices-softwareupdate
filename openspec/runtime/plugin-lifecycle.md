@@ -54,7 +54,7 @@
   - condition variable task_thread for worker/event coordination
   - ten single-purpose mutexes, each guarding one piece of shared state or lifecycle protocol:
     - m_callMutex: g_currentMode/g_triggerMode; also serializes the task_execution_thread() loop
-    - m_waiMutex: g_listen_to_deviceContextUpdate
+    - m_waiMutex: g_listen_to_deviceContextUpdate and m_contextWaitCancelled
     - m_statusMutex: m_notify_status, g_task_status, g_is_critical_maintenance, g_is_reboot_pending, g_unsolicited_complete, and m_workerJoinInProgress
     - m_networkEventMutex: g_listen_to_nwevents
     - m_taskMapMutex: m_task_map
@@ -70,6 +70,7 @@
 
 - Marks timer callbacks as shutting down, invalidates the active generation, deletes/unregisters the timer context, and waits for the in-flight callback count to reach zero.
 - Queued callbacks that have not acquired their registered context return without dereferencing plugin memory; callbacks already in flight retain shared context ownership and finish before teardown continues.
+- Stop/deactivation sets m_contextWaitCancelled and clears g_listen_to_deviceContextUpdate under m_waiMutex before notifying, so the device-context predicate wait cannot remain blocked.
 - Terminal completion/stop sets m_workerJoinInProgress under m_statusMutex, releases the status lock, joins the worker, then publishes final status and clears the transition flag; concurrent start/stop is rejected during the join.
 - Calls stopMaintenanceTasks() before IARM deinit (under IARM build).
 - Removes IARM event handler and nulls singleton instance in deinit path.
@@ -80,7 +81,7 @@
 ## Failure and recovery behavior
 
 - Thread creation failures in boot and startMaintenance paths are caught and converted to MAINTENANCE_ERROR or failed RPC response.
-- Signal handler registration failure fails Initialize().
+- Timer creation/arming failures are logged and reported to the task orchestration path.
 - Timer operation failures are logged and can degrade timeout enforcement.
 
 - There is no explicit health watchdog for permanently blocked thread waits if no IARM completion/error event arrives and timer path is disabled/failing.
